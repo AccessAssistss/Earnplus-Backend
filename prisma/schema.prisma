@@ -1,0 +1,829 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ####################--------------------Custom User Model Start's here--------------------####################
+enum UserType {
+  ASSOCIATE
+  EMPLOYER
+  EMPLOYEE
+  ASSOCIATESUBADMIN
+  EMPLOYERSUBADMIN
+}
+
+model CustomUser {
+  id                String   @id @default(uuid())
+  email             String?  @unique
+  name              String?
+  mobile            String   @db.VarChar(10)
+  alternativeMobile String?  @db.VarChar(10)
+  userType          UserType
+  accessToken       String?
+  refreshToken      String?
+
+  associates        Associate[]
+  employers         Employer[]
+  employees         Employee[]
+  employerSubAdmin  EmployerSubAdmin?
+  associateSubAdmin AssociateSubAdmin?
+}
+
+// ####################--------------------Custom User Model End's here--------------------####################
+
+// ####################--------------------Country, State and District Model Start's here--------------------####################
+// ####################--------------------Country Model--------------------####################
+model Country {
+  id          String   @id @default(uuid())
+  countryName String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isDeleted   Boolean  @default(false)
+
+  state                   State[]
+  EmployerBusinessDetails EmployerBusinessDetails[]
+  Employee                Employee[]
+  EmployerLocationDetails EmployerLocationDetails[]
+}
+
+// ####################--------------------State Model--------------------####################
+model State {
+  id        String   @id @default(uuid())
+  countryId String?
+  stateName String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+  country   Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+  district                District[]
+  EmployerBusinessDetails EmployerBusinessDetails[]
+  Employee                Employee[]
+  EmployerLocationDetails EmployerLocationDetails[]
+}
+
+// ####################--------------------District Model--------------------####################
+model District {
+  id           String   @id @default(uuid())
+  stateId      String?
+  districtName String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isDeleted    Boolean  @default(false)
+  state        State?   @relation(fields: [stateId], references: [id], onDelete: Cascade)
+
+  EmployerBusinessDetails EmployerBusinessDetails[]
+  EmployerLocationDetails EmployerLocationDetails[]
+}
+
+// ####################--------------------ASSOCIATE--------------------####################
+// ##########----------Associate Profile Model Start's here----------##########
+model Associate {
+  id        String      @id @default(uuid())
+  userId    String?     @unique
+  name      String?
+  email     String?     @unique @db.VarChar(100)
+  password  String      @db.VarChar(128)
+  fcmToken  String?
+  mobile    String?     @db.VarChar(10)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  isDeleted Boolean     @default(false)
+  user      CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  employers         Employer[]
+  AssociateSubAdmin AssociateSubAdmin[]
+  Role              Role[]
+  Module            Module[]
+}
+
+// ##########----------Associate Profile Model Ends's here----------##########
+
+// ####################--------------------Sub-Admin--------------------####################
+// ####################--------------------Role And Module Model Start's here--------------------####################
+// ####################--------------------Role Model--------------------####################
+model Role {
+  id          String     @id @default(uuid())
+  associateId String?
+  roleName    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isDeleted   Boolean    @default(false)
+  associate   Associate? @relation(fields: [associateId], references: [id], onDelete: Cascade)
+
+  Module            Module[]
+  AssociateSubAdmin AssociateSubAdmin[]
+}
+
+// ####################--------------------Module Model--------------------####################
+model Module {
+  id          String     @id @default(uuid())
+  associateId String?
+  roleId      String?
+  moduleName  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isDeleted   Boolean    @default(false)
+  role        Role?      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  associate   Associate? @relation(fields: [associateId], references: [id], onDelete: Cascade)
+
+  AssociateSubAdminModule AssociateSubAdminModule[]
+}
+
+// ####################--------------------Role And Module Model End's here--------------------####################
+
+// ##########----------Sub-Admin Profile Model Start's here----------##########
+model AssociateSubAdmin {
+  id          String      @id @default(uuid())
+  userId      String?     @unique
+  associateId String?
+  name        String?
+  email       String?     @unique @db.VarChar(100)
+  mobile      String?     @db.VarChar(10)
+  roleId      String?
+  password    String      @db.VarChar(128)
+  isActive    Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  isDeleted   Boolean     @default(false)
+  user        CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  associate   Associate?  @relation(fields: [associateId], references: [id], onDelete: Cascade)
+  role        Role?       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  Employer                Employer[]
+  AssociateSubAdminModule AssociateSubAdminModule[]
+  MasterProduct           MasterProduct[]
+}
+
+// ##########----------Sub-Admin Profile Model Ends's here----------##########
+
+// ##########----------Sub-Admin Modules Model Start's here----------##########
+model AssociateSubAdminModule {
+  id                  String             @id @default(uuid())
+  associateSubAdminId String?
+  moduleId            String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  isDeleted           Boolean            @default(false)
+  associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
+  module              Module?            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Sub-Admin Profile Model Ends's here----------##########
+
+// ##########----------Product Category Model Start's here----------##########
+model ProductCategory {
+  id           String   @id @default(uuid())
+  categoryName String?  @db.VarChar(100)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  isDeleted    Boolean  @default(false)
+
+  ProductPurpose ProductPurpose[]
+  MasterProduct  MasterProduct[]
+}
+
+// ##########----------Product Category Model Ends's here----------##########
+
+// ##########----------Product Purpose Model Start's here----------##########
+model ProductPurpose {
+  id                String   @id @default(uuid())
+  productCategoryId String?
+  purpose           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  isDeleted         Boolean  @default(false)
+
+  productCategory      ProductCategory?       @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
+  MasterProductPurpose MasterProductPurpose[]
+}
+
+// ##########----------Product Purpose Model Ends's here----------##########
+
+// ##########----------Product Common UseCase Model Start's here----------##########
+model CommonUseCase {
+  id                         String                       @id @default(uuid())
+  name                       String?                      @db.VarChar(100)
+  createdAt                  DateTime                     @default(now())
+  updatedAt                  DateTime                     @updatedAt
+  isDeleted                  Boolean                      @default(false)
+  MasterProductCommonUseCase MasterProductCommonUseCase[]
+}
+
+// ##########----------Product Common UseCase Model Ends's here----------##########
+
+// ##########----------Target Customer Type Model Start's here----------##########
+model CustomerType {
+  id                        String                      @id @default(uuid())
+  name                      String?                     @db.VarChar(100)
+  createdAt                 DateTime                    @default(now())
+  updatedAt                 DateTime                    @updatedAt
+  isDeleted                 Boolean                     @default(false)
+  MasterProductCustomerType MasterProductCustomerType[]
+}
+
+// ##########----------Target Customer Type Model Ends's here----------##########
+
+// ####################--------------------Master Product Models--------------------####################
+// ##########----------Master Product Model Start's here----------##########
+enum ProductType {
+  SECURED
+  UNSECURED
+  NA
+}
+
+model MasterProduct {
+  id                 String      @id @default(uuid())
+  productManagerId   String?
+  productCategoryId  String?
+  productType        ProductType
+  versionId          String?     @db.VarChar(80)
+  productName        String?     @db.VarChar(100)
+  productCode        String?     @db.VarChar(100)
+  productDescription String?     @db.VarChar(100)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+  isDeleted          Boolean     @default(false)
+
+  productCategory ProductCategory?   @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
+  productManager  AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
+
+  MasterProductLoanStructure      MasterProductLoanStructure[]
+  MasterProductFeeStructure       MasterProductFeeStructure[]
+  MasterProductSecurityCompliance MasterProductSecurityCompliance[]
+  MasterProductDisbursementRules  MasterProductDisbursementRules[]
+  MasterProductPerformance        MasterProductPerformance[]
+  MasterProductPurpose            MasterProductPurpose[]
+  MasterProductCommonUseCase      MasterProductCommonUseCase[]
+  MasterProductCustomerType       MasterProductCustomerType[]
+}
+
+// ##########----------Master Product Model Ends's here----------##########
+
+// ##########----------Master Product Purpose Model Starts's here----------##########
+model MasterProductPurpose {
+  id              String @id @default(uuid())
+  masterProductId String
+  purposeId       String
+
+  masterProduct  MasterProduct  @relation(fields: [masterProductId], references: [id])
+  productPurpose ProductPurpose @relation(fields: [purposeId], references: [id])
+}
+
+// ##########----------Master Product Purpose Model Ends's here----------##########
+
+// ##########----------Master Product Common UseCase Model Starts's here----------##########
+model MasterProductCommonUseCase {
+  id              String @id @default(uuid())
+  masterProductId String
+  commonuseCaseId String
+
+  masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+  commonuseCase CommonUseCase @relation(fields: [commonuseCaseId], references: [id])
+}
+
+// ##########----------Master Product Common UseCase Model Ends's here----------##########
+
+// ##########----------Master Product Customer Type Model Starts's here----------##########
+model MasterProductCustomerType {
+  id              String @id @default(uuid())
+  masterProductId String
+  customerTypeId  String
+
+  masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+  customerType  CustomerType  @relation(fields: [customerTypeId], references: [id])
+}
+
+// ##########----------Master Product Customer Type Model Ends's here----------##########
+
+// ##########----------Master Product Tenure Type Model Start's here----------##########
+// model TenureType {
+//   id         String   @id @default(uuid())
+//   tenureType String?  @db.VarChar(100)
+//   createdAt  DateTime @default(now())
+//   updatedAt  DateTime @updatedAt
+//   isDeleted  Boolean  @default(false)
+
+//   TenureUnit TenureUnit[]
+// }
+
+// ##########----------Master Product Tenure Type Model Ends's here----------##########
+
+// ##########----------Master Product Tenure Unit Model Start's here----------##########
+// model TenureUnit {
+//   id           String   @id @default(uuid())
+//   tenureTypeId String?
+//   createdAt    DateTime @default(now())
+//   updatedAt    DateTime @updatedAt
+//   isDeleted    Boolean  @default(false)
+
+//   tenureType TenureType? @relation(fields: [tenureTypeId], references: [id], onDelete: Cascade)
+// }
+
+// ##########----------Master Product Tenure Unit Model Ends's here----------##########
+
+// ##########----------Master Product Loan Structure Model Start's here----------##########
+enum InterestType {
+  FLAT
+  REDUCING
+  ZERO
+  CUSTOM
+}
+
+enum TenureType {
+  Fixed
+  Flexible
+  EventBased
+}
+
+enum TenureUnit {
+  Days
+  Weeks
+  Months
+  PayoutLinked
+}
+
+model MasterProductLoanStructure {
+  id                          String       @id @default(uuid())
+  masterProductId             String
+  minLoanAmount               Int?
+  maxLoanAmount               Int?
+  tenureType                  TenureType
+  tenureUnit                  TenureUnit
+  minTenure                   Int?
+  maxTenure                   Int?
+  allowedTenureValues         String?      @db.VarChar(50)
+  defaultTenure               String?      @db.VarChar(50)
+  isTenureBasedOnPaymentCycle Boolean?
+  tenureCalcLogic             String?      @db.VarChar(50)
+  allowRepaymentOverride      Boolean?
+  interestType                InterestType
+  interestRate                Int?
+  gracePeriod                 Int?
+  penalInterestRate           Int?
+  moratoriumPeriod            Int?
+  repaymentMethod             String?      @db.VarChar(50)
+  latePaymentFee              Int?
+  prePaymentAllowed           Boolean?
+  paymentCharges              Int?
+  lockinPeriod                Int?
+  createdAt                   DateTime     @default(now())
+  updatedAt                   DateTime     @updatedAt
+  isDeleted                   Boolean      @default(false)
+
+  masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Loan Structure Model Ends's here----------##########
+
+// ##########----------Master Product Fee Structure Model Start's here----------##########
+model MasterProductFeeStructure {
+  id                   String   @id @default(uuid())
+  masterProductId      String
+  processingFee        Int?
+  processingFeeGst     Int?
+  setupFee             Int?
+  setupFeeGst          Int?
+  subscriptionOption   Boolean?
+  perTransactionFee    Int?
+  perTransactionFeeGst Int?
+  insuranceCharge      Int?
+  insuranceChargeGst   Int?
+  otherCharges         Int?
+  otherChargesGst      Int?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  isDeleted            Boolean  @default(false)
+
+  masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Fee Structure Model Ends's here----------##########
+
+// ##########----------Master Product Security Compliance Model Start's here----------##########
+enum CollateralType {
+  GOLD
+  Vehicle
+  PROPERTY
+  OTHER
+}
+
+enum ConcentCaptureFormat {
+  DIGITAL
+  PAPER
+  BIOMETRIC
+}
+
+enum RiskCategory {
+  DIGITAL
+  PAPER
+  BIOMETRIC
+}
+
+model MasterProductSecurityCompliance {
+  id                    String                @id @default(uuid())
+  masterProductId       String
+  collateralRequired    Boolean?
+  collateralType        CollateralType?
+  kycRequired           Boolean?
+  coBorrowerRequired    Boolean?
+  insuranceBundeled     Boolean?
+  creditBureauMandatory Boolean?
+  minCibil              Int?
+  concentFormat         ConcentCaptureFormat?
+  defaultReporting      Int?
+  riskCategory          RiskCategory?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  isDeleted             Boolean               @default(false)
+
+  masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Security Compliance Model Ends's here----------##########
+
+// ##########----------Master Product Disbursement Rule Model Start's here----------##########
+enum DisbursementModes {
+  NEFT
+  IMPS
+  UPI
+}
+
+model MasterProductDisbursementRules {
+  id                String             @id @default(uuid())
+  masterProductId   String
+  disbursementMode  DisbursementModes?
+  varientAllowed    Boolean?
+  apiEnabledProduct Boolean?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  isDeleted         Boolean            @default(false)
+
+  masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Disbursement Rule Model Ends's here----------##########
+
+// ##########----------Master Product Employer Tagging Model Start's here----------##########
+// model MasterProductEmployerTagging {
+//   id              String   @id @default(uuid())
+//   masterProductId String
+//   employerLinked  Boolean?
+//   employerId      Boolean?
+//   loanCap         Int?
+//   repaymentSource String?
+//   createdAt       DateTime @default(now())
+//   updatedAt       DateTime @updatedAt
+//   isDeleted       Boolean  @default(false)
+
+//   masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+// }
+
+// ##########----------Master Product Employer Tagging Model Ends's here----------##########
+
+// ##########----------Master Product Performance Model Start's here----------##########
+model MasterProductPerformance {
+  id                          String   @id @default(uuid())
+  masterProductId             String
+  monitoringType              String?
+  delinquencyTriggerThreshold String?
+  portfolioCap                Int?
+  reviewCycle                 String?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+  isDeleted                   Boolean  @default(false)
+
+  masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Performance Model Ends's here----------##########
+
+// ####################--------------------EMPLOYER--------------------####################
+// ##########----------Employer Profile Model Start's here----------##########
+model Employer {
+  id                  String             @id @default(uuid())
+  userId              String?            @unique
+  associateId         String?
+  associateSubAdminId String?
+  employerId          String?            @unique
+  name                String?
+  email               String?
+  password            String
+  mobile              String?
+  gst                 String?
+  pan                 String?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  isDeleted           Boolean            @default(false)
+  isActive            Boolean            @default(false)
+  gstVerified         Boolean            @default(false)
+  panverified         Boolean            @default(false)
+  user                CustomUser?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  associate           Associate?         @relation(fields: [associateId], references: [id], onDelete: Cascade)
+  associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
+
+  employees               Employee[]
+  employerBusinessDetails EmployerBusinessDetails[]
+  EmployerLocationDetails EmployerLocationDetails[]
+  EmployerCompanyPolicies EmployerCompanyPolicies[]
+  EmployerContractType    EmployerContractType[]
+  employerSubAdmin        EmployerSubAdmin[]
+}
+
+// ##########----------Employer Profile Model End's here----------##########
+
+// ##########----------Employer Sub-Admin Model Start's here----------##########
+model EmployerSubAdmin {
+  id         String      @id @default(uuid())
+  userId     String?     @unique
+  employerId String?
+  name       String?
+  email      String?     @db.VarChar(100)
+  mobile     String?     @db.VarChar(10)
+  role       String?     @db.VarChar(20)
+  password   String      @db.VarChar(128)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  isDeleted  Boolean     @default(false)
+  user       CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employer   Employer?   @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+  employerSubAdminModule    EmployerSubAdminModule[]
+  EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
+  EmployeeBasePayroll       EmployeeBasePayroll[]
+  EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
+}
+
+// ##########----------Employer Sub-Admin Model Ends's here----------##########
+
+// ##########----------Employer Sub-Admin Modules Model Start's here----------##########
+model EmployerSubAdminModule {
+  id                 String   @id @default(uuid())
+  employerSubAdminId String?
+  module             String?  @db.VarChar(50)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  isDeleted          Boolean  @default(false)
+
+  employerSubAdmin EmployerSubAdmin? @relation(fields: [employerSubAdminId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employer Sub-Admin Module Model Ends's here----------##########
+
+// ####################--------------------Industry Type Model Start's here--------------------####################
+model IndustryType {
+  id        String   @id @default(uuid())
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isDeleted Boolean  @default(false)
+
+  EmployerBusinessDetails EmployerBusinessDetails[]
+}
+
+// ####################--------------------Industry Type Model Start's here--------------------####################
+
+// ##########----------Employer Business Details Model Start's here----------##########
+model EmployerBusinessDetails {
+  id                  String    @id @default(uuid())
+  employerId          String?
+  industryTypeId      String?
+  businessLocation    String?
+  businessDescription String?
+  establishmentDate   DateTime?
+  countryId           String?
+  stateId             String?
+  districtId          String?
+  pincode             String?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  isDeleted           Boolean   @default(false)
+  isVerified          Boolean   @default(false)
+
+  employer     Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  country      Country?      @relation(fields: [countryId], references: [id])
+  state        State?        @relation(fields: [stateId], references: [id])
+  district     District?     @relation(fields: [districtId], references: [id])
+  industryType IndustryType? @relation(fields: [industryTypeId], references: [id])
+}
+
+// ##########----------Employer Business Details Model End's here----------##########
+
+// ##########----------Employer Business Details Model Start's here----------##########
+model EmployerLocationDetails {
+  id            String   @id @default(uuid())
+  employerId    String?
+  workspaceName String?
+  noOfEmployees Int?
+  address       String?
+  countryId     String?
+  stateId       String?
+  districtId    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  isDeleted     Boolean  @default(false)
+
+  employer Employer? @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  country  Country?  @relation(fields: [countryId], references: [id])
+  state    State?    @relation(fields: [stateId], references: [id])
+  district District? @relation(fields: [districtId], references: [id])
+}
+
+// ##########----------Employer Business Details Model Start's here----------##########
+model EmployerCompanyPolicies {
+  id                 String   @id @default(uuid())
+  employerId         String?
+  noticePeriod       Int?
+  probationPeriod    Int?
+  annualLeaves       Int?
+  sickLeaves         Int?
+  casualLeaves       Int?
+  maternityLeaves    Int?
+  overtimePolicy     String?
+  registrationPolicy String?
+  remoteworkPolicy   String?
+  otherPolicies      String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  isDeleted          Boolean  @default(false)
+
+  employer Employer? @relation(fields: [employerId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employer Business Details Model End's here----------##########
+
+// ##########----------Contract Type Model Start's here----------##########
+model ContractType {
+  id                   String                 @id @default(uuid())
+  name                 String?
+  description          String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  isDeleted            Boolean                @default(false)
+  EmployerContractType EmployerContractType[]
+}
+
+// ##########----------Contract Type Model End's here----------##########
+
+// ##########----------Employer Contract Type Model Start's here----------##########
+model EmployerContractType {
+  id             String   @id @default(uuid())
+  employerId     String?
+  contractTypeId String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  isDeleted      Boolean  @default(false)
+
+  employer     Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  contractType ContractType? @relation(fields: [contractTypeId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employer Contract Type Model End's here----------##########
+
+// ####################--------------------Employee--------------------####################
+// Enums
+enum Gender {
+  Male
+  Female
+  Others
+}
+
+enum KycStatus {
+  Pending
+  InProcess
+  Completed
+}
+
+enum MaritalStatus {
+  Married
+  Single
+  Divorced
+}
+
+// ##########----------Employee Profile Model Start's here----------##########
+model Employee {
+  id                String         @id @default(uuid())
+  userId            String?        @unique
+  employerId        String?
+  kycStatus         KycStatus      @default(Pending)
+  paymentCycleId    String?
+  contractTypeId    String?
+  locationTypeId    String?
+  employeeName      String?        @db.VarChar(100)
+  employeeId        String?        @db.VarChar(100)
+  email             String?        @db.VarChar(100)
+  mobile            String         @db.VarChar(10)
+  alternativeMobile String?        @db.VarChar(10)
+  gender            Gender?
+  fcmToken          String?        @db.VarChar(100)
+  dob               DateTime?
+  department        String?        @db.VarChar(100)
+  designation       String?        @db.VarChar(100)
+  nationality       String?        @db.VarChar(100)
+  panNo             String?        @db.VarChar(100)
+  aadharNo          String?        @db.VarChar(100)
+  jobTitle          String?
+  maritalStatus     MaritalStatus?
+  dateJoined        DateTime?
+  hireDate          DateTime?
+  salaryDate        DateTime?
+  address           String?
+  city              String?        @db.VarChar(100)
+  stateId           String?
+  pincode           String?        @db.VarChar(100)
+  otpExpiration     DateTime       @default(now())
+  otp               String?        @db.VarChar(100)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  isDeleted         Boolean        @default(false)
+  isKycVerified     Boolean        @default(false)
+  isEmployerScreen  Boolean        @default(false)
+
+  employer Employer?   @relation(fields: [employerId], references: [id], onDelete: Cascade)
+  user     CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  country  Country?    @relation(fields: [nationality], references: [id])
+  state    State?      @relation(fields: [stateId], references: [id])
+
+  EmployeeVerification      EmployeeVerification[]
+  EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
+  EmployeeBasePayroll       EmployeeBasePayroll[]
+  EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
+}
+
+// ##########----------Employee Profile Model End's here----------##########
+
+// ##########----------Employee Veification Model Start's here----------##########
+model EmployeeVerification {
+  id               String   @id @default(uuid())
+  employeeId       String?
+  panNumber        String?  @db.VarChar(10)
+  isPanVerified    Boolean? @default(false)
+  aadharNumber     String?  @db.VarChar(12)
+  aadharImage      String?  @db.VarChar(50)
+  isAadharVerified Boolean? @default(false)
+  selfie           String?  @db.VarChar(50)
+  isSelfieVerified Boolean? @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employee Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Veification Model End's here----------##########
+
+// ##########----------Employee Current Payroll Model Start's here----------##########
+model EmployeeCurrentPayroll {
+  id               String   @id @default(uuid())
+  createdBy        String
+  employeeId       String
+  customEmployeeId String
+  income           Decimal
+  date             DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Current Payroll Model End's here----------##########
+
+// ##########----------Employee Base Payroll Model Start's here----------##########
+model EmployeeBasePayroll {
+  id               String   @id @default(uuid())
+  createdBy        String
+  employeeId       String
+  customEmployeeId String
+  attendance       Boolean
+  income           Decimal
+  date             DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Base Payroll Model End's here----------##########
+
+// ##########----------Employee Histroical Payroll Model Start's here----------##########
+model EmployeeHistoricalPayroll {
+  id               String   @id @default(uuid())
+  createdBy        String
+  employeeId       String
+  customEmployeeId String
+  income           Decimal
+  startDate        DateTime
+  endDate          DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Histroical Payroll Model End's here----------##########

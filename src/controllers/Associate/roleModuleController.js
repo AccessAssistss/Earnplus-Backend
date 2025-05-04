@@ -1,0 +1,264 @@
+const { PrismaClient } = require("@prisma/client");
+const { asyncHandler } = require("../../../utils/asyncHandler");
+
+const prisma = new PrismaClient();
+
+// ####################--------------------Role--------------------####################
+// ##########----------Create Role----------##########
+const createRole = asyncHandler(async (req, res) => {
+  const associateId = req.user;
+  const { roleName } = req.body;
+
+  if (!roleName) {
+    return res.respond(400, "Role name is required!");
+  }
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId: associateId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(404, "Associated profile not found!");
+  }
+
+  const existingRole = await prisma.role.findFirst({
+    where: {
+      roleName: { equals: roleName, mode: "insensitive" },
+      associateId: associate.id,
+      isDeleted: false,
+    },
+  });
+
+  if (existingRole) {
+    return res.respond(
+      400,
+      "Role with this name already exists for this associate!"
+    );
+  }
+
+  const role = await prisma.role.create({
+    data: { roleName, associateId: associate.id },
+  });
+
+  res.respond(200, "Role Created Successfully!", role);
+});
+
+// ##########----------Update Role----------##########
+const updateRole = asyncHandler(async (req, res) => {
+  const associateId = req.user;
+  const { roleName } = req.body;
+  const { roleId } = req.params;
+
+  if (!roleName) {
+    return res.respond(400, "Role name is required!");
+  }
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId: associateId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(404, "Associated profile not found!");
+  }
+
+  const existingRole = await prisma.role.findFirst({
+    where: {
+      roleName: { equals: roleName, mode: "insensitive" },
+      associateId: associate.id,
+      isDeleted: false,
+      NOT: {
+        id: roleId,
+      },
+    },
+  });
+
+  if (existingRole) {
+    return res.respond(
+      400,
+      "Role with this name already exists for this associate!"
+    );
+  }
+
+  const updatedRole = await prisma.role.update({
+    where: { id: roleId },
+    data: { roleName },
+  });
+
+  res.respond(200, "Role Updated Successfully!", updatedRole);
+});
+
+// ##########----------Get All Roles----------##########
+const getAllRoles = asyncHandler(async (req, res) => {
+  const associateId = req.user;
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId: associateId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(404, "Associated profile not found!");
+  }
+
+  const countries = await prisma.role.findMany({
+    where: { associateId: associate.id, isDeleted: false },
+    orderBy: { roleName: "asc" },
+  });
+
+  res.respond(200, "Roles fetched Successfully!", countries);
+});
+
+// ##########----------Soft Delete Role----------##########
+const softDeleteRole = asyncHandler(async (req, res) => {
+  const { roleId } = req.params;
+
+  // #####-----Get all modules under the given role-----#####
+  const modules = await prisma.module.findMany({ where: { roleId } });
+
+  // #####-----Soft delete all districts under those modules-----#####
+  for (const module of modules) {
+    await prisma.district.updateMany({
+      where: { moduleId: module.id },
+      data: { isDeleted: true },
+    });
+  }
+
+  // #####-----Soft delete all modules under the given role-----#####
+  await prisma.module.updateMany({
+    where: { roleId },
+    data: { isDeleted: true },
+  });
+
+  const deletedRole = await prisma.role.update({
+    where: { id: roleId },
+    data: { isDeleted: true },
+  });
+
+  res.respond(200, "Role deleted(Soft Delete) Successfully!", deletedRole);
+});
+
+// ####################--------------------Module--------------------####################
+// ##########----------Create Module----------##########
+const createModule = asyncHandler(async (req, res) => {
+  const associateId = req.user;
+  const { moduleName, roleId } = req.body;
+
+  if ((!moduleName, !roleId)) {
+    return res.respond(400, "Module name And Role ID are required!");
+  }
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId: associateId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(404, "Associated profile not found!");
+  }
+
+  const existingModule = await prisma.module.findFirst({
+    where: {
+      moduleName: { equals: moduleName, mode: "insensitive" },
+      roleId,
+      associateId: associate.id,
+      isDeleted: false,
+    },
+  });
+
+  if (existingModule) {
+    return res.respond(
+      400,
+      "Module with this name already exists in the role!"
+    );
+  }
+
+  const module = await prisma.module.create({
+    data: { moduleName, roleId, associateId: associate.id },
+  });
+
+  res.respond(200, "Module Created Successfully!", module);
+});
+
+// ##########----------Update Module----------##########
+const updateModule = asyncHandler(async (req, res) => {
+  const associateId = req.user;
+  const { moduleName, roleId } = req.body;
+  const { moduleId } = req.params;
+
+  if (!moduleName) {
+    return res.respond(400, "Module name is required!");
+  }
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId: associateId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(404, "Associated profile not found!");
+  }
+
+  const existingModule = await prisma.module.findFirst({
+    where: {
+      moduleName: { equals: moduleName, mode: "insensitive" },
+      roleId,
+      associateId: associate.id,
+      isDeleted: false,
+      NOT: {
+        id: moduleId,
+      },
+    },
+  });
+
+  if (existingModule) {
+    return res.respond(
+      400,
+      "Module with this name already exists in the role!"
+    );
+  }
+
+  const updatedModule = await prisma.module.update({
+    where: { id: moduleId },
+    data: { moduleName },
+  });
+
+  res.respond(200, "Module Updated Successfully!", updatedModule);
+});
+
+// ##########----------Get All Modules by Role----------##########
+const getModulesByRole = asyncHandler(async (req, res) => {
+  const { roleId } = req.params;
+
+  const modules = await prisma.module.findMany({
+    where: { roleId, isDeleted: false },
+    orderBy: { moduleName: "asc" },
+  });
+
+  res.respond(200, "modules fetched Successfully!", modules);
+});
+
+// ##########----------Soft Delete Module----------##########
+const softDeleteModule = asyncHandler(async (req, res) => {
+  const { moduleId } = req.params;
+
+  // #####-----Soft delete all districts under the given module-----#####
+  await prisma.district.updateMany({
+    where: { moduleId },
+    data: { isDeleted: true },
+  });
+
+  const deletedModule = await prisma.module.update({
+    where: { id: moduleId },
+    data: { isDeleted: true },
+  });
+
+  res.respond(200, "Module deleted(Soft Delete) Successfully!", deletedModule);
+});
+
+module.exports = {
+  createRole,
+  updateRole,
+  getAllRoles,
+  softDeleteRole,
+  createModule,
+  updateModule,
+  getModulesByRole,
+  softDeleteModule,
+};
