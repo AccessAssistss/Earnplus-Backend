@@ -12,5 +12,6 @@ router.use("/productCategory", require("./productCategoryRoute"));
 router.use("/commonUseCase", require("./commonUseCaseRoute"));
 router.use("/customerType", require("./customerTypeRoute"));
 router.use("/masterProduct", require("./masterProductRoute"));
+router.use("/variantProduct", require("./variantProductRoute"));
 
 module.exports = router;

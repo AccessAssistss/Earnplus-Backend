@@ -6,4 +6,17 @@ const generateProductCode = (name) => {
   return `PROD-${upperSlug}`;
 };
 
-module.exports = { generateProductCode };
+const generateVariantProductCode = (productCode, variantName, count) => {
+  const sanitizedName = variantName
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9\-]/g, "");
+
+  const code = `VAR-${productCode}-${sanitizedName}-${count + 1}`;
+  return code.toUpperCase();
+};
+
+module.exports = {
+  generateProductCode,
+  generateVariantProductCode,
+};

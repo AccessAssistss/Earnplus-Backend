@@ -40,24 +40,24 @@ const createMasterProduct = asyncHandler(async (req, res) => {
   const productManager = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
     include: {
-      roleId: true,
+      role: true,
     },
   });
 
-  if (!productManager || productManager.roleId.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create products.");
   }
 
   const generatedCode = generateProductCode(productName);
 
-  const existingName = prisma.masterProduct.findFirst({
+  const existingName = await prisma.masterProduct.findFirst({
     where: { productName: { equals: productName, mode: "insensitive" } },
   });
   if (existingName) {
     return res.respond(409, "A product with this name already exists.");
   }
 
-  const existingCode = prisma.masterProduct.findFirst({
+  const existingCode = await prisma.masterProduct.findFirst({
     where: { productCode: generatedCode },
   });
   if (existingCode) {
@@ -121,10 +121,13 @@ const getAllMasterProducts = asyncHandler(async (req, res) => {
 
   const productManager = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
   });
 
-  if (!productManager || productManager.roleId.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can create products.");
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can get products.");
   }
 
   const masterProducts = await prisma.masterProduct.findMany({
@@ -156,9 +159,12 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
 
   const productManager = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
   });
 
-  if (!productManager || productManager.roleId.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create products.");
   }
 
@@ -186,19 +192,34 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
       MasterProductPurpose: {
         select: {
           id: true,
-          Purpose: true,
+          productPurpose: {
+            select: {
+              id: true,
+              purpose: true,
+            },
+          },
         },
       },
       MasterProductCommonUseCase: {
         select: {
           id: true,
-          name: true,
+          commonuseCase: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       MasterProductCustomerType: {
         select: {
           id: true,
-          name: true,
+          customerType: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
         },
       },
       MasterProductLoanStructure: {

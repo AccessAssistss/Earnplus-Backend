@@ -157,6 +157,7 @@ model AssociateSubAdmin {
   Employer                Employer[]
   AssociateSubAdminModule AssociateSubAdminModule[]
   MasterProduct           MasterProduct[]
+  VariantProduct          VariantProduct[]
 }
 
 // ##########----------Sub-Admin Profile Model Ends's here----------##########
@@ -252,14 +253,15 @@ model MasterProduct {
   productCategory ProductCategory?   @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
   productManager  AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
 
-  MasterProductLoanStructure      MasterProductLoanStructure[]
-  MasterProductFeeStructure       MasterProductFeeStructure[]
-  MasterProductSecurityCompliance MasterProductSecurityCompliance[]
-  MasterProductDisbursementRules  MasterProductDisbursementRules[]
-  MasterProductPerformance        MasterProductPerformance[]
+  MasterProductLoanStructure      MasterProductLoanStructure?
+  MasterProductFeeStructure       MasterProductFeeStructure?
+  MasterProductSecurityCompliance MasterProductSecurityCompliance?
+  MasterProductDisbursementRules  MasterProductDisbursementRules?
+  MasterProductPerformance        MasterProductPerformance?
   MasterProductPurpose            MasterProductPurpose[]
   MasterProductCommonUseCase      MasterProductCommonUseCase[]
   MasterProductCustomerType       MasterProductCustomerType[]
+  VariantProduct                  VariantProduct[]
 }
 
 // ##########----------Master Product Model Ends's here----------##########
@@ -270,8 +272,8 @@ model MasterProductPurpose {
   masterProductId String
   purposeId       String
 
-  masterProduct  MasterProduct  @relation(fields: [masterProductId], references: [id])
-  productPurpose ProductPurpose @relation(fields: [purposeId], references: [id])
+  masterProduct  MasterProduct  @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+  productPurpose ProductPurpose @relation(fields: [purposeId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Purpose Model Ends's here----------##########
@@ -282,8 +284,8 @@ model MasterProductCommonUseCase {
   masterProductId String
   commonuseCaseId String
 
-  masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
-  commonuseCase CommonUseCase @relation(fields: [commonuseCaseId], references: [id])
+  masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+  commonuseCase CommonUseCase @relation(fields: [commonuseCaseId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Common UseCase Model Ends's here----------##########
@@ -294,8 +296,8 @@ model MasterProductCustomerType {
   masterProductId String
   customerTypeId  String
 
-  masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
-  customerType  CustomerType  @relation(fields: [customerTypeId], references: [id])
+  masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+  customerType  CustomerType  @relation(fields: [customerTypeId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Customer Type Model Ends's here----------##########
@@ -349,7 +351,7 @@ enum TenureUnit {
 
 model MasterProductLoanStructure {
   id                          String       @id @default(uuid())
-  masterProductId             String
+  masterProductId             String       @unique
   minLoanAmount               Int?
   maxLoanAmount               Int?
   tenureType                  TenureType
@@ -383,7 +385,7 @@ model MasterProductLoanStructure {
 // ##########----------Master Product Fee Structure Model Start's here----------##########
 model MasterProductFeeStructure {
   id                   String   @id @default(uuid())
-  masterProductId      String
+  masterProductId      String   @unique
   processingFee        Int?
   processingFeeGst     Int?
   setupFee             Int?
@@ -426,7 +428,7 @@ enum RiskCategory {
 
 model MasterProductSecurityCompliance {
   id                    String                @id @default(uuid())
-  masterProductId       String
+  masterProductId       String                @unique
   collateralRequired    Boolean?
   collateralType        CollateralType?
   kycRequired           Boolean?
@@ -455,7 +457,7 @@ enum DisbursementModes {
 
 model MasterProductDisbursementRules {
   id                String             @id @default(uuid())
-  masterProductId   String
+  masterProductId   String             @unique
   disbursementMode  DisbursementModes?
   varientAllowed    Boolean?
   apiEnabledProduct Boolean?
@@ -488,7 +490,7 @@ model MasterProductDisbursementRules {
 // ##########----------Master Product Performance Model Start's here----------##########
 model MasterProductPerformance {
   id                          String   @id @default(uuid())
-  masterProductId             String
+  masterProductId             String   @unique
   monitoringType              String?
   delinquencyTriggerThreshold String?
   portfolioCap                Int?
@@ -501,6 +503,129 @@ model MasterProductPerformance {
 }
 
 // ##########----------Master Product Performance Model Ends's here----------##########
+
+// ##########----------Varient Product Model Starts's here----------##########
+model VariantProduct {
+  id               String      @id @default(uuid())
+  masterProductId  String
+  productManagerId String
+  productType      ProductType
+  variantName      String      @db.VarChar(150)
+  variantType      String      @db.VarChar(30)
+  variantCode      String      @db.VarChar(60)
+  remark           String
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  isDeleted        Boolean     @default(false)
+
+  masterProduct  MasterProduct      @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+  productManager AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
+
+  VariantProductEligibility   VariantProductEligibility?
+  VariantProductFeeStructure  VariantProductFeeStructure?
+  VariantProductWithdrawLogic VariantProductWithdrawLogic?
+  VariantProductRepayment     VariantProductRepayment?
+  VariantProductValidity      VariantProductValidity?
+}
+
+// ##########----------Varient Product Model Ends's here----------##########
+
+// ##########----------Varient Product Eligibility Model Starts's here----------##########
+model VariantProductEligibility {
+  id                String            @id @default(uuid())
+  varientProductId  String            @unique
+  minEmploymentDays ProductType
+  disbursementMode  DisbursementModes
+  minSalary         String            @db.VarChar(30)
+  maxSalary         String            @db.VarChar(60)
+  paymentFrequency  String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  isDeleted         Boolean           @default(false)
+
+  varientProduct VariantProduct @relation(fields: [varientProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Varient Product Eligibility Model Ends's here----------##########
+
+// ##########----------Variant Product Fee Structure Model Start's here----------##########
+model VariantProductFeeStructure {
+  id                 String   @id @default(uuid())
+  variantProductId   String   @unique
+  setupFee           Int?
+  perTransactionFee  Int?
+  subscriptionOption Boolean?
+  feePayer           String?
+  gst                Int?
+  penalty            Int?
+  insuranceFee       Int?
+  insuranceCalcOn    Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  isDeleted          Boolean  @default(false)
+
+  variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Fee Structure Model Ends's here----------##########
+
+// ##########----------Variant Product Withdrawl Logic Model Start's here----------##########
+model VariantProductWithdrawLogic {
+  id                   String   @id @default(uuid())
+  variantProductId     String   @unique
+  minWithdrawAmount    Int?
+  maxWithdrawAmount    Int?
+  minAccrued           Int?
+  maxAccrued           Int?
+  maxWithdrawlPerMonth Int?
+  frequencyRule        String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  isDeleted            Boolean  @default(false)
+
+  variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Withdrawl Logic Model Ends's here----------##########
+
+// ##########----------Variant Product Repayment Model Start's here----------##########
+enum RepaymentMode {
+  ENACH
+  SELFPAY
+}
+
+model VariantProductRepayment {
+  id               String         @id @default(uuid())
+  variantProductId String         @unique
+  repaymentMode    RepaymentMode?
+  eNachRequired    Boolean
+  autoDebit        Boolean
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  isDeleted        Boolean        @default(false)
+
+  variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Repayment Model Ends's here----------##########
+
+// ##########----------Variant Product Validity Model Start's here----------##########
+model VariantProductValidity {
+  id               String    @id @default(uuid())
+  variantProductId String    @unique
+  activationDate   DateTime?
+  validityPeriod   DateTime
+  workLocation     String
+  minSalary        Int
+  maxSalary        Int
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  isDeleted        Boolean   @default(false)
+
+  variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Validity Model Ends's here----------##########
 
 // ####################--------------------EMPLOYER--------------------####################
 // ##########----------Employer Profile Model Start's here----------##########
