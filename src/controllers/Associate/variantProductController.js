@@ -6,6 +6,7 @@ const {
 
 const prisma = new PrismaClient();
 
+// ##########----------Create Variant Product----------##########
 const createVariantProduct = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
@@ -24,10 +25,12 @@ const createVariantProduct = asyncHandler(async (req, res) => {
 
   const productManager = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
-    select: { id: true, roleId: { select: { roleName: true } } },
+    include: {
+      role: true,
+    },
   });
 
-  if (!productManager || productManager.roleId.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(
       403,
       "Only Product Managers can create variant products."
@@ -134,16 +137,19 @@ const createVariantProduct = asyncHandler(async (req, res) => {
   );
 });
 
+// ##########----------Get All Variant Products By Product----------##########
 const getAllVariantProductsByProduct = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { productId } = req.params;
 
   const productManager = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
-    select: { id: true, roleId: { select: { roleName: true } } },
+    include: {
+      role: true,
+    },
   });
 
-  if (!productManager || productManager.roleId.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 
@@ -169,6 +175,7 @@ const getAllVariantProductsByProduct = asyncHandler(async (req, res) => {
   return res.respond(200, "Variant products fetched successfully.", variants);
 });
 
+// ##########----------Get Variant Product Details----------##########
 const getVariantProductDetail = asyncHandler(async (req, res) => {
   const { variantProductId } = req.params;
 

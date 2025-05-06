@@ -22,16 +22,14 @@ model Employer {
     associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
 
     employees               Employee[]
-    employerBusinessDetails EmployerBusinessDetails[]
-    EmployerLocationDetails EmployerLocationDetails[]
-    EmployerCompanyPolicies EmployerCompanyPolicies[]
+    employerBusinessDetails EmployerBusinessDetails?
+    EmployerLocationDetails EmployerLocationDetails?
+    EmployerCompanyPolicies EmployerCompanyPolicies?
     EmployerContractType    EmployerContractType[]
     employerSubAdmin        EmployerSubAdmin[]
     EmployerRole            EmployerRole[]
     EmployerModule          EmployerModule[]
 }
-
-// ##########----------Employer Profile Model End's here----------##########
 
 // ####################--------------------Employer Role And Module Model Start's here--------------------####################
 model EmployerRole {
@@ -61,8 +59,6 @@ model EmployerModule {
     EmployerSubAdminModule EmployerSubAdminModule[]
 }
 
-// ####################--------------------Employer Role And Module Model End's here--------------------####################
-
 // ####################--------------------Industry Type Model Start's here--------------------####################
 model IndustryType {
     id        String   @id @default(uuid())
@@ -74,12 +70,10 @@ model IndustryType {
     EmployerBusinessDetails EmployerBusinessDetails[]
 }
 
-// ####################--------------------Industry Type Model Start's here--------------------####################
-
 // ##########----------Employer Business Details Model Start's here----------##########
 model EmployerBusinessDetails {
     id                  String    @id @default(uuid())
-    employerId          String?
+    employerId          String?   @unique
     industryTypeId      String?
     businessLocation    String?
     businessDescription String?
@@ -100,12 +94,10 @@ model EmployerBusinessDetails {
     industryType IndustryType? @relation(fields: [industryTypeId], references: [id])
 }
 
-// ##########----------Employer Business Details Model End's here----------##########
-
 // ##########----------Employer Business Details Model Start's here----------##########
 model EmployerLocationDetails {
     id            String   @id @default(uuid())
-    employerId    String?
+    employerId    String?  @unique
     workspaceName String?
     noOfEmployees Int?
     address       String?
@@ -125,7 +117,7 @@ model EmployerLocationDetails {
 // ##########----------Employer Business Details Model Start's here----------##########
 model EmployerCompanyPolicies {
     id                 String   @id @default(uuid())
-    employerId         String?
+    employerId         String?  @unique
     noticePeriod       Int?
     probationPeriod    Int?
     annualLeaves       Int?
@@ -143,8 +135,6 @@ model EmployerCompanyPolicies {
     employer Employer? @relation(fields: [employerId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Employer Business Details Model End's here----------##########
-
 // ##########----------Contract Type Model Start's here----------##########
 model ContractType {
     id                   String                 @id @default(uuid())
@@ -155,8 +145,6 @@ model ContractType {
     isDeleted            Boolean                @default(false)
     EmployerContractType EmployerContractType[]
 }
-
-// ##########----------Contract Type Model End's here----------##########
 
 // ##########----------Employer Contract Type Model Start's here----------##########
 model EmployerContractType {
@@ -170,5 +158,3 @@ model EmployerContractType {
     employer     Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
     contractType ContractType? @relation(fields: [contractTypeId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Employer Contract Type Model End's here----------##########

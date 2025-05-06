@@ -21,8 +21,6 @@ model EmployerSubAdmin {
     EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
 }
 
-// ##########----------Employer Sub-Admin Model Ends's here----------##########
-
 // ##########----------Employer Sub-Admin Modules Model Start's here----------##########
 model EmployerSubAdminModule {
     id                 String   @id @default(uuid())
@@ -35,5 +33,3 @@ model EmployerSubAdminModule {
     employerSubAdmin EmployerSubAdmin? @relation(fields: [employerSubAdminId], references: [id], onDelete: Cascade)
     employerModule   EmployerModule?   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Employer Sub-Admin Module Model Ends's here----------##########

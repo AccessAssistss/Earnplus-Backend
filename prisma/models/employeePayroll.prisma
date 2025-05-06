@@ -13,8 +13,6 @@ model EmployeeCurrentPayroll {
     employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Employee Current Payroll Model End's here----------##########
-
 // ##########----------Employee Base Payroll Model Start's here----------##########
 model EmployeeBasePayroll {
     id               String   @id @default(uuid())
@@ -31,8 +29,6 @@ model EmployeeBasePayroll {
     employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Employee Base Payroll Model End's here----------##########
-
 // ##########----------Employee Histroical Payroll Model Start's here----------##########
 model EmployeeHistoricalPayroll {
     id               String   @id @default(uuid())
@@ -48,5 +44,3 @@ model EmployeeHistoricalPayroll {
     employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
     employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Employee Histroical Payroll Model End's here----------##########

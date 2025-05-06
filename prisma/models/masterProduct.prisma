@@ -10,8 +10,6 @@ model ProductCategory {
     MasterProduct  MasterProduct[]
 }
 
-// ##########----------Product Category Model Ends's here----------##########
-
 // ##########----------Product Purpose Model Start's here----------##########
 model ProductPurpose {
     id                String   @id @default(uuid())
@@ -23,9 +21,8 @@ model ProductPurpose {
 
     productCategory      ProductCategory?       @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
     MasterProductPurpose MasterProductPurpose[]
+    masterProductPurposeUpdates MasterProductPurposeUpdate[]
 }
-
-// ##########----------Product Purpose Model Ends's here----------##########
 
 // ##########----------Product Common UseCase Model Start's here----------##########
 model CommonUseCase {
@@ -35,9 +32,8 @@ model CommonUseCase {
     updatedAt                  DateTime                     @updatedAt
     isDeleted                  Boolean                      @default(false)
     MasterProductCommonUseCase MasterProductCommonUseCase[]
+    masterProductCommonUseCaseUpdates MasterProductCommonUseCaseUpdate[]
 }
-
-// ##########----------Product Common UseCase Model Ends's here----------##########
 
 // ##########----------Target Customer Type Model Start's here----------##########
 model CustomerType {
@@ -47,11 +43,9 @@ model CustomerType {
     updatedAt                 DateTime                    @updatedAt
     isDeleted                 Boolean                     @default(false)
     MasterProductCustomerType MasterProductCustomerType[]
+    masterProductCustomerTypeUpdates MasterProductCustomerTypeUpdate[]
 }
 
-// ##########----------Target Customer Type Model Ends's here----------##########
-
-// ####################--------------------Master Product Models--------------------####################
 // ##########----------Master Product Model Start's here----------##########
 model MasterProduct {
     id                 String      @id @default(uuid())
@@ -78,9 +72,8 @@ model MasterProduct {
     MasterProductCommonUseCase      MasterProductCommonUseCase[]
     MasterProductCustomerType       MasterProductCustomerType[]
     VariantProduct                  VariantProduct[]
+    MasterProductUpdateRequest MasterProductUpdateRequest[]
 }
-
-// ##########----------Master Product Model Ends's here----------##########
 
 // ##########----------Master Product Purpose Model Starts's here----------##########
 model MasterProductPurpose {
@@ -92,8 +85,6 @@ model MasterProductPurpose {
     productPurpose ProductPurpose @relation(fields: [purposeId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Purpose Model Ends's here----------##########
-
 // ##########----------Master Product Common UseCase Model Starts's here----------##########
 model MasterProductCommonUseCase {
     id              String @id @default(uuid())
@@ -104,8 +95,6 @@ model MasterProductCommonUseCase {
     commonuseCase CommonUseCase @relation(fields: [commonuseCaseId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Common UseCase Model Ends's here----------##########
-
 // ##########----------Master Product Customer Type Model Starts's here----------##########
 model MasterProductCustomerType {
     id              String @id @default(uuid())
@@ -115,8 +104,6 @@ model MasterProductCustomerType {
     masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
     customerType  CustomerType  @relation(fields: [customerTypeId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Master Product Customer Type Model Ends's here----------##########
 
 // ##########----------Master Product Tenure Type Model Start's here----------##########
 // model TenureType {
@@ -176,8 +163,6 @@ model MasterProductLoanStructure {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Loan Structure Model Ends's here----------##########
-
 // ##########----------Master Product Fee Structure Model Start's here----------##########
 model MasterProductFeeStructure {
     id                   String   @id @default(uuid())
@@ -200,8 +185,6 @@ model MasterProductFeeStructure {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Fee Structure Model Ends's here----------##########
-
 // ##########----------Master Product Security Compliance Model Start's here----------##########
 model MasterProductSecurityCompliance {
     id                    String                @id @default(uuid())
@@ -223,8 +206,6 @@ model MasterProductSecurityCompliance {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Security Compliance Model Ends's here----------##########
-
 // ##########----------Master Product Disbursement Rule Model Start's here----------##########
 model MasterProductDisbursementRules {
     id                String             @id @default(uuid())
@@ -238,8 +219,6 @@ model MasterProductDisbursementRules {
 
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Master Product Disbursement Rule Model Ends's here----------##########
 
 // ##########----------Master Product Employer Tagging Model Start's here----------##########
 // model MasterProductEmployerTagging {
@@ -272,5 +251,3 @@ model MasterProductPerformance {
 
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Master Product Performance Model Ends's here----------##########

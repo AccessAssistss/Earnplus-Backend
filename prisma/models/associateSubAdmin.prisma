@@ -20,9 +20,8 @@ model AssociateSubAdmin {
     AssociateSubAdminModule AssociateSubAdminModule[]
     MasterProduct           MasterProduct[]
     VariantProduct          VariantProduct[]
+    masterProductUpdateRequests MasterProductUpdateRequest[]
 }
-
-// ##########----------Sub-Admin Profile Model Ends's here----------##########
 
 // ##########----------Sub-Admin Modules Model Start's here----------##########
 model AssociateSubAdminModule {
@@ -35,5 +34,3 @@ model AssociateSubAdminModule {
     associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
     module              Module?            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Sub-Admin Profile Model Ends's here----------##########

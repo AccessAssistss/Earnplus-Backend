@@ -22,8 +22,6 @@ model VariantProduct {
     VariantProductValidity      VariantProductValidity?
 }
 
-// ##########----------Varient Product Model Ends's here----------##########
-
 // ##########----------Varient Product Eligibility Model Starts's here----------##########
 model VariantProductEligibility {
     id                String            @id @default(uuid())
@@ -39,8 +37,6 @@ model VariantProductEligibility {
 
     varientProduct VariantProduct @relation(fields: [varientProductId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Varient Product Eligibility Model Ends's here----------##########
 
 // ##########----------Variant Product Fee Structure Model Start's here----------##########
 model VariantProductFeeStructure {
@@ -61,8 +57,6 @@ model VariantProductFeeStructure {
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Fee Structure Model Ends's here----------##########
-
 // ##########----------Variant Product Withdrawl Logic Model Start's here----------##########
 model VariantProductWithdrawLogic {
     id                   String   @id @default(uuid())
@@ -80,8 +74,6 @@ model VariantProductWithdrawLogic {
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Withdrawl Logic Model Ends's here----------##########
-
 // ##########----------Variant Product Repayment Model Start's here----------##########
 model VariantProductRepayment {
     id               String         @id @default(uuid())
@@ -95,8 +87,6 @@ model VariantProductRepayment {
 
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Variant Product Repayment Model Ends's here----------##########
 
 // ##########----------Variant Product Validity Model Start's here----------##########
 model VariantProductValidity {
@@ -113,5 +103,3 @@ model VariantProductValidity {
 
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Variant Product Validity Model Ends's here----------##########

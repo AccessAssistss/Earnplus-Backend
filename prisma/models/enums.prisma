@@ -6,6 +6,7 @@ enum UserType {
     ASSOCIATESUBADMIN
     EMPLOYERSUBADMIN
 }
+
 // ##########----------Employee Enums----------##########
 enum Gender {
     Male
@@ -80,4 +81,10 @@ enum DisbursementModes {
 enum RepaymentMode {
     ENACH
     SELFPAY
+}
+
+enum UpdateRequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
 }

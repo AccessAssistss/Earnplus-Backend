@@ -42,18 +42,16 @@ model Employee {
     country  Country?    @relation(fields: [nationality], references: [id])
     state    State?      @relation(fields: [stateId], references: [id])
 
-    EmployeeVerification      EmployeeVerification[]
+    EmployeeVerification      EmployeeVerification?
     EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
     EmployeeBasePayroll       EmployeeBasePayroll[]
     EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
 }
 
-// ##########----------Employee Profile Model End's here----------##########
-
 // ##########----------Employee Veification Model Start's here----------##########
 model EmployeeVerification {
     id               String   @id @default(uuid())
-    employeeId       String?
+    employeeId       String?  @unique
     panNumber        String?  @db.VarChar(10)
     isPanVerified    Boolean? @default(false)
     aadharNumber     String?  @db.VarChar(12)
@@ -66,5 +64,3 @@ model EmployeeVerification {
 
     employee Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
-
-// ##########----------Employee Veification Model End's here----------##########

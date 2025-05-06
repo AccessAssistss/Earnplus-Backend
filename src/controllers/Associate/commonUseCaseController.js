@@ -56,7 +56,11 @@ const updateCommonUseCase = asyncHandler(async (req, res) => {
     data: { name },
   });
 
-  res.respond(200, "Common UseCase Updated Successfully!", updatedCommonUseCase);
+  res.respond(
+    200,
+    "Common UseCase Updated Successfully!",
+    updatedCommonUseCase
+  );
 });
 
 // ##########----------Get All Common UseCases----------##########

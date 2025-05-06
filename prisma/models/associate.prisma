@@ -18,8 +18,6 @@ model Associate {
   Module            Module[]
 }
 
-// ##########----------Associate Profile Model Ends's here----------##########
-
 // ####################--------------------Role And Module Model Start's here--------------------####################
 model Role {
   id          String     @id @default(uuid())
@@ -47,5 +45,3 @@ model Module {
 
   AssociateSubAdminModule AssociateSubAdminModule[]
 }
-
-// ####################--------------------Role And Module Model End's here--------------------####################

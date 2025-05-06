@@ -1,0 +1,140 @@
+// ##########----------Master Product Update Model Start's here----------##########
+model MasterProductUpdateRequest {
+    id              String              @id @default(uuid())
+    masterProductId String
+    requestedById   String
+    status          UpdateRequestStatus @default(PENDING)
+    reason          String?             @db.VarChar(300)
+    createdAt       DateTime            @default(now())
+    updatedAt       DateTime            @updatedAt
+
+    masterProduct      MasterProduct                      @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    requestedBy        AssociateSubAdmin                  @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+    loanStructure      LoanStructureUpdate?
+    feeStructure       FeeStructureUpdate?
+    securityCompliance SecurityComplianceUpdate?
+    disbursementRule   DisbursementRuleUpdate?
+    performance        PerformanceUpdate?
+    purposes           MasterProductPurposeUpdate[]
+    useCases           MasterProductCommonUseCaseUpdate[]
+    customerTypes      MasterProductCustomerTypeUpdate[]
+}
+
+// ##########----------Loan Structure Update Model Start's here----------##########
+model LoanStructureUpdate {
+    id                          String       @id @default(uuid())
+    updateRequestId             String       @unique
+    minLoanAmount               Int?
+    maxLoanAmount               Int?
+    tenureType                  TenureType
+    tenureUnit                  TenureUnit
+    minTenure                   Int?
+    maxTenure                   Int?
+    allowedTenureValues         String?      @db.VarChar(50)
+    defaultTenure               String?      @db.VarChar(50)
+    isTenureBasedOnPaymentCycle Boolean?
+    tenureCalcLogic             String?      @db.VarChar(50)
+    allowRepaymentOverride      Boolean?
+    interestType                InterestType
+    interestRate                Int?
+    gracePeriod                 Int?
+    penalInterestRate           Int?
+    moratoriumPeriod            Int?
+    repaymentMethod             String?      @db.VarChar(50)
+    latePaymentFee              Int?
+    prePaymentAllowed           Boolean?
+    paymentCharges              Int?
+    lockinPeriod                Int?
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Fee Structure Update Model Start's here----------##########
+model FeeStructureUpdate {
+    id                   String   @id @default(uuid())
+    updateRequestId      String   @unique
+    processingFee        Int?
+    processingFeeGst     Int?
+    setupFee             Int?
+    setupFeeGst          Int?
+    subscriptionOption   Boolean?
+    perTransactionFee    Int?
+    perTransactionFeeGst Int?
+    insuranceCharge      Int?
+    insuranceChargeGst   Int?
+    otherCharges         Int?
+    otherChargesGst      Int?
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Security Compliance Update Model Start's here----------##########
+model SecurityComplianceUpdate {
+    id                    String                @id @default(uuid())
+    updateRequestId       String                @unique
+    collateralRequired    Boolean?
+    collateralType        CollateralType?
+    kycRequired           Boolean?
+    coBorrowerRequired    Boolean?
+    insuranceBundeled     Boolean?
+    creditBureauMandatory Boolean?
+    minCibil              Int?
+    concentFormat         ConcentCaptureFormat?
+    defaultReporting      Int?
+    riskCategory          RiskCategory?
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Disbursement Rule Update Model Start's here----------##########
+model DisbursementRuleUpdate {
+    id                String             @id @default(uuid())
+    updateRequestId   String             @unique
+    disbursementMode  DisbursementModes?
+    varientAllowed    Boolean?
+    apiEnabledProduct Boolean?
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Performance Update Model Start's here----------##########
+model PerformanceUpdate {
+    id                          String  @id @default(uuid())
+    updateRequestId             String  @unique
+    monitoringType              String?
+    delinquencyTriggerThreshold String?
+    portfolioCap                Int?
+    reviewCycle                 String?
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Purpose Update Model Start's here----------##########
+model MasterProductPurposeUpdate {
+    id               String @id @default(uuid())
+    updateRequestId  String
+    productPurposeId String
+
+    updateRequest  MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    productPurpose ProductPurpose             @relation(fields: [productPurposeId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Common UseCase Update Model Start's here----------##########
+model MasterProductCommonUseCaseUpdate {
+    id              String @id @default(uuid())
+    updateRequestId String
+    commonUseCaseId String
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    commonUseCase CommonUseCase              @relation(fields: [commonUseCaseId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Customer Type Update Model Start's here----------##########
+model MasterProductCustomerTypeUpdate {
+    id              String @id @default(uuid())
+    updateRequestId String
+    customerTypeId  String
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    customerType  CustomerType               @relation(fields: [customerTypeId], references: [id], onDelete: Cascade)
+}

@@ -20,4 +20,4 @@ modelFiles.forEach((file) => {
 const finalSchema = baseSchema + combinedModels;
 fs.writeFileSync(outputSchemaPath, finalSchema);
 
-console.log("✅ schema.prisma generated successfully!");
+console.log("schema.prisma generated successfully!");

@@ -9,14 +9,12 @@ model CustomUser {
     accessToken       String?
     refreshToken      String?
 
-    associates        Associate[]
-    employers         Employer[]
-    employees         Employee[]
+    associates        Associate?
+    employers         Employer?
+    employees         Employee?
     employerSubAdmin  EmployerSubAdmin?
     associateSubAdmin AssociateSubAdmin?
 }
-
-// ####################--------------------Custom User Model End's here--------------------####################
 
 // ####################--------------------Country, State and District Model Start's here--------------------####################
 // ####################--------------------Country Model--------------------####################
