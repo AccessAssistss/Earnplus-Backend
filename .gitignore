@@ -1,6 +1,9 @@
 # Node modules
 node_modules/
 
+# Prisma File
+# Ignore auto-generated Prisma schema
+/home/aman/Sourabh/Nodejs/Earnplus/prisma/schema.prisma
 # Logs
 logs/
 *.log

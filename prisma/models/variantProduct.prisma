@@ -1,0 +1,117 @@
+// ##########----------Varient Product Model Starts's here----------##########
+model VariantProduct {
+    id               String      @id @default(uuid())
+    masterProductId  String
+    productManagerId String
+    productType      ProductType
+    variantName      String      @db.VarChar(150)
+    variantType      String      @db.VarChar(30)
+    variantCode      String      @db.VarChar(60)
+    remark           String
+    createdAt        DateTime    @default(now())
+    updatedAt        DateTime    @updatedAt
+    isDeleted        Boolean     @default(false)
+
+    masterProduct  MasterProduct      @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    productManager AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
+
+    VariantProductEligibility   VariantProductEligibility?
+    VariantProductFeeStructure  VariantProductFeeStructure?
+    VariantProductWithdrawLogic VariantProductWithdrawLogic?
+    VariantProductRepayment     VariantProductRepayment?
+    VariantProductValidity      VariantProductValidity?
+}
+
+// ##########----------Varient Product Model Ends's here----------##########
+
+// ##########----------Varient Product Eligibility Model Starts's here----------##########
+model VariantProductEligibility {
+    id                String            @id @default(uuid())
+    varientProductId  String            @unique
+    minEmploymentDays ProductType
+    disbursementMode  DisbursementModes
+    minSalary         String            @db.VarChar(30)
+    maxSalary         String            @db.VarChar(60)
+    paymentFrequency  String
+    createdAt         DateTime          @default(now())
+    updatedAt         DateTime          @updatedAt
+    isDeleted         Boolean           @default(false)
+
+    varientProduct VariantProduct @relation(fields: [varientProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Varient Product Eligibility Model Ends's here----------##########
+
+// ##########----------Variant Product Fee Structure Model Start's here----------##########
+model VariantProductFeeStructure {
+    id                 String   @id @default(uuid())
+    variantProductId   String   @unique
+    setupFee           Int?
+    perTransactionFee  Int?
+    subscriptionOption Boolean?
+    feePayer           String?
+    gst                Int?
+    penalty            Int?
+    insuranceFee       Int?
+    insuranceCalcOn    Int?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    isDeleted          Boolean  @default(false)
+
+    variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Fee Structure Model Ends's here----------##########
+
+// ##########----------Variant Product Withdrawl Logic Model Start's here----------##########
+model VariantProductWithdrawLogic {
+    id                   String   @id @default(uuid())
+    variantProductId     String   @unique
+    minWithdrawAmount    Int?
+    maxWithdrawAmount    Int?
+    minAccrued           Int?
+    maxAccrued           Int?
+    maxWithdrawlPerMonth Int?
+    frequencyRule        String?
+    createdAt            DateTime @default(now())
+    updatedAt            DateTime @updatedAt
+    isDeleted            Boolean  @default(false)
+
+    variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Withdrawl Logic Model Ends's here----------##########
+
+// ##########----------Variant Product Repayment Model Start's here----------##########
+model VariantProductRepayment {
+    id               String         @id @default(uuid())
+    variantProductId String         @unique
+    repaymentMode    RepaymentMode?
+    eNachRequired    Boolean
+    autoDebit        Boolean
+    createdAt        DateTime       @default(now())
+    updatedAt        DateTime       @updatedAt
+    isDeleted        Boolean        @default(false)
+
+    variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Repayment Model Ends's here----------##########
+
+// ##########----------Variant Product Validity Model Start's here----------##########
+model VariantProductValidity {
+    id               String    @id @default(uuid())
+    variantProductId String    @unique
+    activationDate   DateTime?
+    validityPeriod   DateTime
+    workLocation     String
+    minSalary        Int
+    maxSalary        Int
+    createdAt        DateTime  @default(now())
+    updatedAt        DateTime  @updatedAt
+    isDeleted        Boolean   @default(false)
+
+    variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Validity Model Ends's here----------##########

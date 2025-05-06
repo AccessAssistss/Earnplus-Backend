@@ -1,0 +1,51 @@
+// ##########----------Associate Profile Model Start's here----------##########
+model Associate {
+  id        String      @id @default(uuid())
+  userId    String?     @unique
+  name      String?
+  email     String?     @unique @db.VarChar(100)
+  password  String      @db.VarChar(128)
+  fcmToken  String?
+  mobile    String?     @db.VarChar(10)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  isDeleted Boolean     @default(false)
+  user      CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  employers         Employer[]
+  AssociateSubAdmin AssociateSubAdmin[]
+  Role              Role[]
+  Module            Module[]
+}
+
+// ##########----------Associate Profile Model Ends's here----------##########
+
+// ####################--------------------Role And Module Model Start's here--------------------####################
+model Role {
+  id          String     @id @default(uuid())
+  associateId String?
+  roleName    String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isDeleted   Boolean    @default(false)
+  associate   Associate? @relation(fields: [associateId], references: [id], onDelete: Cascade)
+
+  Module            Module[]
+  AssociateSubAdmin AssociateSubAdmin[]
+}
+
+model Module {
+  id          String     @id @default(uuid())
+  associateId String?
+  roleId      String?
+  moduleName  String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  isDeleted   Boolean    @default(false)
+  role        Role?      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  associate   Associate? @relation(fields: [associateId], references: [id], onDelete: Cascade)
+
+  AssociateSubAdminModule AssociateSubAdminModule[]
+}
+
+// ####################--------------------Role And Module Model End's here--------------------####################

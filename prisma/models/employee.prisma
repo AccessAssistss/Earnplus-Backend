@@ -1,0 +1,70 @@
+// ##########----------Employee Profile Model Start's here----------##########
+model Employee {
+    id                String         @id @default(uuid())
+    userId            String?        @unique
+    employerId        String?
+    kycStatus         KycStatus      @default(Pending)
+    paymentCycleId    String?
+    contractTypeId    String?
+    locationTypeId    String?
+    employeeName      String?        @db.VarChar(100)
+    employeeId        String?        @db.VarChar(100)
+    email             String?        @db.VarChar(100)
+    mobile            String         @db.VarChar(10)
+    alternativeMobile String?        @db.VarChar(10)
+    gender            Gender?
+    fcmToken          String?        @db.VarChar(100)
+    dob               DateTime?
+    department        String?        @db.VarChar(100)
+    designation       String?        @db.VarChar(100)
+    nationality       String?        @db.VarChar(100)
+    panNo             String?        @db.VarChar(100)
+    aadharNo          String?        @db.VarChar(100)
+    jobTitle          String?
+    maritalStatus     MaritalStatus?
+    dateJoined        DateTime?
+    hireDate          DateTime?
+    salaryDate        DateTime?
+    address           String?
+    city              String?        @db.VarChar(100)
+    stateId           String?
+    pincode           String?        @db.VarChar(100)
+    otpExpiration     DateTime       @default(now())
+    otp               String?        @db.VarChar(100)
+    createdAt         DateTime       @default(now())
+    updatedAt         DateTime       @updatedAt
+    isDeleted         Boolean        @default(false)
+    isKycVerified     Boolean        @default(false)
+    isEmployerScreen  Boolean        @default(false)
+
+    employer Employer?   @relation(fields: [employerId], references: [id], onDelete: Cascade)
+    user     CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+    country  Country?    @relation(fields: [nationality], references: [id])
+    state    State?      @relation(fields: [stateId], references: [id])
+
+    EmployeeVerification      EmployeeVerification[]
+    EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
+    EmployeeBasePayroll       EmployeeBasePayroll[]
+    EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
+}
+
+// ##########----------Employee Profile Model End's here----------##########
+
+// ##########----------Employee Veification Model Start's here----------##########
+model EmployeeVerification {
+    id               String   @id @default(uuid())
+    employeeId       String?
+    panNumber        String?  @db.VarChar(10)
+    isPanVerified    Boolean? @default(false)
+    aadharNumber     String?  @db.VarChar(12)
+    aadharImage      String?  @db.VarChar(50)
+    isAadharVerified Boolean? @default(false)
+    selfie           String?  @db.VarChar(50)
+    isSelfieVerified Boolean? @default(false)
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    employee Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Veification Model End's here----------##########

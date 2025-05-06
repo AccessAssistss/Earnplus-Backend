@@ -1,0 +1,39 @@
+// ##########----------Sub-Admin Profile Model Start's here----------##########
+model AssociateSubAdmin {
+    id          String      @id @default(uuid())
+    userId      String?     @unique
+    associateId String?
+    name        String?
+    email       String?     @unique @db.VarChar(100)
+    mobile      String?     @db.VarChar(10)
+    roleId      String?
+    password    String      @db.VarChar(128)
+    isActive    Boolean     @default(false)
+    createdAt   DateTime    @default(now())
+    updatedAt   DateTime    @updatedAt
+    isDeleted   Boolean     @default(false)
+    user        CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
+    associate   Associate?  @relation(fields: [associateId], references: [id], onDelete: Cascade)
+    role        Role?       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+    Employer                Employer[]
+    AssociateSubAdminModule AssociateSubAdminModule[]
+    MasterProduct           MasterProduct[]
+    VariantProduct          VariantProduct[]
+}
+
+// ##########----------Sub-Admin Profile Model Ends's here----------##########
+
+// ##########----------Sub-Admin Modules Model Start's here----------##########
+model AssociateSubAdminModule {
+    id                  String             @id @default(uuid())
+    associateSubAdminId String?
+    moduleId            String?
+    createdAt           DateTime           @default(now())
+    updatedAt           DateTime           @updatedAt
+    isDeleted           Boolean            @default(false)
+    associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
+    module              Module?            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Sub-Admin Profile Model Ends's here----------##########

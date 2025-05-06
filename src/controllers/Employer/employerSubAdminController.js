@@ -102,13 +102,13 @@ const createEmployerSubAdmin = asyncHandler(async (req, res) => {
       email,
       mobile,
       password: hashed,
-      role,
+      roleId: role,
     },
   });
 
   await prisma.employerSubAdminModule.createMany({
-    data: modules.map((mod) => ({
-      module: mod,
+    data: modules.map((modId) => ({
+      moduleId: modId,
       employerSubAdminId: registeredEmployerSubAdmin.id,
     })),
   });
@@ -118,7 +118,7 @@ const createEmployerSubAdmin = asyncHandler(async (req, res) => {
     name: registeredEmployerSubAdmin.name,
     email: registeredEmployerSubAdmin.email,
     mobile: registeredEmployerSubAdmin.mobile,
-    role: registeredEmployerSubAdmin.role,
+    roleId: registeredEmployerSubAdmin.role,
     createdAt: registeredEmployerSubAdmin.createdAt,
     updatedAt: registeredEmployerSubAdmin.updatedAt,
   };
@@ -224,7 +224,7 @@ const updateEmployerSubAdmin = asyncHandler(async (req, res) => {
     data: {
       ...(name && { name }),
       ...(mobile && { mobile }),
-      ...(role && { role }),
+      ...(role && { roleId: role }),
     },
   });
 
@@ -234,8 +234,8 @@ const updateEmployerSubAdmin = asyncHandler(async (req, res) => {
     });
 
     await prisma.employerSubAdminModule.createMany({
-      data: modules.map((mod) => ({
-        module: mod,
+      data: modules.map((modId) => ({
+        moduleId: modId,
         employerSubAdminId: subAdminId,
       })),
     });

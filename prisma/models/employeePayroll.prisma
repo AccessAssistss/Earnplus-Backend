@@ -1,0 +1,52 @@
+// ##########----------Employee Current Payroll Model Start's here----------##########
+model EmployeeCurrentPayroll {
+    id               String   @id @default(uuid())
+    createdBy        String
+    employeeId       String
+    customEmployeeId String
+    income           Decimal
+    date             DateTime
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Current Payroll Model End's here----------##########
+
+// ##########----------Employee Base Payroll Model Start's here----------##########
+model EmployeeBasePayroll {
+    id               String   @id @default(uuid())
+    createdBy        String
+    employeeId       String
+    customEmployeeId String
+    attendance       Boolean
+    income           Decimal
+    date             DateTime
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Base Payroll Model End's here----------##########
+
+// ##########----------Employee Histroical Payroll Model Start's here----------##########
+model EmployeeHistoricalPayroll {
+    id               String   @id @default(uuid())
+    createdBy        String
+    employeeId       String
+    customEmployeeId String
+    income           Decimal
+    startDate        DateTime
+    endDate          DateTime
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    employerSubAdmin EmployerSubAdmin? @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Histroical Payroll Model End's here----------##########

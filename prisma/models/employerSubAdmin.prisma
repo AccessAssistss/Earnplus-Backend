@@ -1,0 +1,39 @@
+// ####################--------------------Employer Role And Module Model End's here--------------------####################
+model EmployerSubAdmin {
+    id           String        @id @default(uuid())
+    userId       String?       @unique
+    employerId   String?
+    name         String?
+    email        String?       @db.VarChar(100)
+    mobile       String?       @db.VarChar(10)
+    roleId       String?
+    password     String        @db.VarChar(128)
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
+    isDeleted    Boolean       @default(false)
+    user         CustomUser?   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    employer     Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+    employerRole EmployerRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+    employerSubAdminModule    EmployerSubAdminModule[]
+    EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
+    EmployeeBasePayroll       EmployeeBasePayroll[]
+    EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
+}
+
+// ##########----------Employer Sub-Admin Model Ends's here----------##########
+
+// ##########----------Employer Sub-Admin Modules Model Start's here----------##########
+model EmployerSubAdminModule {
+    id                 String   @id @default(uuid())
+    employerSubAdminId String?
+    moduleId           String?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    isDeleted          Boolean  @default(false)
+
+    employerSubAdmin EmployerSubAdmin? @relation(fields: [employerSubAdminId], references: [id], onDelete: Cascade)
+    employerModule   EmployerModule?   @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employer Sub-Admin Module Model Ends's here----------##########

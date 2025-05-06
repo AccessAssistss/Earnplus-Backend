@@ -1,0 +1,83 @@
+// ##########----------Custom User Enums----------##########
+enum UserType {
+    ASSOCIATE
+    EMPLOYER
+    EMPLOYEE
+    ASSOCIATESUBADMIN
+    EMPLOYERSUBADMIN
+}
+// ##########----------Employee Enums----------##########
+enum Gender {
+    Male
+    Female
+    Others
+}
+
+enum KycStatus {
+    Pending
+    InProcess
+    Completed
+}
+
+enum MaritalStatus {
+    Married
+    Single
+    Divorced
+}
+
+// ##########----------Product Enums----------##########
+enum ProductType {
+    SECURED
+    UNSECURED
+    NA
+}
+
+enum InterestType {
+    FLAT
+    REDUCING
+    ZERO
+    CUSTOM
+}
+
+enum TenureType {
+    Fixed
+    Flexible
+    EventBased
+}
+
+enum TenureUnit {
+    Days
+    Weeks
+    Months
+    PayoutLinked
+}
+
+enum CollateralType {
+    GOLD
+    Vehicle
+    PROPERTY
+    OTHER
+}
+
+enum ConcentCaptureFormat {
+    DIGITAL
+    PAPER
+    BIOMETRIC
+}
+
+enum RiskCategory {
+    DIGITAL
+    PAPER
+    BIOMETRIC
+}
+
+enum DisbursementModes {
+    NEFT
+    IMPS
+    UPI
+}
+
+enum RepaymentMode {
+    ENACH
+    SELFPAY
+}

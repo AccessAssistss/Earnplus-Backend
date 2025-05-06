@@ -1,0 +1,174 @@
+// ##########----------Employer Profile Model Start's here----------##########
+model Employer {
+    id                  String             @id @default(uuid())
+    userId              String?            @unique
+    associateId         String?
+    associateSubAdminId String?
+    employerId          String?            @unique
+    name                String?
+    email               String?
+    password            String
+    mobile              String?
+    gst                 String?
+    pan                 String?
+    createdAt           DateTime           @default(now())
+    updatedAt           DateTime           @updatedAt
+    isDeleted           Boolean            @default(false)
+    isActive            Boolean            @default(false)
+    gstVerified         Boolean            @default(false)
+    panverified         Boolean            @default(false)
+    user                CustomUser?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    associate           Associate?         @relation(fields: [associateId], references: [id], onDelete: Cascade)
+    associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
+
+    employees               Employee[]
+    employerBusinessDetails EmployerBusinessDetails[]
+    EmployerLocationDetails EmployerLocationDetails[]
+    EmployerCompanyPolicies EmployerCompanyPolicies[]
+    EmployerContractType    EmployerContractType[]
+    employerSubAdmin        EmployerSubAdmin[]
+    EmployerRole            EmployerRole[]
+    EmployerModule          EmployerModule[]
+}
+
+// ##########----------Employer Profile Model End's here----------##########
+
+// ####################--------------------Employer Role And Module Model Start's here--------------------####################
+model EmployerRole {
+    id         String    @id @default(uuid())
+    employerId String?
+    roleName   String?
+    createdAt  DateTime  @default(now())
+    updatedAt  DateTime  @updatedAt
+    isDeleted  Boolean   @default(false)
+    employer   Employer? @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+    EmployerModule   EmployerModule[]
+    EmployerSubAdmin EmployerSubAdmin[]
+}
+
+model EmployerModule {
+    id         String        @id @default(uuid())
+    employerId String?
+    roleId     String?
+    moduleName String?
+    createdAt  DateTime      @default(now())
+    updatedAt  DateTime      @updatedAt
+    isDeleted  Boolean       @default(false)
+    role       EmployerRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
+    employer   Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+
+    EmployerSubAdminModule EmployerSubAdminModule[]
+}
+
+// ####################--------------------Employer Role And Module Model End's here--------------------####################
+
+// ####################--------------------Industry Type Model Start's here--------------------####################
+model IndustryType {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    EmployerBusinessDetails EmployerBusinessDetails[]
+}
+
+// ####################--------------------Industry Type Model Start's here--------------------####################
+
+// ##########----------Employer Business Details Model Start's here----------##########
+model EmployerBusinessDetails {
+    id                  String    @id @default(uuid())
+    employerId          String?
+    industryTypeId      String?
+    businessLocation    String?
+    businessDescription String?
+    establishmentDate   DateTime?
+    countryId           String?
+    stateId             String?
+    districtId          String?
+    pincode             String?
+    createdAt           DateTime  @default(now())
+    updatedAt           DateTime  @updatedAt
+    isDeleted           Boolean   @default(false)
+    isVerified          Boolean   @default(false)
+
+    employer     Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+    country      Country?      @relation(fields: [countryId], references: [id])
+    state        State?        @relation(fields: [stateId], references: [id])
+    district     District?     @relation(fields: [districtId], references: [id])
+    industryType IndustryType? @relation(fields: [industryTypeId], references: [id])
+}
+
+// ##########----------Employer Business Details Model End's here----------##########
+
+// ##########----------Employer Business Details Model Start's here----------##########
+model EmployerLocationDetails {
+    id            String   @id @default(uuid())
+    employerId    String?
+    workspaceName String?
+    noOfEmployees Int?
+    address       String?
+    countryId     String?
+    stateId       String?
+    districtId    String?
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    isDeleted     Boolean  @default(false)
+
+    employer Employer? @relation(fields: [employerId], references: [id], onDelete: Cascade)
+    country  Country?  @relation(fields: [countryId], references: [id])
+    state    State?    @relation(fields: [stateId], references: [id])
+    district District? @relation(fields: [districtId], references: [id])
+}
+
+// ##########----------Employer Business Details Model Start's here----------##########
+model EmployerCompanyPolicies {
+    id                 String   @id @default(uuid())
+    employerId         String?
+    noticePeriod       Int?
+    probationPeriod    Int?
+    annualLeaves       Int?
+    sickLeaves         Int?
+    casualLeaves       Int?
+    maternityLeaves    Int?
+    overtimePolicy     String?
+    registrationPolicy String?
+    remoteworkPolicy   String?
+    otherPolicies      String?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    isDeleted          Boolean  @default(false)
+
+    employer Employer? @relation(fields: [employerId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employer Business Details Model End's here----------##########
+
+// ##########----------Contract Type Model Start's here----------##########
+model ContractType {
+    id                   String                 @id @default(uuid())
+    name                 String?
+    description          String?
+    createdAt            DateTime               @default(now())
+    updatedAt            DateTime               @updatedAt
+    isDeleted            Boolean                @default(false)
+    EmployerContractType EmployerContractType[]
+}
+
+// ##########----------Contract Type Model End's here----------##########
+
+// ##########----------Employer Contract Type Model Start's here----------##########
+model EmployerContractType {
+    id             String   @id @default(uuid())
+    employerId     String?
+    contractTypeId String?
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    isDeleted      Boolean  @default(false)
+
+    employer     Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+    contractType ContractType? @relation(fields: [contractTypeId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employer Contract Type Model End's here----------##########

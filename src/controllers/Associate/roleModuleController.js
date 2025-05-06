@@ -99,41 +99,29 @@ const getAllRoles = asyncHandler(async (req, res) => {
     return res.respond(404, "Associated profile not found!");
   }
 
-  const countries = await prisma.role.findMany({
+  const roles = await prisma.role.findMany({
     where: { associateId: associate.id, isDeleted: false },
     orderBy: { roleName: "asc" },
   });
 
-  res.respond(200, "Roles fetched Successfully!", countries);
+  res.respond(200, "Roles fetched Successfully!", roles);
 });
 
 // ##########----------Soft Delete Role----------##########
 const softDeleteRole = asyncHandler(async (req, res) => {
   const { roleId } = req.params;
 
-  // #####-----Get all modules under the given role-----#####
-  const modules = await prisma.module.findMany({ where: { roleId } });
-
-  // #####-----Soft delete all districts under those modules-----#####
-  for (const module of modules) {
-    await prisma.district.updateMany({
-      where: { moduleId: module.id },
-      data: { isDeleted: true },
-    });
-  }
-
-  // #####-----Soft delete all modules under the given role-----#####
   await prisma.module.updateMany({
     where: { roleId },
     data: { isDeleted: true },
   });
 
-  const deletedRole = await prisma.role.update({
+  const role = await prisma.role.update({
     where: { id: roleId },
     data: { isDeleted: true },
   });
 
-  res.respond(200, "Role deleted(Soft Delete) Successfully!", deletedRole);
+  res.respond(200, "Role deleted (soft delete) successfully!", role);
 });
 
 // ####################--------------------Module--------------------####################
@@ -142,7 +130,7 @@ const createModule = asyncHandler(async (req, res) => {
   const associateId = req.user;
   const { moduleName, roleId } = req.body;
 
-  if ((!moduleName, !roleId)) {
+  if (!moduleName || !roleId) {
     return res.respond(400, "Module name And Role ID are required!");
   }
 
@@ -238,18 +226,12 @@ const getModulesByRole = asyncHandler(async (req, res) => {
 const softDeleteModule = asyncHandler(async (req, res) => {
   const { moduleId } = req.params;
 
-  // #####-----Soft delete all districts under the given module-----#####
-  await prisma.district.updateMany({
-    where: { moduleId },
-    data: { isDeleted: true },
-  });
-
   const deletedModule = await prisma.module.update({
     where: { id: moduleId },
     data: { isDeleted: true },
   });
 
-  res.respond(200, "Module deleted(Soft Delete) Successfully!", deletedModule);
+  res.respond(200, "Module deleted (soft delete) successfully!", deletedModule);
 });
 
 module.exports = {

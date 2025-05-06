@@ -1,0 +1,66 @@
+// ####################--------------------Custom User Model Start's here--------------------####################
+model CustomUser {
+    id                String   @id @default(uuid())
+    email             String?  @unique
+    name              String?
+    mobile            String   @db.VarChar(10)
+    alternativeMobile String?  @db.VarChar(10)
+    userType          UserType
+    accessToken       String?
+    refreshToken      String?
+
+    associates        Associate[]
+    employers         Employer[]
+    employees         Employee[]
+    employerSubAdmin  EmployerSubAdmin?
+    associateSubAdmin AssociateSubAdmin?
+}
+
+// ####################--------------------Custom User Model End's here--------------------####################
+
+// ####################--------------------Country, State and District Model Start's here--------------------####################
+// ####################--------------------Country Model--------------------####################
+model Country {
+    id          String   @id @default(uuid())
+    countryName String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+    isDeleted   Boolean  @default(false)
+
+    state                   State[]
+    EmployerBusinessDetails EmployerBusinessDetails[]
+    Employee                Employee[]
+    EmployerLocationDetails EmployerLocationDetails[]
+}
+
+// ####################--------------------State Model--------------------####################
+model State {
+    id        String   @id @default(uuid())
+    countryId String?
+    stateName String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+    country   Country? @relation(fields: [countryId], references: [id], onDelete: Cascade)
+
+    district                District[]
+    EmployerBusinessDetails EmployerBusinessDetails[]
+    Employee                Employee[]
+    EmployerLocationDetails EmployerLocationDetails[]
+}
+
+// ####################--------------------District Model--------------------####################
+model District {
+    id           String   @id @default(uuid())
+    stateId      String?
+    districtName String?
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+    isDeleted    Boolean  @default(false)
+    state        State?   @relation(fields: [stateId], references: [id], onDelete: Cascade)
+
+    EmployerBusinessDetails EmployerBusinessDetails[]
+    EmployerLocationDetails EmployerLocationDetails[]
+}
+
+// ####################--------------------Country, State and District Model End's here--------------------####################
