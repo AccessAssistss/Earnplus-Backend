@@ -21,14 +21,15 @@ model Employer {
     associate           Associate?         @relation(fields: [associateId], references: [id], onDelete: Cascade)
     associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
 
-    employees               Employee[]
-    employerBusinessDetails EmployerBusinessDetails?
-    EmployerLocationDetails EmployerLocationDetails?
-    EmployerCompanyPolicies EmployerCompanyPolicies?
-    EmployerContractType    EmployerContractType[]
-    employerSubAdmin        EmployerSubAdmin[]
-    EmployerRole            EmployerRole[]
-    EmployerModule          EmployerModule[]
+    employees                      Employee[]
+    employerBusinessDetails        EmployerBusinessDetails?
+    EmployerLocationDetails        EmployerLocationDetails?
+    EmployerCompanyPolicies        EmployerCompanyPolicies?
+    EmployerContractType           EmployerContractType[]
+    employerSubAdmin               EmployerSubAdmin[]
+    EmployerRole                   EmployerRole[]
+    EmployerModule                 EmployerModule[]
+    AssignVariantProductToEmployer AssignVariantProductToEmployer[]
 }
 
 // ####################--------------------Employer Role And Module Model Start's here--------------------####################

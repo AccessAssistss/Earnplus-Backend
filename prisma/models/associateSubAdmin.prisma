@@ -16,10 +16,10 @@ model AssociateSubAdmin {
     associate   Associate?  @relation(fields: [associateId], references: [id], onDelete: Cascade)
     role        Role?       @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-    Employer                Employer[]
-    AssociateSubAdminModule AssociateSubAdminModule[]
-    MasterProduct           MasterProduct[]
-    VariantProduct          VariantProduct[]
+    Employer                    Employer[]
+    AssociateSubAdminModule     AssociateSubAdminModule[]
+    MasterProduct               MasterProduct[]
+    VariantProduct              VariantProduct[]
     masterProductUpdateRequests MasterProductUpdateRequest[]
 }
 

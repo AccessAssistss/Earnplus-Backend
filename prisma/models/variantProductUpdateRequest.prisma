@@ -1,0 +1,95 @@
+model VariantProductUpdateRequest {
+    id               String   @id @default(uuid())
+    variantProductId String
+    updateType       String
+    status           String
+    isApproved       Boolean  @default(false)
+    isRejected       Boolean  @default(false)
+    rejectionReason  String?
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    variantProduct VariantProduct @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+
+    coreUpdate          VariantProductCoreUpdate?
+    eligibilityUpdate   VariantProductEligibilityUpdate?
+    feeUpdate           VariantProductFeeStructureUpdate?
+    withdrawLogicUpdate VariantProductWithdrawLogicUpdate?
+    repaymentUpdate     VariantProductRepaymentUpdate?
+    validityUpdate      VariantProductValidityUpdate?
+}
+
+model VariantProductCoreUpdate {
+    id              String      @id @default(uuid())
+    updateRequestId String      @unique
+    variantName     String
+    variantType     String
+    variantCode     String?
+    versionId       Int
+    remark          String
+    productType     ProductType
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model VariantProductEligibilityUpdate {
+    id                String            @id @default(uuid())
+    updateRequestId   String            @unique
+    minEmploymentDays ProductType
+    disbursementMode  DisbursementModes
+    minSalary         String
+    maxSalary         String
+    paymentFrequency  String
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model VariantProductFeeStructureUpdate {
+    id                 String   @id @default(uuid())
+    updateRequestId    String   @unique
+    setupFee           Int?
+    perTransactionFee  Int?
+    subscriptionOption Boolean?
+    feePayer           String?
+    gst                Int?
+    penalty            Int?
+    insuranceFee       Int?
+    insuranceCalcOn    Int?
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model VariantProductWithdrawLogicUpdate {
+    id                   String  @id @default(uuid())
+    updateRequestId      String  @unique
+    minWithdrawAmount    Int?
+    maxWithdrawAmount    Int?
+    minAccrued           Int?
+    maxAccrued           Int?
+    maxWithdrawlPerMonth Int?
+    frequencyRule        String?
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model VariantProductRepaymentUpdate {
+    id              String         @id @default(uuid())
+    updateRequestId String         @unique
+    repaymentMode   RepaymentMode?
+    eNachRequired   Boolean
+    autoDebit       Boolean
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model VariantProductValidityUpdate {
+    id              String    @id @default(uuid())
+    updateRequestId String    @unique
+    activationDate  DateTime?
+    validityPeriod  DateTime
+    workLocation    String
+    minSalary       Int
+    maxSalary       Int
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}

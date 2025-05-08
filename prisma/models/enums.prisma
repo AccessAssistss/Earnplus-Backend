@@ -55,7 +55,7 @@ enum TenureUnit {
 
 enum CollateralType {
     GOLD
-    Vehicle
+    VEHICLE
     PROPERTY
     OTHER
 }
@@ -67,9 +67,9 @@ enum ConcentCaptureFormat {
 }
 
 enum RiskCategory {
-    DIGITAL
-    PAPER
-    BIOMETRIC
+    HIGH
+    MODERATE
+    LOW
 }
 
 enum DisbursementModes {
@@ -79,8 +79,11 @@ enum DisbursementModes {
 }
 
 enum RepaymentMode {
+    LIEN
     ENACH
     SELFPAY
+    EMI
+    BNPL
 }
 
 enum UpdateRequestStatus {

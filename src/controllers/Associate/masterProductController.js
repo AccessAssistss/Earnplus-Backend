@@ -72,7 +72,7 @@ const createMasterProduct = asyncHandler(async (req, res) => {
     const product = await tx.masterProduct.create({
       data: {
         productManagerId: productManager.id,
-        versionId: "1",
+        versionId: 1,
         productCategoryId,
         productType,
         productName,
@@ -123,18 +123,27 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
     masterProductId,
-    updateReason,
-    loanStructure,
-    feeStructure,
-    compliance,
-    disbursement,
-    performance,
-    purposes,
-    commonUseCases,
-    customerTypes,
+    createdById,
+    coreUpdate,
+    loanUpdate,
+    feeUpdate,
+    complianceUpdate,
+    disbursementUpdate,
+    performanceUpdate,
+    purposeIds,
+    useCaseIds,
+    customerTypeIds,
   } = req.body;
 
-  if (!masterProductId || !updateReason || !proposedVersion) {
+  if (
+    !masterProductId ||
+    !coreUpdate ||
+    !loanUpdate ||
+    !feeUpdate ||
+    !complianceUpdate ||
+    !disbursementUpdate ||
+    !performanceUpdate
+  ) {
     return res.respond(400, "Required fields are missing!");
   }
 
@@ -156,40 +165,43 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
     return res.respond(404, "Master Product not found.");
   }
 
-  const proposedVersion = masterProduct.versionId + 1;
-
   const updateRequest = await prisma.masterProductUpdateRequest.create({
     data: {
       masterProductId,
-      reason: updateReason,
-      proposedVersion,
-      status: "PENDING",
-      loanStructure: loanStructure ? { create: loanStructure } : undefined,
-      feeStructure: feeStructure ? { create: feeStructure } : undefined,
-      securityCompliance: compliance ? { create: compliance } : undefined,
-      disbursementRule: disbursement ? { create: disbursement } : undefined,
-      performance: performance ? { create: performance } : undefined,
-      purposes: purposes?.length
-        ? {
-            create: purposes.map((id) => ({
-              productPurpose: { connect: { id } },
-            })),
-          }
-        : undefined,
-      useCases: commonUseCases?.length
-        ? {
-            create: commonUseCases.map((id) => ({
-              commonUseCase: { connect: { id } },
-            })),
-          }
-        : undefined,
-      customerTypes: customerTypes?.length
-        ? {
-            create: customerTypes.map((id) => ({
-              customerType: { connect: { id } },
-            })),
-          }
-        : undefined,
+      createdById,
+      masterProductCoreUpdate: {
+        create: coreUpdate,
+      },
+      masterProductLoanUpdate: {
+        create: loanUpdate,
+      },
+      masterProductFeeUpdate: {
+        create: feeUpdate,
+      },
+      masterProductComplianceUpdate: {
+        create: complianceUpdate,
+      },
+      masterProductDisbursementUpdate: {
+        create: disbursementUpdate,
+      },
+      masterProductPerformanceUpdate: {
+        create: performanceUpdate,
+      },
+      masterProductPurposeUpdates: {
+        createMany: {
+          data: purposeIds.map((id) => ({ purposeId: id })),
+        },
+      },
+      masterProductUseCaseUpdates: {
+        createMany: {
+          data: useCaseIds.map((id) => ({ commonUseCaseId: id })),
+        },
+      },
+      masterProductCustomerUpdates: {
+        createMany: {
+          data: customerTypeIds.map((id) => ({ customerTypeId: id })),
+        },
+      },
     },
   });
 
@@ -203,7 +215,7 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
 // ##########----------Approve Master Product Update Request----------##########
 const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
-  const { updateRequestId } = req.params;
+  const { requestId } = req.params;
 
   const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
@@ -213,97 +225,142 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
     return res.respond(403, "associate not found!");
   }
 
-  const updateRequest = await prisma.masterProductUpdateRequest.findUnique({
-    where: { id: updateRequestId },
+  const request = await prisma.masterProductUpdateRequest.findUnique({
+    where: { id: requestId },
     include: {
-      masterProduct: true,
-      loanStructure: true,
-      feeStructure: true,
-      securityCompliance: true,
-      disbursementRule: true,
-      performance: true,
-      purposes: { include: { productPurpose: true } },
-      useCases: { include: { commonUseCase: true } },
-      customerTypes: { include: { customerType: true } },
+      masterProduct: {
+        include: {
+          MasterProductLoanStructure: true,
+          MasterProductFeeStructure: true,
+          MasterProductSecurityCompliance: true,
+          MasterProductDisbursementRules: true,
+          MasterProductPerformance: true,
+          MasterProductPurpose: true,
+          MasterProductCommonUseCase: true,
+          MasterProductCustomerType: true,
+        },
+      },
+      masterProductCoreUpdate: true,
+      masterProductLoanUpdate: true,
+      masterProductFeeUpdate: true,
+      masterProductComplianceUpdate: true,
+      masterProductDisbursementUpdate: true,
+      masterProductPerformanceUpdate: true,
+      masterProductPurposeUpdates: true,
+      masterProductUseCaseUpdates: true,
+      masterProductCustomerUpdates: true,
     },
   });
 
-  if (!updateRequest) {
+  if (!request) {
     return res.respond(404, "Update request not found.");
   }
 
-  const { masterProduct } = updateRequest;
+  const currentProduct = request.masterProduct;
+  const newVersionId = currentProduct.versionId + 1;
+
+  function cleanPrismaUpdateData(
+    data,
+    disallowedFields = ["id", "updateRequestId", "createdAt", "updatedAt"]
+  ) {
+    const cleaned = { ...data };
+    for (const field of disallowedFields) {
+      delete cleaned[field];
+    }
+    return cleaned;
+  }
 
   await prisma.$transaction(async (tx) => {
-    await tx.masterProduct.update({
-      where: { id: masterProduct.id },
+    await tx.masterProductVersion.create({
       data: {
-        version: masterProduct.version + 1,
-        MasterProductLoanStructure: {
-          updateMany: {
-            where: { masterProductId: masterProduct.id },
-            data: updateRequest.loanStructure || {},
-          },
-        },
-        MasterProductFeeStructure: {
-          updateMany: {
-            where: { masterProductId: masterProduct.id },
-            data: updateRequest.feeStructure || {},
-          },
-        },
-        MasterProductSecurityCompliance: {
-          updateMany: {
-            where: { masterProductId: masterProduct.id },
-            data: updateRequest.securityCompliance || {},
-          },
-        },
-        MasterProductDisbursementRules: {
-          updateMany: {
-            where: { masterProductId: masterProduct.id },
-            data: updateRequest.disbursementRule || {},
-          },
-        },
-        MasterProductPerformance: {
-          updateMany: {
-            where: { masterProductId: masterProduct.id },
-            data: updateRequest.performance || {},
-          },
-        },
-        MasterProductPurpose: {
-          deleteMany: { masterProductId: masterProduct.id },
-          create: updateRequest.purposes.map((p) => ({
-            productPurpose: { connect: { id: p.productPurpose.id } },
-          })),
-        },
-        MasterProductCommonUseCase: {
-          deleteMany: { masterProductId: masterProduct.id },
-          create: updateRequest.useCases.map((u) => ({
-            commonuseCase: { connect: { id: u.commonUseCase.id } },
-          })),
-        },
-        MasterProductCustomerType: {
-          deleteMany: { masterProductId: masterProduct.id },
-          create: updateRequest.customerTypes.map((c) => ({
-            customerType: { connect: { id: c.customerType.id } },
-          })),
-        },
+        masterProductId: currentProduct.id,
+        versionId: currentProduct.versionId,
+        snapshot: JSON.parse(JSON.stringify(currentProduct)),
       },
     });
 
+    await tx.masterProduct.update({
+      where: { id: currentProduct.id },
+      data: {
+        productName: request.masterProductCoreUpdate.productName,
+        productDescription: request.masterProductCoreUpdate.productDescription,
+        productCategoryId: request.masterProductCoreUpdate.productCategoryId,
+        versionId: newVersionId,
+      },
+    });
+
+    await tx.masterProductLoanStructure.update({
+      where: { id: currentProduct.MasterProductLoanStructure?.id },
+      data: cleanPrismaUpdateData(request.masterProductLoanUpdate),
+    });
+
+    await tx.masterProductFeeStructure.update({
+      where: { id: currentProduct.MasterProductFeeStructure?.id },
+      data: cleanPrismaUpdateData(request.masterProductFeeUpdate),
+    });
+
+    await tx.masterProductSecurityCompliance.update({
+      where: { id: currentProduct.MasterProductSecurityCompliance?.id },
+      data: cleanPrismaUpdateData(request.masterProductComplianceUpdate),
+    });
+
+    await tx.masterProductDisbursementRules.update({
+      where: { id: currentProduct.MasterProductDisbursementRules?.id },
+      data: cleanPrismaUpdateData(request.masterProductDisbursementUpdate),
+    });
+
+    await tx.masterProductPerformance.update({
+      where: { id: currentProduct.MasterProductPerformance?.id },
+      data: cleanPrismaUpdateData(request.masterProductPerformanceUpdate),
+    });
+
+    await tx.masterProductPurpose.deleteMany({
+      where: { masterProductId: currentProduct.id },
+    });
+    await tx.masterProductPurpose.createMany({
+      data: request.masterProductPurposeUpdates.map((p) => ({
+        masterProductId: currentProduct.id,
+        purposeId: p.purposeId,
+      })),
+    });
+
+    await tx.masterProductCommonUseCase.deleteMany({
+      where: { masterProductId: currentProduct.id },
+    });
+    await tx.masterProductCommonUseCase.createMany({
+      data: request.masterProductUseCaseUpdates.map((u) => ({
+        masterProductId: currentProduct.id,
+        commonuseCaseId: u.commonUseCaseId,
+      })),
+    });
+
+    await tx.masterProductCustomerType.deleteMany({
+      where: { masterProductId: currentProduct.id },
+    });
+    await tx.masterProductCustomerType.createMany({
+      data: request.masterProductCustomerUpdates.map((c) => ({
+        masterProductId: currentProduct.id,
+        customerTypeId: c.customerTypeId,
+      })),
+    });
+
     await tx.masterProductUpdateRequest.update({
-      where: { id: updateRequest.id },
-      data: { status: "APPROVED", updatedAt: new Date() },
+      where: { id: requestId },
+      data: {
+        isApproved: true,
+        isDeleted: true,
+      },
     });
   });
 
-  return res.respond(200, "Update request approved and applied.");
+  return res.respond(200, "Update request approved and applied!");
 });
 
 // ##########----------Reject Master Product Update Request----------##########
 const rejectMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
-  const { updateRequestId } = req.params;
-  const { rejectionReason } = req.body;
+  const { requestId } = req.params;
+  const { reason } = req.body;
 
   const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
@@ -313,19 +370,21 @@ const rejectMasterProductUpdateRequest = asyncHandler(async (req, res) => {
     return res.respond(403, "associate not found!");
   }
 
-  const updateRequest = await prisma.masterProductUpdateRequest.findUnique({
-    where: { id: updateRequestId },
+  const request = await prisma.masterProductUpdateRequest.findUnique({
+    where: { id: requestId },
   });
-
-  if (!updateRequest) {
-    return res.respond(404, "Update request not found.");
+  if (!request) {
+    return res
+      .status(404)
+      .json({ success: false, message: "Update request not found" });
   }
 
   await prisma.masterProductUpdateRequest.update({
-    where: { id: updateRequestId },
+    where: { id: requestId },
     data: {
-      status: "REJECTED",
-      reason: rejectionReason,
+      isRejected: true,
+      isDeleted: true,
+      rejectionReason: reason,
     },
   });
 
@@ -525,6 +584,78 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
   res.respond(200, "Master Products fetched successfully!", masterProduct);
 });
 
+// ##########----------Master Product Versions----------##########
+const getMasterProductVersions = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { masterProductId } = req.params;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: { role: true },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can access this data.");
+  }
+
+  const masterProduct = await prisma.masterProduct.findFirst({
+    where: { id: masterProductId, isDeleted: false },
+  });
+
+  if (!masterProduct) {
+    return res.respond(404, "Master product not found.");
+  }
+
+  const versions = await prisma.masterProductVersion.findMany({
+    where: { masterProductId },
+    orderBy: { versionId: "desc" },
+  });
+
+  return res.respond(
+    200,
+    "Master product version history fetched successfully!",
+    versions
+  );
+});
+
+// ##########----------Master Product Version Detail----------##########
+const getMasterProductVersionById = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { versionId } = req.params;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: { role: true },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can access this data.");
+  }
+
+  const version = await prisma.masterProductVersion.findUnique({
+    where: { id: versionId },
+    include: {
+      masterProduct: {
+        select: {
+          productName: true,
+          id: true,
+          isDeleted: true,
+        },
+      },
+    },
+  });
+
+  if (!version) {
+    return res.respond(404, "Master product version not found.");
+  }
+
+  return res.respond(
+    200,
+    "Master product version details fetched successfully!",
+    version
+  );
+});
+
 module.exports = {
   createMasterProduct,
   submitMasterProductUpdateRequest,
@@ -532,4 +663,6 @@ module.exports = {
   rejectMasterProductUpdateRequest,
   getAllMasterProducts,
   getMasterProductDetails,
+  getMasterProductVersions,
+  getMasterProductVersionById,
 };

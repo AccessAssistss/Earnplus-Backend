@@ -7,6 +7,7 @@ model VariantProduct {
     variantName      String      @db.VarChar(150)
     variantType      String      @db.VarChar(30)
     variantCode      String      @db.VarChar(60)
+    versionId        Int
     remark           String
     createdAt        DateTime    @default(now())
     updatedAt        DateTime    @updatedAt
@@ -15,11 +16,14 @@ model VariantProduct {
     masterProduct  MasterProduct      @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
     productManager AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
 
-    VariantProductEligibility   VariantProductEligibility?
-    VariantProductFeeStructure  VariantProductFeeStructure?
-    VariantProductWithdrawLogic VariantProductWithdrawLogic?
-    VariantProductRepayment     VariantProductRepayment?
-    VariantProductValidity      VariantProductValidity?
+    VariantProductEligibility      VariantProductEligibility?
+    VariantProductFeeStructure     VariantProductFeeStructure?
+    VariantProductWithdrawLogic    VariantProductWithdrawLogic?
+    VariantProductRepayment        VariantProductRepayment?
+    VariantProductValidity         VariantProductValidity?
+    VariantProductUpdateRequest    VariantProductUpdateRequest[]
+    VariantProductVersion          VariantProductVersion[]
+    AssignVariantProductToEmployer AssignVariantProductToEmployer[]
 }
 
 // ##########----------Varient Product Eligibility Model Starts's here----------##########
@@ -38,7 +42,7 @@ model VariantProductEligibility {
     varientProduct VariantProduct @relation(fields: [varientProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Fee Structure Model Start's here----------##########
+// ##########----------Variant Product Fee Structure Model----------##########
 model VariantProductFeeStructure {
     id                 String   @id @default(uuid())
     variantProductId   String   @unique
@@ -57,7 +61,7 @@ model VariantProductFeeStructure {
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Withdrawl Logic Model Start's here----------##########
+// ##########----------Variant Product Withdrawl Logic Model----------##########
 model VariantProductWithdrawLogic {
     id                   String   @id @default(uuid())
     variantProductId     String   @unique
@@ -74,7 +78,7 @@ model VariantProductWithdrawLogic {
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Repayment Model Start's here----------##########
+// ##########----------Variant Product Repayment Model----------##########
 model VariantProductRepayment {
     id               String         @id @default(uuid())
     variantProductId String         @unique
@@ -88,7 +92,7 @@ model VariantProductRepayment {
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Validity Model Start's here----------##########
+// ##########----------Variant Product Validity Model----------##########
 model VariantProductValidity {
     id               String    @id @default(uuid())
     variantProductId String    @unique
@@ -102,4 +106,31 @@ model VariantProductValidity {
     isDeleted        Boolean   @default(false)
 
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Variant Product Version Model----------##########
+model VariantProductVersion {
+    id               String   @id @default(uuid())
+    variantProductId String
+    versionId        Int
+    snapshot         Json
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    variantProduct VariantProduct @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Assign Variant Product To Employer----------##########
+model AssignVariantProductToEmployer {
+    id               String   @id @default(uuid())
+    variantProductId String
+    employerId       String
+    aasignmentDate   DateTime
+    endDate          DateTime
+    employerNote     String
+    createdAt        DateTime @default(now())
+    updatedAt        DateTime @updatedAt
+
+    variantProduct VariantProduct @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+    employer       Employer       @relation(fields: [employerId], references: [id], onDelete: Cascade)
 }

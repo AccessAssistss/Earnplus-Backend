@@ -1,4 +1,4 @@
-// ##########----------Product Category Model Start's here----------##########
+// ##########----------Product Category Model----------##########
 model ProductCategory {
     id           String   @id @default(uuid())
     categoryName String?  @db.VarChar(100)
@@ -10,7 +10,7 @@ model ProductCategory {
     MasterProduct  MasterProduct[]
 }
 
-// ##########----------Product Purpose Model Start's here----------##########
+// ##########----------Product Purpose Model----------##########
 model ProductPurpose {
     id                String   @id @default(uuid())
     productCategoryId String?
@@ -19,40 +19,40 @@ model ProductPurpose {
     updatedAt         DateTime @updatedAt
     isDeleted         Boolean  @default(false)
 
-    productCategory      ProductCategory?       @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
-    MasterProductPurpose MasterProductPurpose[]
+    productCategory             ProductCategory?             @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
+    MasterProductPurpose        MasterProductPurpose[]
     masterProductPurposeUpdates MasterProductPurposeUpdate[]
 }
 
-// ##########----------Product Common UseCase Model Start's here----------##########
+// ##########----------Product Common UseCase Model----------##########
 model CommonUseCase {
-    id                         String                       @id @default(uuid())
-    name                       String?                      @db.VarChar(100)
-    createdAt                  DateTime                     @default(now())
-    updatedAt                  DateTime                     @updatedAt
-    isDeleted                  Boolean                      @default(false)
-    MasterProductCommonUseCase MasterProductCommonUseCase[]
+    id                                String                             @id @default(uuid())
+    name                              String?                            @db.VarChar(100)
+    createdAt                         DateTime                           @default(now())
+    updatedAt                         DateTime                           @updatedAt
+    isDeleted                         Boolean                            @default(false)
+    MasterProductCommonUseCase        MasterProductCommonUseCase[]
     masterProductCommonUseCaseUpdates MasterProductCommonUseCaseUpdate[]
 }
 
-// ##########----------Target Customer Type Model Start's here----------##########
+// ##########----------Target Customer Type Model----------##########
 model CustomerType {
-    id                        String                      @id @default(uuid())
-    name                      String?                     @db.VarChar(100)
-    createdAt                 DateTime                    @default(now())
-    updatedAt                 DateTime                    @updatedAt
-    isDeleted                 Boolean                     @default(false)
-    MasterProductCustomerType MasterProductCustomerType[]
+    id                               String                            @id @default(uuid())
+    name                             String?                           @db.VarChar(100)
+    createdAt                        DateTime                          @default(now())
+    updatedAt                        DateTime                          @updatedAt
+    isDeleted                        Boolean                           @default(false)
+    MasterProductCustomerType        MasterProductCustomerType[]
     masterProductCustomerTypeUpdates MasterProductCustomerTypeUpdate[]
 }
 
-// ##########----------Master Product Model Start's here----------##########
+// ##########----------Master Product Model----------##########
 model MasterProduct {
     id                 String      @id @default(uuid())
     productManagerId   String?
     productCategoryId  String?
     productType        ProductType
-    versionId          String?     @db.VarChar(80)
+    versionId          Int
     productName        String?     @db.VarChar(100)
     productCode        String?     @db.VarChar(100)
     productDescription String?     @db.VarChar(100)
@@ -72,7 +72,8 @@ model MasterProduct {
     MasterProductCommonUseCase      MasterProductCommonUseCase[]
     MasterProductCustomerType       MasterProductCustomerType[]
     VariantProduct                  VariantProduct[]
-    MasterProductUpdateRequest MasterProductUpdateRequest[]
+    MasterProductUpdateRequest      MasterProductUpdateRequest[]
+    MasterProductVersion            MasterProductVersion[]
 }
 
 // ##########----------Master Product Purpose Model Starts's here----------##########
@@ -105,33 +106,7 @@ model MasterProductCustomerType {
     customerType  CustomerType  @relation(fields: [customerTypeId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Tenure Type Model Start's here----------##########
-// model TenureType {
-//   id         String   @id @default(uuid())
-//   tenureType String?  @db.VarChar(100)
-//   createdAt  DateTime @default(now())
-//   updatedAt  DateTime @updatedAt
-//   isDeleted  Boolean  @default(false)
-
-//   TenureUnit TenureUnit[]
-// }
-
-// ##########----------Master Product Tenure Type Model Ends's here----------##########
-
-// ##########----------Master Product Tenure Unit Model Start's here----------##########
-// model TenureUnit {
-//   id           String   @id @default(uuid())
-//   tenureTypeId String?
-//   createdAt    DateTime @default(now())
-//   updatedAt    DateTime @updatedAt
-//   isDeleted    Boolean  @default(false)
-
-//   tenureType TenureType? @relation(fields: [tenureTypeId], references: [id], onDelete: Cascade)
-// }
-
-// ##########----------Master Product Tenure Unit Model Ends's here----------##########
-
-// ##########----------Master Product Loan Structure Model Start's here----------##########
+// ##########----------Master Product Loan Structure Model----------##########
 model MasterProductLoanStructure {
     id                          String       @id @default(uuid())
     masterProductId             String       @unique
@@ -163,7 +138,7 @@ model MasterProductLoanStructure {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Fee Structure Model Start's here----------##########
+// ##########----------Master Product Fee Structure Model----------##########
 model MasterProductFeeStructure {
     id                   String   @id @default(uuid())
     masterProductId      String   @unique
@@ -185,7 +160,7 @@ model MasterProductFeeStructure {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Security Compliance Model Start's here----------##########
+// ##########----------Master Product Security Compliance Model----------##########
 model MasterProductSecurityCompliance {
     id                    String                @id @default(uuid())
     masterProductId       String                @unique
@@ -206,7 +181,7 @@ model MasterProductSecurityCompliance {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Disbursement Rule Model Start's here----------##########
+// ##########----------Master Product Disbursement Rule Model----------##########
 model MasterProductDisbursementRules {
     id                String             @id @default(uuid())
     masterProductId   String             @unique
@@ -220,24 +195,7 @@ model MasterProductDisbursementRules {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Employer Tagging Model Start's here----------##########
-// model MasterProductEmployerTagging {
-//   id              String   @id @default(uuid())
-//   masterProductId String
-//   employerLinked  Boolean?
-//   employerId      Boolean?
-//   loanCap         Int?
-//   repaymentSource String?
-//   createdAt       DateTime @default(now())
-//   updatedAt       DateTime @updatedAt
-//   isDeleted       Boolean  @default(false)
-
-//   masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-// }
-
-// ##########----------Master Product Employer Tagging Model Ends's here----------##########
-
-// ##########----------Master Product Performance Model Start's here----------##########
+// ##########----------Master Product Performance Model----------##########
 model MasterProductPerformance {
     id                          String   @id @default(uuid())
     masterProductId             String   @unique
@@ -250,4 +208,15 @@ model MasterProductPerformance {
     isDeleted                   Boolean  @default(false)
 
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Version Model----------##########
+model MasterProductVersion {
+    id              String   @id @default(uuid())
+    masterProductId String
+    versionId       Int
+    snapshot        Json
+    createdAt       DateTime @default(now())
+
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
 }
