@@ -1,3 +1,4 @@
+// ##########----------Variant Product Update Request Model Start's here----------##########
 model VariantProductUpdateRequest {
     id               String   @id @default(uuid())
     variantProductId String
@@ -19,6 +20,7 @@ model VariantProductUpdateRequest {
     validityUpdate      VariantProductValidityUpdate?
 }
 
+// ##########----------Variant Product Core Update Model Start's here----------##########
 model VariantProductCoreUpdate {
     id              String      @id @default(uuid())
     updateRequestId String      @unique
@@ -32,6 +34,7 @@ model VariantProductCoreUpdate {
     updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
 
+// ##########----------Variant Product Eligibility Update Model Start's here----------##########
 model VariantProductEligibilityUpdate {
     id                String            @id @default(uuid())
     updateRequestId   String            @unique
@@ -44,6 +47,7 @@ model VariantProductEligibilityUpdate {
     updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
 
+// ##########----------Variant Product Fee Structure Update Model Start's here----------##########
 model VariantProductFeeStructureUpdate {
     id                 String   @id @default(uuid())
     updateRequestId    String   @unique
@@ -59,6 +63,7 @@ model VariantProductFeeStructureUpdate {
     updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
 
+// ##########----------Variant Product Withdraw Logic Update Model Start's here----------##########
 model VariantProductWithdrawLogicUpdate {
     id                   String  @id @default(uuid())
     updateRequestId      String  @unique
@@ -72,6 +77,7 @@ model VariantProductWithdrawLogicUpdate {
     updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
 
+// ##########----------Variant Product Repayment Update Model Start's here----------##########
 model VariantProductRepaymentUpdate {
     id              String         @id @default(uuid())
     updateRequestId String         @unique
@@ -82,6 +88,7 @@ model VariantProductRepaymentUpdate {
     updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
 
+// ##########----------Variant Product Validity Update Model Start's here----------##########
 model VariantProductValidityUpdate {
     id              String    @id @default(uuid())
     updateRequestId String    @unique

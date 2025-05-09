@@ -319,9 +319,18 @@ const deactivateAssociateSubAdmin = asyncHandler(async (req, res) => {
 const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
   const user = req.user;
 
-  const { userType = "EMPLOYER", email, name, mobile, gst, pan } = req.body;
+  const {
+    userType = "EMPLOYER",
+    email,
+    name,
+    mobile,
+    gst,
+    pan,
+    cin,
+    legalIdentity,
+  } = req.body;
 
-  if (!email || !mobile || !name || !gst || !pan) {
+  if (!email || !mobile || !name || !gst || !pan || !legalIdentity) {
     return res.respond(400, "All fields required!");
   }
 
@@ -342,7 +351,6 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
   if (!existingSubAdmin) {
     return res.respond(400, "SubAdmin not found!");
   }
-  console.log(existingSubAdmin.role.roleName);
 
   if (existingSubAdmin.role.roleName !== "ERM") {
     return res.respond(400, "You don't have access to Add Employer!");
@@ -413,6 +421,8 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
       password: hashed,
       gst,
       pan,
+      cin,
+      legalIdentity,
       employerId: newEmployerId,
     },
   });
@@ -424,6 +434,7 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
     name: employer.name,
     email: employer.email,
     mobile: employer.mobile,
+    legalIdentity: employer.legalIdentity,
     createdAt: employer.createdAt,
     updatedAt: employer.updatedAt,
   };

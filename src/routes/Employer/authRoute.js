@@ -12,6 +12,7 @@ const {
   addEmployerContractType,
   getEmployerProfile,
   getEmployeeProfile,
+  getEmployerContractTypes,
 } = require("../../controllers/Employer/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -41,7 +42,8 @@ router.patch(
 );
 router.post("/addEmployeeByEmployer", validateToken, addEmployeeByEmployer);
 router.get("/getEmployeesByEmployer", validateToken, getEmployeesByEmployer);
-router.get("/getEmployeeProfile/:id", validateToken, getEmployeeProfile);
+router.get("/getEmployeeProfile/:employeeId", validateToken, getEmployeeProfile);
+router.get("/getEmployerContractTypes", getEmployerContractTypes);
 router.patch(
   "/handleEmployerActivationStatus",
   validateToken,

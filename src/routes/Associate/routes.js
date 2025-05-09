@@ -13,5 +13,6 @@ router.use("/commonUseCase", require("./commonUseCaseRoute"));
 router.use("/customerType", require("./customerTypeRoute"));
 router.use("/masterProduct", require("./masterProductRoute"));
 router.use("/variantProduct", require("./variantProductRoute"));
+router.use("/contractCombination", require("./contractCombinationRoute"));
 
 module.exports = router;

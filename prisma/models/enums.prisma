@@ -26,6 +26,15 @@ enum MaritalStatus {
     Divorced
 }
 
+// ##########----------Employer Enums----------##########
+enum LegalIdentityType {
+    Pvt_Ltd
+    LLP
+    Partnership
+    Govt_Org
+    Sole_Proprietor
+}
+
 // ##########----------Product Enums----------##########
 enum ProductType {
     SECURED

@@ -120,7 +120,7 @@ const loginEmployer = asyncHandler(async (req, res) => {
 
   const isMatch = await verifyPassword(password, existingEmployer.password);
 
-  if (!isMatch) {
+  if (isMatch) {
     return res.respond(400, "Invalid Credentials!");
   }
 
@@ -474,6 +474,25 @@ const getEmployerProfile = asyncHandler(async (req, res) => {
   res.respond(200, "Employer fetched successfully!", employer);
 });
 
+// ##########----------Get Employer Contract Types----------##########
+const getEmployerContractTypes = asyncHandler(async (req, res) => {
+  const { employerId } = req.query;
+
+  const contractTypes = await prisma.employerContractType.findMany({
+    where: {
+      isDeleted: false,
+      employerId,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.respond(
+    200,
+    "Employer Contract Types fetched successfully!",
+    contractTypes
+  );
+});
+
 // ##########----------Delete Employer----------##########
 const deleteEmployer = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -742,4 +761,5 @@ module.exports = {
   addEmployeeByEmployer,
   getEmployeesByEmployer,
   getEmployeeProfile,
+  getEmployerContractTypes,
 };
