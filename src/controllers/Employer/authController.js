@@ -6,6 +6,7 @@ const {
   generateRefreshToken,
   verifyPassword,
 } = require("../../../utils/authUtils");
+const xlsx = require("xlsx");
 
 const prisma = new PrismaClient();
 
@@ -591,29 +592,11 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
   });
 
   // ######-----Generate unique employeeId per employer-----#####
-  const baseEmployerId = String(existingEmployer.employerId).padStart(5, "0");
-
-  const latestEmployee = await prisma.employee.findFirst({
-    where: {
-      employerId: existingEmployer.id,
-      employeeId: {
-        startsWith: `EE-${baseEmployerId}-`,
-      },
-    },
-    orderBy: { createdAt: "desc" },
-    select: { employeeId: true },
-  });
-
-  let newEmployeeId = `EE-EMP${baseEmployerId}-0001`;
-  if (latestEmployee?.employeeId) {
-    const parts = latestEmployee.employeeId.split("-");
-    const lastNumber = parseInt(parts[2]);
-    const nextNumber = lastNumber + 1;
-    newEmployeeId = `EE-EMP${baseEmployerId}-${String(nextNumber).padStart(
-      4,
-      "0"
-    )}`;
-  }
+  const newEmployeeId = await generateUniqueEmployeeId(
+    prisma,
+    existingEmployer.employerId,
+    existingEmployer.id
+  );
 
   const employee = await prisma.employee.create({
     data: {
@@ -669,6 +652,134 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
   };
 
   res.respond(201, "Employee Created Successfully!", registeredEmployee);
+});
+
+// ##########----------Bulk Upload Employess From Excel----------##########
+const bulkUploadEmployees = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { nationality, state } = req.body;
+
+  if (!req.file || !req.file.path) {
+    return res.respond(400, "Please upload a file.");
+  }
+
+  if (!nationality || !state) {
+    return res.respond(
+      400,
+      "Nationality and state are required in request body!"
+    );
+  }
+
+  const workbook = xlsx.readFile(req.file.path);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const data = xlsx.utils.sheet_to_json(sheet);
+
+  const employer = await prisma.employer.findFirst({ where: { userId } });
+  if (!employer) return res.respond(404, "Employer not found!");
+
+  const baseEmployerId = String(employer.employerId).padStart(5, "0");
+
+  let successCount = 0;
+  let errorRows = [];
+
+  for (let i = 0; i < data.length; i++) {
+    const row = data[i];
+    const {
+      employeeName,
+      mobile,
+      email,
+      dob,
+      maritalStatus,
+      gender,
+      panNo,
+      aadharNo,
+      address,
+      city,
+      pincode,
+      dateJoined,
+      jobTitle,
+    } = row;
+
+    try {
+      if (
+        !employeeName ||
+        !email ||
+        !mobile ||
+        !gender ||
+        !panNo ||
+        !aadharNo ||
+        !address ||
+        !city ||
+        !pincode ||
+        !dateJoined ||
+        !jobTitle
+      ) {
+        return res.respond(400, "Missing required fields!");
+      }
+
+      const existingUser = await prisma.customUser.findFirst({
+        where: { OR: [{ email }, { mobile }] },
+      });
+      if (existingUser) {
+        return res.respond(
+          400,
+          "User already exists with given email or mobile!"
+        );
+      }
+
+      const newUser = await prisma.customUser.create({
+        data: {
+          email,
+          mobile,
+          name: employeeName,
+          userType: "EMPLOYEE",
+        },
+      });
+
+      const newEmployeeId = await generateUniqueEmployeeId(
+        prisma,
+        employer.employerId,
+        employer.id
+      );
+
+      await prisma.employee.create({
+        data: {
+          user: { connect: { id: newUser.id } },
+          employer: { connect: { id: employer.id } },
+          employeeName,
+          mobile,
+          email,
+          dob: new Date(dob),
+          maritalStatus,
+          gender,
+          country: { connect: { id: nationality } },
+          panNo,
+          aadharNo,
+          address,
+          city,
+          state: { connect: { id: state } },
+          pincode,
+          employeeId: newEmployeeId,
+          dateJoined: new Date(dateJoined),
+          jobTitle,
+        },
+      });
+
+      successCount++;
+    } catch (err) {
+      errorRows.push({
+        row: i + 2,
+        error: err.message,
+        data: row,
+      });
+    }
+  }
+
+  res.respond(201, `Bulk upload completed!`, {
+    successCount,
+    failedCount: errorRows.length,
+    errors: errorRows,
+  });
 });
 
 // ##########----------Get Employees By Employer----------##########
@@ -759,6 +870,7 @@ module.exports = {
   getEmployerProfile,
   deleteEmployer,
   addEmployeeByEmployer,
+  bulkUploadEmployees,
   getEmployeesByEmployer,
   getEmployeeProfile,
   getEmployerContractTypes,

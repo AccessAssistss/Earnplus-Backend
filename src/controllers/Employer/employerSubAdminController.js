@@ -102,7 +102,9 @@ const createEmployerSubAdmin = asyncHandler(async (req, res) => {
       email,
       mobile,
       password: hashed,
-      roleId: role,
+      employerRole: {
+        connect: { id: role },
+      },
     },
   });
 

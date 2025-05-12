@@ -13,8 +13,11 @@ const {
   getEmployerProfile,
   getEmployeeProfile,
   getEmployerContractTypes,
+  bulkUploadEmployees,
 } = require("../../controllers/Employer/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 
 const router = express.Router();
 
@@ -41,8 +44,18 @@ router.patch(
   addEmployerContractType
 );
 router.post("/addEmployeeByEmployer", validateToken, addEmployeeByEmployer);
+router.post(
+  "/bulkUploadEmployees",
+  validateToken,
+  upload.single("file"),
+  bulkUploadEmployees
+);
 router.get("/getEmployeesByEmployer", validateToken, getEmployeesByEmployer);
-router.get("/getEmployeeProfile/:employeeId", validateToken, getEmployeeProfile);
+router.get(
+  "/getEmployeeProfile/:employeeId",
+  validateToken,
+  getEmployeeProfile
+);
 router.get("/getEmployerContractTypes", getEmployerContractTypes);
 router.patch(
   "/handleEmployerActivationStatus",

@@ -14,5 +14,6 @@ router.use("/customerType", require("./customerTypeRoute"));
 router.use("/masterProduct", require("./masterProductRoute"));
 router.use("/variantProduct", require("./variantProductRoute"));
 router.use("/contractCombination", require("./contractCombinationRoute"));
+router.use("/productAllocation", require("./productAllocationRoute"));
 
 module.exports = router;

@@ -21,6 +21,7 @@ model AssociateSubAdmin {
     MasterProduct               MasterProduct[]
     VariantProduct              VariantProduct[]
     masterProductUpdateRequests MasterProductUpdateRequest[]
+    AllocateProductToEmployer   AllocateProductToEmployer[]
 }
 
 // ##########----------Sub-Admin Modules Model Start's here----------##########

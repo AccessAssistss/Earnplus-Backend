@@ -72,11 +72,15 @@ const createContractCombination = asyncHandler(async (req, res) => {
     },
   });
 
+  function isValidDate(date) {
+    return date && !isNaN(new Date(date).getTime());
+  }
+
   await prisma.payoutDate.createMany({
     data: payoutDates.map((date) => ({
       contractCombinationId: combination.id,
-      startDate: new Date(date.startDate),
-      endDate: new Date(date.endDate),
+      startDate: isValidDate(date.startDate) ? new Date(date.startDate) : null,
+      endDate: isValidDate(date.endDate) ? new Date(date.endDate) : null,
     })),
   });
 
@@ -118,10 +122,19 @@ const getContractCombinations = asyncHandler(async (req, res) => {
       employerId,
       contractTypeId,
     },
-    include: {
-      payoutDates: {
-        startDate: true,
-        endDate: true,
+    select: {
+      id: true,
+      uniqueId: true,
+      name: true,
+      paymentFrequency: true,
+      remark: true,
+      createdAt: true,
+      updatedAt: true,
+      include: {
+        PayoutDate: {
+          startDate: true,
+          endDate: true,
+        },
       },
     },
     orderBy: { createdAt: "desc" },
@@ -208,10 +221,15 @@ const getContractRuleBooks = asyncHandler(async (req, res) => {
       isDeleted: false,
       contractCombinationId,
     },
-    include: {
-      contractCombination: {
-        id: true,
-      },
+    select: {
+      id: true,
+      name: true,
+      tenureRule: true,
+      salaryBand: true,
+      designation: true,
+      remark: true,
+      createdAt: true,
+      updatedAt: true,
     },
     orderBy: { createdAt: "desc" },
   });

@@ -7,7 +7,12 @@ const {
   getBasePayrolls,
   createEmployeeHistoricalPayroll,
   getHistoricalPayrolls,
+  bulkUploadEmployeeCurrentPayroll,
+  bulkUploadEmployeeBasePayroll,
+  bulkUploadEmployeeHistoricalPayroll,
 } = require("../../controllers/Employee/payrollController");
+const multer = require("multer");
+const upload = multer({ dest: "uploads/" });
 
 const router = express.Router();
 
@@ -17,6 +22,12 @@ router.post(
   validateToken,
   createEmployeeCurrentPayroll
 );
+router.post(
+  "/bulkUploadEmployeeCurrentPayroll",
+  validateToken,
+  upload.single("file"),
+  bulkUploadEmployeeCurrentPayroll
+);
 router.get("/getCurrentPayrolls", validateToken, getCurrentPayrolls);
 
 // ##########----------Employee Base Payroll Routes----------##########
@@ -25,6 +36,12 @@ router.post(
   validateToken,
   createEmployeeBasePayroll
 );
+router.post(
+  "/bulkUploadEmployeeBasePayroll",
+  validateToken,
+  upload.single("file"),
+  bulkUploadEmployeeBasePayroll
+);
 router.get("/getBasePayrolls", validateToken, getBasePayrolls);
 
 // ##########----------Employee Historical Payroll Routes----------##########
@@ -32,6 +49,12 @@ router.post(
   "/createEmployeeHistoricalPayroll",
   validateToken,
   createEmployeeHistoricalPayroll
+);
+router.post(
+  "/bulkUploadEmployeeHistoricalPayroll",
+  validateToken,
+  upload.single("file"),
+  bulkUploadEmployeeHistoricalPayroll
 );
 router.get("/getHistoricalPayrolls", validateToken, getHistoricalPayrolls);
 
