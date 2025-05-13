@@ -100,3 +100,10 @@ enum UpdateRequestStatus {
     APPROVED
     REJECTED
 }
+
+// ##########----------Query Enums----------##########
+enum Urgency {
+    High
+    Low
+    Medium
+}

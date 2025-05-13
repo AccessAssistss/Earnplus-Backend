@@ -25,6 +25,7 @@ model VariantProduct {
     VariantProductVersion          VariantProductVersion[]
     AssignVariantProductToEmployer AssignVariantProductToEmployer[]
     AllocateProductToEmployer      AllocateProductToEmployer[]
+    queries                        RaiseQuery[]
 }
 
 // ##########----------Varient Product Eligibility Model Starts's here----------##########
