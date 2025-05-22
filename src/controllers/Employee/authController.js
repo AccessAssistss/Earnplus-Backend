@@ -73,10 +73,10 @@ const sendUserOTP = asyncHandler(async (req, res) => {
 
   const isExistingUser = !!employee;
 
-  // const sent = await sendOTP(mobile, otp);
-  // if (!sent) {
-  //   return res.respond(500, "Failed to send OTP");
-  // }
+  const sent = await sendOTP(mobile, otp);
+  if (!sent) {
+    return res.respond(500, "Failed to send OTP");
+  }
 
   if (employee) {
     await prisma.employee.update({

@@ -7,6 +7,7 @@ const {
   verifyPassword,
   generateRandomPassword,
 } = require("../../../utils/authUtils");
+const { generateUniqueEmployerId } = require("../../../utils/uniqueCodeGenerator");
 
 const prisma = new PrismaClient();
 
@@ -185,7 +186,7 @@ const changeAssociatePassword = asyncHandler(async (req, res) => {
 const addEmployerByAssociate = asyncHandler(async (req, res) => {
   const user = req.user;
 
-  const { userType = "EMPLOYER", email, name, mobile, gst, pan } = req.body;
+  const { userType = "EMPLOYER", email, name, mobile, gst, pan, approvalEmail } = req.body;
 
   if (!email || !mobile || !name || !gst || !pan) {
     return res.respond(400, "All fields required!");
@@ -227,31 +228,23 @@ const addEmployerByAssociate = asyncHandler(async (req, res) => {
   });
 
   // ######-----Generate Unique employerId-----#####
-  const latestEmployer = await prisma.employer.findFirst({
-    orderBy: {
-      createdAt: "desc",
-    },
-    select: {
-      employerId: true,
-    },
-    where: {
-      employerId: {
-        startsWith: "EMP-",
-      },
-    },
-  });
-
-  let newEmployerId = "EMP-00001";
-  if (latestEmployer?.employerId) {
-    const currentNumber = parseInt(latestEmployer.employerId.split("-")[1]);
-    const nextNumber = currentNumber + 1;
-    newEmployerId = `EMP-${String(nextNumber).padStart(5, "0")}`;
-  }
+  const newEmployerId = await generateUniqueEmployerId()
 
   const password = generateRandomPassword(8);
 
   const hashed = await hashPassword(password);
 
+  const signedMasterAgreementFile = req.files?.signedMasterAgreement?.[0];
+  const kycDocumentsFile = req.files?.kycDocuments?.[0];
+
+  const signedMasterAgreementUrl = signedMasterAgreementFile
+    ? `/uploads/employer/master_agreement/${signedMasterAgreementFile.filename}`
+    : null;
+
+  const kycDocumentsUrl = kycDocumentsFile
+    ? `/uploads/employer/kyc_documents/${kycDocumentsFile.filename}`
+    : null;
+    
   const employer = await prisma.employer.create({
     data: {
       user: {
@@ -267,6 +260,9 @@ const addEmployerByAssociate = asyncHandler(async (req, res) => {
       gst,
       pan,
       employerId: newEmployerId,
+      signedMasterAgreement: signedMasterAgreementUrl,
+      kycDocuments: kycDocumentsUrl,
+      approvalEmail
     },
   });
 

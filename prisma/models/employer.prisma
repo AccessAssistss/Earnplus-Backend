@@ -1,27 +1,32 @@
 // ##########----------Employer Profile Model Start's here----------##########
 model Employer {
-    id                  String             @id @default(uuid())
-    userId              String?            @unique
-    associateId         String?
-    associateSubAdminId String?
-    employerId          String?            @unique
-    name                String?
-    email               String?
-    password            String
-    mobile              String?
-    gst                 String?
-    pan                 String?
-    cin                 String?
-    legalIdentity       LegalIdentityType?
-    createdAt           DateTime           @default(now())
-    updatedAt           DateTime           @updatedAt
-    isDeleted           Boolean            @default(false)
-    isActive            Boolean            @default(false)
-    gstVerified         Boolean            @default(false)
-    panverified         Boolean            @default(false)
-    user                CustomUser?        @relation(fields: [userId], references: [id], onDelete: Cascade)
-    associate           Associate?         @relation(fields: [associateId], references: [id], onDelete: Cascade)
-    associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
+    id                    String             @id @default(uuid())
+    userId                String?            @unique
+    associateId           String?
+    associateSubAdminId   String?
+    employerId            String?            @unique
+    name                  String?
+    email                 String?
+    password              String
+    mobile                String?
+    gst                   String?
+    pan                   String?
+    cin                   String?
+    signedMasterAgreement String?
+    kycDocuments          String?
+    approvalEmail         String?
+    step                  Int?               @default(1)
+    isPassGenerated       Boolean?           @default(false)
+    legalIdentity         LegalIdentityType?
+    createdAt             DateTime           @default(now())
+    updatedAt             DateTime           @updatedAt
+    isDeleted             Boolean            @default(false)
+    isActive              Boolean            @default(false)
+    gstVerified           Boolean            @default(false)
+    panverified           Boolean            @default(false)
+    user                  CustomUser?        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    associate             Associate?         @relation(fields: [associateId], references: [id], onDelete: Cascade)
+    associateSubAdmin     AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
 
     employees                       Employee[]
     employerBusinessDetails         EmployerBusinessDetails?

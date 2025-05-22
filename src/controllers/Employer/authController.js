@@ -7,6 +7,7 @@ const {
   verifyPassword,
 } = require("../../../utils/authUtils");
 const xlsx = require("xlsx");
+const { generateUniqueEmployeeId } = require("../../../utils/uniqueCodeGenerator");
 
 const prisma = new PrismaClient();
 
@@ -134,10 +135,14 @@ const loginEmployer = asyncHandler(async (req, res) => {
     name: existingEmployer.name,
     email: existingEmployer.email,
     mobile: existingEmployer.mobile,
+    gst: existingEmployer.gst,
+    pan: existingEmployer.pan,
+    step: existingEmployer.step,
+    isPassGenerated: existingEmployer.isPassGenerated,
     userType: existingUser.userType,
   };
 
-  res.respond(200, "Associate Logged In successfully!", {
+  res.respond(200, "Employer Logged In successfully!", {
     user,
     accessToken,
     refreshToken,
@@ -196,6 +201,13 @@ const EmployerProfileCompletion = asyncHandler(async (req, res) => {
     },
   });
 
+  await prisma.employer.update({
+    where: { id: employer.id },
+    data: {
+      step: 2,
+    },
+  });
+
   res.respond(200, "Employer profile completed successfully!", businessDetails);
 });
 
@@ -229,6 +241,13 @@ const addEmployerWorkLocation = asyncHandler(async (req, res) => {
       countryId: country,
       stateId: state,
       districtId: district,
+    },
+  });
+
+  await prisma.employer.update({
+    where: { id: employer.id },
+    data: {
+      step: 3,
     },
   });
 
@@ -293,6 +312,13 @@ const addEmployerCompanyPolicy = asyncHandler(async (req, res) => {
     },
   });
 
+  await prisma.employer.update({
+    where: { id: employer.id },
+    data: {
+      step: 4,
+    },
+  });
+
   res.respond(200, "Company Policy added successfully!", companyPolicy);
 });
 
@@ -301,8 +327,8 @@ const addEmployerContractType = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { contractTypeId } = req.body;
 
-  if (!contractTypeId) {
-    return res.respond(400, "Contract Type is required!");
+  if (!Array.isArray(contractTypeId) || contractTypeId.length === 0) {
+    return res.respond(400, "Contract Type IDs must be a non-empty array!");
   }
 
   const employer = await prisma.employer.findUnique({
@@ -313,14 +339,36 @@ const addEmployerContractType = asyncHandler(async (req, res) => {
     return res.respond(404, "Employer not found!");
   }
 
-  const contractType = await prisma.employerContractType.create({
-    data: {
+  const dataToInsert = contractTypeId.map((id) => ({
+    employerId: employer.id,
+    contractTypeId: id,
+  }));
+
+  await prisma.employerContractType.createMany({
+    data: dataToInsert,
+    skipDuplicates: true,
+  });
+
+  const insertedRecords = await prisma.employerContractType.findMany({
+    where: {
       employerId: employer.id,
-      contractTypeId,
+      contractTypeId: {
+        in: contractTypeId,
+      },
+    },
+    include: {
+      contractType: true,
     },
   });
 
-  res.respond(200, "Contract Type added successfully!", contractType);
+  await prisma.employer.update({
+    where: { id: employer.id },
+    data: {
+      isPassGenerated: true,
+    },
+  });
+
+  res.respond(200, "Contract Types added successfully!", insertedRecords);
 });
 
 // ##########----------Handle Employer Activation----------##########
@@ -362,6 +410,40 @@ const handleEmployerActivationStatus = asyncHandler(async (req, res) => {
     "Employer Activation status changed successfully!",
     isActive
   );
+});
+
+// ##########----------Get All Employer----------##########
+const getAllEmployers = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId },
+  });
+
+  if (!employee) {
+    return res.respond(404, "Employee not found");
+  }
+  
+  const employers = await prisma.employer.findMany({
+    where: {
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      employerId: true,
+      name: true,
+      email: true,
+      mobile: true,
+      createdAt: true,
+      updatedAt: true,
+      isActive: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  res.respond(200, "Employers fetched successfully!", employers);
 });
 
 // ##########----------Employer Profile----------##########
@@ -527,6 +609,7 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
     maritalStatus,
     gender,
     nationality,
+    country,
     panNo,
     aadharNo,
     address,
@@ -536,6 +619,13 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
     employeeId,
     dateJoined,
     jobTitle,
+    department,
+    workLocation,
+    contractType,
+    accName,
+    accNumber,
+    bankName,
+    ifsc,
   } = req.body;
 
   if (
@@ -551,7 +641,9 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
     !pincode ||
     !employeeId ||
     !dateJoined ||
-    !jobTitle
+    !jobTitle ||
+    !workLocation ||
+    !contractType
   ) {
     return res.respond(400, "All fields required!");
   }
@@ -582,52 +674,58 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
     );
   }
 
-  const newUser = await prisma.customUser.create({
-    data: {
-      email,
-      mobile,
-      name: employeeName,
-      userType,
-    },
+  const result = await prisma.$transaction(async (tx) => {
+    const newUser = await tx.customUser.create({
+      data: {
+        email,
+        mobile,
+        name: employeeName,
+        userType,
+      },
+    });
+
+    // ######-----Generate unique employeeId per employer-----#####
+    const newEmployeeId = await generateUniqueEmployeeId(
+      prisma,
+      existingEmployer.employerId,
+      existingEmployer.id
+    );
+
+    const employee = await tx.employee.create({
+      data: {
+        user: {
+          connect: { id: newUser.id },
+        },
+        employer: {
+          connect: { id: existingEmployer.id },
+        },
+        employeeName,
+        mobile,
+        email,
+        dob: new Date(dob),
+        maritalStatus,
+        gender,
+        country: {
+          connect: { id: nationality },
+        },
+        panNo,
+        aadharNo,
+        address,
+        city,
+        state: {
+          connect: { id: state },
+        },
+        pincode,
+        employeeId: newEmployeeId,
+        dateJoined: new Date(dateJoined),
+        jobTitle,
+      },
+    });
+
+    return { newUser, employee };
   });
 
-  // ######-----Generate unique employeeId per employer-----#####
-  const newEmployeeId = await generateUniqueEmployeeId(
-    prisma,
-    existingEmployer.employerId,
-    existingEmployer.id
-  );
-
-  const employee = await prisma.employee.create({
-    data: {
-      user: {
-        connect: { id: newUser.id },
-      },
-      employer: {
-        connect: { id: existingEmployer.id },
-      },
-      employeeName,
-      mobile,
-      email,
-      dob: new Date(dob),
-      maritalStatus,
-      gender,
-      country: {
-        connect: { id: nationality },
-      },
-      panNo,
-      aadharNo,
-      address,
-      city,
-      state: {
-        connect: { id: state },
-      },
-      pincode,
-      employeeId: newEmployeeId,
-      dateJoined: new Date(dateJoined),
-      jobTitle,
-    },
-  });
+  const { employee } = result;
 
   let registeredEmployee = {
     id: employee.id,
@@ -872,6 +970,7 @@ module.exports = {
   addEmployeeByEmployer,
   bulkUploadEmployees,
   getEmployeesByEmployer,
+  getAllEmployers,
   getEmployeeProfile,
   getEmployerContractTypes,
 };

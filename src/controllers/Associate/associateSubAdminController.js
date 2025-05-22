@@ -10,6 +10,7 @@ const {
 
 const { UserType } = require("@prisma/client");
 const { verifyGST, verifyPAN } = require("../../../utils/verificationUtils");
+const { generateUniqueEmployerId } = require("../../../utils/uniqueCodeGenerator");
 
 const prisma = new PrismaClient();
 
@@ -382,26 +383,7 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
   });
 
   // ######-----Generate Unique employerId-----#####
-  const latestEmployer = await prisma.employer.findFirst({
-    orderBy: {
-      createdAt: "desc",
-    },
-    select: {
-      employerId: true,
-    },
-    where: {
-      employerId: {
-        startsWith: "EMP-",
-      },
-    },
-  });
-
-  let newEmployerId = "EMP-00001";
-  if (latestEmployer?.employerId) {
-    const currentNumber = parseInt(latestEmployer.employerId.split("-")[1]);
-    const nextNumber = currentNumber + 1;
-    newEmployerId = `EMP-${String(nextNumber).padStart(5, "0")}`;
-  }
+  const newEmployerId = await generateUniqueEmployerId()
 
   const password = generateRandomPassword(8);
 

@@ -51,8 +51,34 @@ const generateUniqueEmployeeId = async (
   return newEmployeeId;
 };
 
+const generateUniqueEmployerId = async () => {
+  const latestEmployer = await prisma.employer.findFirst({
+    orderBy: {
+      createdAt: "desc",
+    },
+    where: {
+      employerId: {
+        startsWith: "EMP-",
+      },
+    },
+    select: {
+      employerId: true,
+    },
+  });
+
+  let newEmployerId = "EMP-00001";
+  if (latestEmployer?.employerId) {
+    const currentNumber = parseInt(latestEmployer.employerId.split("-")[1]);
+    const nextNumber = currentNumber + 1;
+    newEmployerId = `EMP-${String(nextNumber).padStart(5, "0")}`;
+  }
+
+  return newEmployerId;
+};
+
 module.exports = {
   generateProductCode,
   generateVariantProductCode,
   generateUniqueEmployeeId,
+  generateUniqueEmployerId,
 };

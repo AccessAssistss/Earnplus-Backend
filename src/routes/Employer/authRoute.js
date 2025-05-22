@@ -14,6 +14,7 @@ const {
   getEmployeeProfile,
   getEmployerContractTypes,
   bulkUploadEmployees,
+  getAllEmployers,
 } = require("../../controllers/Employer/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
 const multer = require("multer");
@@ -62,6 +63,7 @@ router.patch(
   validateToken,
   handleEmployerActivationStatus
 );
+router.get("/getAllEmployers", validateToken, getAllEmployers);
 router.get("/getEmployerProfile", validateToken, getEmployerProfile);
 router.delete("/deleteEmployer", validateToken, deleteEmployer);
 
