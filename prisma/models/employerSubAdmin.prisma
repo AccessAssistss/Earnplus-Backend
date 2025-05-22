@@ -1,16 +1,18 @@
 // ####################--------------------Employer Role And Module Model End's here--------------------####################
 model EmployerSubAdmin {
-    id           String        @id @default(uuid())
-    userId       String?       @unique
-    employerId   String?
-    name         String?
-    email        String?       @db.VarChar(100)
-    mobile       String?       @db.VarChar(10)
-    roleId       String?
-    password     String        @db.VarChar(128)
-    createdAt    DateTime      @default(now())
-    updatedAt    DateTime      @updatedAt
-    isDeleted    Boolean       @default(false)
+    id         String   @id @default(uuid())
+    userId     String?  @unique
+    employerId String?
+    name       String?
+    email      String?  @db.VarChar(100)
+    mobile     String?  @db.VarChar(10)
+    roleId     String?
+    password   String   @db.VarChar(128)
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+    isActive   Boolean  @default(true)
+    isDeleted  Boolean  @default(false)
+
     user         CustomUser?   @relation(fields: [userId], references: [id], onDelete: Cascade)
     employer     Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
     employerRole EmployerRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)

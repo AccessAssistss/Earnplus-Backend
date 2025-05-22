@@ -246,6 +246,122 @@ const updateEmployerSubAdmin = asyncHandler(async (req, res) => {
   res.respond(200, "Employer SubAdmin updated successfully!");
 });
 
+// ##########----------Update Employer SubAdmin Active Status----------##########
+const updateEmployerSubAdminActiveStatus = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { subAdminId } = req.params;
+  const { isActive } = req.body;
+
+  const existingSubAdmin = await prisma.employerSubAdmin.findUnique({
+    where: { id: subAdminId },
+    include: { user: true },
+  });
+
+  if (!existingSubAdmin) {
+    return res.respond(404, "Employer SubAdmin not found!");
+  }
+
+  const existingEmployer = await prisma.employer.findFirst({
+    where: { userId },
+  });
+
+  if (!existingEmployer) {
+    return res.respond(400, "Employer not found!");
+  }
+
+  await prisma.employerSubAdmin.update({
+    where: { id: subAdminId },
+    data: {
+      isActive
+    },
+  });
+
+  res.respond(200, "Employer SubAdmin active updated successfully!");
+});
+
+// ##########----------Get All Employer SubAdmins by Employer----------##########
+const getEmployerSubAdminsByEmployer = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { page = 1, limit = 10, search = "" } = req.query;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId, isDeleted: false },
+  });
+
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const whereClause = {
+    employerId: employer.id,
+    isDeleted: false,
+    OR: [
+      { name: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { mobile: { contains: search, mode: "insensitive" } },
+    ],
+  };
+
+  const totalCount = await prisma.employerSubAdmin.count({
+    where: whereClause,
+  });
+
+  const employerSubAdmins = await prisma.employerSubAdmin.findMany({
+    where: whereClause,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          mobile: true,
+        },
+      },
+      employerRole: {
+        select: {
+          id: true,
+          roleName: true,
+        },
+      },
+      employerSubAdminModule: {
+        where: { isDeleted: false },
+        include: {
+          employerModule: {
+            select: {
+              id: true,
+              moduleName: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+    skip: (parseInt(page) - 1) * parseInt(limit),
+    take: parseInt(limit),
+  });
+
+  const result = employerSubAdmins.map((subAdmin) => ({
+    id: subAdmin.id,
+    name: subAdmin.name,
+    email: subAdmin.email,
+    mobile: subAdmin.mobile,
+    role: subAdmin.employerRole,
+    modules: subAdmin.employerSubAdminModule.map((m) => m.employerModule),
+    isActive: subAdmin.isActive,
+    createdAt: subAdmin.createdAt,
+    updatedAt: subAdmin.updatedAt,
+  }));
+
+  res.respond(200, "Employer SubAdmins fetched successfully!", {
+    totalCount,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: result,
+  });
+});
+
 // ##########----------Delete EmployerSubAdmin----------##########
 const deleteEmployerSubAdmin = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -266,9 +382,33 @@ const deleteEmployerSubAdmin = asyncHandler(async (req, res) => {
   res.respond(200, "EmployerSubAdmin deleted successfully!");
 });
 
+// ##########----------Delete Employer SubAdmin By Employer----------##########
+const deleteSubAdminByEmployer = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { subAdminId } = req.params;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId },
+  });
+
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  await prisma.employerSubAdmin.update({
+    where: { id: subAdminId },
+    data: { isDeleted: true },
+  });
+
+  res.respond(200, "Employer SubAdmin deleted successfully!");
+});
+
 module.exports = {
   createEmployerSubAdmin,
   loginEmployerSubAdmin,
   updateEmployerSubAdmin,
+  updateEmployerSubAdminActiveStatus,
+  getEmployerSubAdminsByEmployer,
   deleteEmployerSubAdmin,
+  deleteSubAdminByEmployer
 };

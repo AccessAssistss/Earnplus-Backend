@@ -29,12 +29,12 @@ const generateUniqueEmployeeId = async (
   const latestEmployee = await prisma.employee.findFirst({
     where: {
       employerId: employerInternalId,
-      employeeId: {
+      customEmployeeId: {
         startsWith: `EE-EMP${baseEmployerId}-`,
       },
     },
     orderBy: { createdAt: "desc" },
-    select: { employeeId: true },
+    select: { customEmployeeId: true },
   });
 
   let newEmployeeId = `EE-EMP${baseEmployerId}-0001`;

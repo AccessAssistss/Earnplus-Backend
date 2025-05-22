@@ -5,6 +5,9 @@ const {
   loginEmployerSubAdmin,
   deleteEmployerSubAdmin,
   updateEmployerSubAdmin,
+  getEmployerSubAdminsByEmployer,
+  updateEmployerSubAdminActiveStatus,
+  deleteSubAdminByEmployer,
 } = require("../../controllers/Employer/employerSubAdminController");
 
 const router = express.Router();
@@ -16,6 +19,13 @@ router.put(
   validateToken,
   updateEmployerSubAdmin
 );
+router.patch(
+  "/updateEmployerSubAdminActiveStatus/:subAdminId",
+  validateToken,
+  updateEmployerSubAdminActiveStatus
+);
+router.get("/getEmployerSubAdminsByEmployer", validateToken, getEmployerSubAdminsByEmployer);
 router.delete("/deleteEmployerSubAdmin", validateToken, deleteEmployerSubAdmin);
+router.delete("/deleteSubAdminByEmployer/:subAdminId", validateToken, deleteSubAdminByEmployer);
 
 module.exports = router;

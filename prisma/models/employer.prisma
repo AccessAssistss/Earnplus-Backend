@@ -124,6 +124,7 @@ model EmployerLocationDetails {
     district District? @relation(fields: [districtId], references: [id])
 
     AllocateProductToEmployer AllocateProductToEmployer[]
+    EmploymentDetails         EmploymentDetails[]
 }
 
 // ##########----------Employer Business Details Model Start's here----------##########
@@ -171,6 +172,7 @@ model EmployerContractType {
     contractType ContractType? @relation(fields: [contractTypeId], references: [id], onDelete: Cascade)
 
     EmployerContractTypeCombination EmployerContractTypeCombination[]
+    EmploymentDetails               EmploymentDetails[]
 }
 
 // ##########----------Employer Contract Type Combination Model Start's here----------##########
@@ -191,6 +193,7 @@ model EmployerContractTypeCombination {
 
     PayoutDate                  PayoutDate[]
     ContractCombinationRuleBook ContractCombinationRuleBook[]
+    EmploymentDetails           EmploymentDetails[]
 }
 
 // ##########----------Payout Dates Model Start's here----------##########

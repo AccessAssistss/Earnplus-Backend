@@ -1,31 +1,27 @@
-// ##########----------Employee Profile Model Start's here----------##########
+// ##########----------Employee Profile Model----------##########
 model Employee {
     id                String         @id @default(uuid())
     userId            String?        @unique
     employerId        String?
+    customEmployeeId  String?
+    employeeId        String?
     kycStatus         KycStatus      @default(Pending)
-    paymentCycleId    String?
-    contractTypeId    String?
-    locationTypeId    String?
     employeeName      String?        @db.VarChar(100)
-    employeeId        String?        @db.VarChar(100)
     email             String?        @db.VarChar(100)
     mobile            String         @db.VarChar(10)
     alternativeMobile String?        @db.VarChar(10)
     gender            Gender?
     fcmToken          String?        @db.VarChar(100)
     dob               DateTime?
-    department        String?        @db.VarChar(100)
     designation       String?        @db.VarChar(100)
     nationality       String?        @db.VarChar(100)
     panNo             String?        @db.VarChar(100)
     aadharNo          String?        @db.VarChar(100)
-    jobTitle          String?
     maritalStatus     MaritalStatus?
-    dateJoined        DateTime?
     hireDate          DateTime?
     salaryDate        DateTime?
     address           String?
+    countryId         String?
     city              String?        @db.VarChar(100)
     stateId           String?
     pincode           String?        @db.VarChar(100)
@@ -39,16 +35,54 @@ model Employee {
 
     employer Employer?   @relation(fields: [employerId], references: [id], onDelete: Cascade)
     user     CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
-    country  Country?    @relation(fields: [nationality], references: [id])
+    country  Country?    @relation(fields: [countryId], references: [id])
     state    State?      @relation(fields: [stateId], references: [id])
 
     EmployeeVerification      EmployeeVerification?
+    EmployeeBankDetails       EmployeeBankDetails?
+    EmploymentDetails         EmploymentDetails?
     EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
     EmployeeBasePayroll       EmployeeBasePayroll[]
     EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
 }
 
-// ##########----------Employee Veification Model Start's here----------##########
+// ##########----------Employee Bank Detail Model----------##########
+model EmploymentDetails {
+    id                String    @id @default(uuid())
+    employeeId        String?   @unique
+    partnerEmployeeId String?   @db.VarChar(100)
+    dateJoined        DateTime?
+    jobTitle          String?
+    department        String?   @db.VarChar(100)
+    workLocationId    String?
+    contractTypeId    String?
+    paymentCycleId    String?
+    isDeleted         Boolean   @default(false)
+    createdAt         DateTime  @default(now())
+    updatedAt         DateTime  @updatedAt
+
+    employee                        Employee?                        @relation(fields: [employeeId], references: [id])
+    employerLocationDetails         EmployerLocationDetails?         @relation(fields: [workLocationId], references: [id])
+    employerContractType            EmployerContractType?            @relation(fields: [contractTypeId], references: [id])
+    employerContractTypeCombination EmployerContractTypeCombination? @relation(fields: [paymentCycleId], references: [id])
+}
+
+// ##########----------Employee Bank Detail Model----------##########
+model EmployeeBankDetails {
+    id         String   @id @default(uuid())
+    employeeId String?  @unique
+    accName    String?  @db.VarChar(100)
+    accNumber  String?  @db.VarChar(100)
+    bankName   String?  @db.VarChar(100)
+    ifsc       String?  @db.VarChar(20)
+    isDeleted  Boolean  @default(false)
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    employee Employee? @relation(fields: [employeeId], references: [id])
+}
+
+// ##########----------Employee Veification Model----------##########
 model EmployeeVerification {
     id               String   @id @default(uuid())
     employeeId       String?  @unique

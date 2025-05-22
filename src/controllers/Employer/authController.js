@@ -412,9 +412,10 @@ const handleEmployerActivationStatus = asyncHandler(async (req, res) => {
   );
 });
 
-// ##########----------Get All Employer----------##########
+// ##########----------Get All Employers----------##########
 const getAllEmployers = asyncHandler(async (req, res) => {
   const userId = req.user;
+  const { search = "" } = req.query;
 
   const employee = await prisma.employee.findFirst({
     where: { userId },
@@ -423,10 +424,13 @@ const getAllEmployers = asyncHandler(async (req, res) => {
   if (!employee) {
     return res.respond(404, "Employee not found");
   }
-  
+
   const employers = await prisma.employer.findMany({
     where: {
       isDeleted: false,
+      OR: [
+        { name: { contains: search, mode: "insensitive" } },
+      ],
     },
     select: {
       id: true,
@@ -596,7 +600,7 @@ const deleteEmployer = asyncHandler(async (req, res) => {
   res.respond(200, "Employer deleted successfully!");
 });
 
-// ##########----------Get Employees By Employer----------##########
+// ##########----------Add Employees By Employer----------##########
 const addEmployeeByEmployer = asyncHandler(async (req, res) => {
   const userId = req.user;
 
@@ -622,6 +626,7 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
     department,
     workLocation,
     contractType,
+    paymentCycle,
     accName,
     accNumber,
     bankName,
@@ -705,20 +710,44 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
         dob: new Date(dob),
         maritalStatus,
         gender,
-        country: {
-          connect: { id: nationality },
-        },
+        nationality,
         panNo,
         aadharNo,
         address,
         city,
+        pincode,
+        employeeId,
+        customEmployeeId: newEmployeeId,
+        country: {
+          connect: { id: country },
+        },
         state: {
           connect: { id: state },
         },
-        pincode,
-        employeeId: newEmployeeId,
+      },
+    });
+
+    await tx.employmentDetails.create({
+      data: {
+        employee: { connect: { id: employee.id } },
+        partnerEmployeeId: employeeId,
         dateJoined: new Date(dateJoined),
         jobTitle,
+        department,
+        employerLocationDetails: { connect: { id: workLocation } },
+        employerContractType: { connect: { id: contractType } },
+      },
+    });
+
+    await tx.employeeBankDetails.create({
+      data: {
+        employee: {
+          connect: { id: employee.id },
+        },
+        accName,
+        accNumber,
+        bankName,
+        ifsc,
       },
     });
 
