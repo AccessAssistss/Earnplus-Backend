@@ -64,11 +64,11 @@ const sendUserOTP = asyncHandler(async (req, res) => {
 
   const employee = user
     ? await prisma.employee.findFirst({
-        where: {
-          userId: user.id,
-          OR: [{ mobile }, { alternativeMobile: mobile }],
-        },
-      })
+      where: {
+        userId: user.id,
+        OR: [{ mobile }, { alternativeMobile: mobile }],
+      },
+    })
     : null;
 
   const isExistingUser = !!employee;
@@ -100,11 +100,15 @@ const verifyOTP = asyncHandler(async (req, res) => {
   }
 
   if (mobile === TEST_MOBILE.toString() && otp === STATIC_OTP.toString()) {
-    const user = await prisma.customUser.upsert({
-      where: { mobile },
-      update: {},
-      create: { mobile, userType },
+    let user = await prisma.customUser.findFirst({
+      where: { mobile, userType },
     });
+
+    if (!user) {
+      user = await prisma.customUser.create({
+        data: { mobile, userType },
+      });
+    }
 
     const employee = await prisma.employee.findFirst({
       where: { userId: user.id },

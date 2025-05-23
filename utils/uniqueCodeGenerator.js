@@ -24,28 +24,26 @@ const generateUniqueEmployeeId = async (
   employerId,
   employerInternalId
 ) => {
-  const baseEmployerId = String(employerId).padStart(5, "0");
+   const baseEmployerId = employerId.replace("-", "");
 
   const latestEmployee = await prisma.employee.findFirst({
     where: {
       employerId: employerInternalId,
       customEmployeeId: {
-        startsWith: `EE-EMP${baseEmployerId}-`,
+        startsWith: `EE-${baseEmployerId}-`,
       },
     },
     orderBy: { createdAt: "desc" },
     select: { customEmployeeId: true },
   });
 
-  let newEmployeeId = `EE-EMP${baseEmployerId}-0001`;
-  if (latestEmployee?.employeeId) {
-    const parts = latestEmployee.employeeId.split("-");
-    const lastNumber = parseInt(parts[2]);
+  let newEmployeeId = `EE-${baseEmployerId}-0001`;
+  
+  if (latestEmployee?.customEmployeeId) {
+    const parts = latestEmployee.customEmployeeId.split("-");
+    const lastNumber = parseInt(parts[2], 10);
     const nextNumber = lastNumber + 1;
-    newEmployeeId = `EE-EMP${baseEmployerId}-${String(nextNumber).padStart(
-      4,
-      "0"
-    )}`;
+    newEmployeeId = `EE-${baseEmployerId}-${String(nextNumber).padStart(4, "0")}`;
   }
 
   return newEmployeeId;
