@@ -784,17 +784,21 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
 // ##########----------Bulk Upload Employess From Excel----------##########
 const bulkUploadEmployees = asyncHandler(async (req, res) => {
   const userId = req.user;
-  const { nationality, state } = req.body;
+  const {
+    nationality,
+    state,
+    country,
+    workLocation,
+    contractType,
+    paymentCycle,
+  } = req.body;
 
   if (!req.file || !req.file.path) {
     return res.respond(400, "Please upload a file.");
   }
 
-  if (!nationality || !state) {
-    return res.respond(
-      400,
-      "Nationality and state are required in request body!"
-    );
+  if (!nationality || !state || !country || !workLocation || !contractType) {
+    return res.respond(400, "Nationality, state, country, workLocation, and contractType are required in request body!");
   }
 
   const workbook = xlsx.readFile(req.file.path);
@@ -803,8 +807,6 @@ const bulkUploadEmployees = asyncHandler(async (req, res) => {
 
   const employer = await prisma.employer.findFirst({ where: { userId } });
   if (!employer) return res.respond(404, "Employer not found!");
-
-  const baseEmployerId = String(employer.employerId).padStart(5, "0");
 
   let successCount = 0;
   let errorRows = [];
@@ -823,8 +825,14 @@ const bulkUploadEmployees = asyncHandler(async (req, res) => {
       address,
       city,
       pincode,
+      employeeId,
       dateJoined,
       jobTitle,
+      department,
+      accName,
+      accNumber,
+      bankName,
+      ifsc,
     } = row;
 
     try {
@@ -838,58 +846,84 @@ const bulkUploadEmployees = asyncHandler(async (req, res) => {
         !address ||
         !city ||
         !pincode ||
+        !employeeId ||
         !dateJoined ||
         !jobTitle
       ) {
-        return res.respond(400, "Missing required fields!");
+        return res.respond(400, "Missing required fields in Excel row!");
       }
 
       const existingUser = await prisma.customUser.findFirst({
-        where: { OR: [{ email }, { mobile }] },
+        where: {
+          OR: [{ email, userType: "EMPLOYEE" }, { mobile, userType: "EMPLOYEE" }],
+        },
       });
+
       if (existingUser) {
-        return res.respond(
-          400,
-          "User already exists with given email or mobile!"
-        );
+        return res.respond(400, "User with this mobile number or email already exists!");
       }
 
-      const newUser = await prisma.customUser.create({
-        data: {
-          email,
-          mobile,
-          name: employeeName,
-          userType: "EMPLOYEE",
-        },
-      });
+      await prisma.$transaction(async (tx) => {
+        const newUser = await tx.customUser.create({
+          data: {
+            email,
+            mobile,
+            name: employeeName,
+            userType: "EMPLOYEE",
+          },
+        });
 
-      const newEmployeeId = await generateUniqueEmployeeId(
-        prisma,
-        employer.employerId,
-        employer.id
-      );
+        const newEmployeeId = await generateUniqueEmployeeId(
+          prisma,
+          employer.employerId,
+          employer.id
+        );
 
-      await prisma.employee.create({
-        data: {
-          user: { connect: { id: newUser.id } },
-          employer: { connect: { id: employer.id } },
-          employeeName,
-          mobile,
-          email,
-          dob: new Date(dob),
-          maritalStatus,
-          gender,
-          country: { connect: { id: nationality } },
-          panNo,
-          aadharNo,
-          address,
-          city,
-          state: { connect: { id: state } },
-          pincode,
-          employeeId: newEmployeeId,
-          dateJoined: new Date(dateJoined),
-          jobTitle,
-        },
+        const employee = await tx.employee.create({
+          data: {
+            user: { connect: { id: newUser.id } },
+            employer: { connect: { id: employer.id } },
+            employeeName,
+            mobile,
+            email,
+            dob: new Date(dob),
+            maritalStatus,
+            gender,
+            nationality,
+            panNo,
+            aadharNo,
+            address,
+            city,
+            pincode,
+            employeeId,
+            customEmployeeId: newEmployeeId,
+            country: { connect: { id: country } },
+            state: { connect: { id: state } },
+          },
+        });
+
+        await tx.employmentDetails.create({
+          data: {
+            employee: { connect: { id: employee.id } },
+            partnerEmployeeId: employeeId,
+            dateJoined: new Date(dateJoined),
+            jobTitle,
+            department,
+            employerLocationDetails: { connect: { id: workLocation } },
+            employerContractType: { connect: { id: contractType } },
+            paymentCycle,
+          },
+        });
+
+        await tx.employeeBankDetails.create({
+          data: {
+            employee: { connect: { id: employee.id } },
+            accName,
+            accNumber,
+            bankName,
+            ifsc,
+          },
+        });
       });
 
       successCount++;
@@ -902,7 +936,7 @@ const bulkUploadEmployees = asyncHandler(async (req, res) => {
     }
   }
 
-  res.respond(201, `Bulk upload completed!`, {
+  return res.respond(201, "Bulk upload completed!", {
     successCount,
     failedCount: errorRows.length,
     errors: errorRows,

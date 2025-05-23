@@ -115,7 +115,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
     });
     const isExistingEmployee = !!employee;
 
-    const { accessToken, refreshToken } = generateAccessAndRefreshTokens(
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
       user.id
     );
 

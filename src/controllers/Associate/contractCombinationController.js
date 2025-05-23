@@ -130,8 +130,8 @@ const getContractCombinations = asyncHandler(async (req, res) => {
       remark: true,
       createdAt: true,
       updatedAt: true,
-      include: {
-        PayoutDate: {
+      PayoutDate: {
+        select: {
           startDate: true,
           endDate: true,
         },

@@ -38,7 +38,7 @@ const sendOTP = async (mobile, otp) => {
   const params = {
     method: "SendMessage",
     send_to: mobile,
-    msg: `${otp} is OTP to Login on Earnplus.`,
+    msg: `${otp} is OTP to Login on Agrisarathi.`,
     msg_type: "TEXT",
     userid: process.env.SMS_GATEWAY_USERID,
     auth_scheme: "plain",
