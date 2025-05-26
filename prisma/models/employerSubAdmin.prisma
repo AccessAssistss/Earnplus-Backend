@@ -18,9 +18,6 @@ model EmployerSubAdmin {
     employerRole EmployerRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
     employerSubAdminModule    EmployerSubAdminModule[]
-    EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
-    EmployeeBasePayroll       EmployeeBasePayroll[]
-    EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
 }
 
 // ##########----------Employer Sub-Admin Modules Model Start's here----------##########

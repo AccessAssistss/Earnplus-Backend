@@ -17,16 +17,41 @@ const createEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
     );
   }
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
+  const existingUser = await prisma.customUser.findFirst({
+    where: {
+      id: userId
+    },
   });
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
+  if (!existingUser) {
+    return res.status(400).json({
+      error: "User not found!",
+    });
+  }
+
+  let createdByUserId = userId;
+  let createdByType;
+
+  if (existingUser.userType === "EMPLOYER") {
+    createdByType = "EMPLOYER";
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    createdByType = "EMPLOYERSUBADMIN";
+
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+    });
+
+    if (!employerSubAdmin) {
+      return res.respond(404, "Employer Sub Admin not found!");
+    }
+
+    createdByUserId = employerSubAdmin.id;
+  } else {
+    return res.respond(403, "Unauthorized user type for payroll creation.");
   }
 
   const employee = await prisma.employee.findFirst({
-    where: { employeeId: customEmployeeId },
+    where: { customEmployeeId: customEmployeeId },
   });
 
   if (!employee) {
@@ -46,7 +71,8 @@ const createEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
 
   const createPayroll = await prisma.employeeCurrentPayroll.create({
     data: {
-      createdBy: employerSubAdmin.id,
+      createdByUserId,
+      createdByType,
       employeeId: employee.id,
       customEmployeeId,
       income,
@@ -70,16 +96,37 @@ const bulkUploadEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
     return res.respond(400, "customEmployeeId is required.");
   }
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
+  const existingUser = await prisma.customUser.findUnique({
+    where: { id: userId },
   });
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
+  if (!existingUser) {
+    return res.respond(404, "User not found!");
+  }
+
+  let createdByUserId = userId;
+  let createdByType;
+
+  if (existingUser.userType === "EMPLOYER") {
+    createdByType = "EMPLOYER";
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    createdByType = "EMPLOYER_SUB_ADMIN";
+
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+    });
+
+    if (!employerSubAdmin) {
+      return res.respond(404, "Employer Sub Admin not found!");
+    }
+
+    createdByUserId = employerSubAdmin.id;
+  } else {
+    return res.respond(403, "Unauthorized user type for payroll creation.");
   }
 
   const employee = await prisma.employee.findFirst({
-    where: { employeeId: customEmployeeId },
+    where: { customEmployeeId: customEmployeeId },
   });
 
   if (!employee) {
@@ -91,7 +138,7 @@ const bulkUploadEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
   const data = xlsx.utils.sheet_to_json(sheet);
 
   let successCount = 0;
-  let errorRows = [];
+  const errorRows = [];
 
   for (let i = 0; i < data.length; i++) {
     const row = data[i];
@@ -102,23 +149,24 @@ const bulkUploadEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
         throw new Error("Missing income or date.");
       }
 
-      const existingPayroll = await prisma.employeeCurrentPayroll.findFirst({
+      const payrollExists = await prisma.employeeCurrentPayroll.findFirst({
         where: {
           employeeId: employee.id,
           date: new Date(date),
         },
       });
 
-      if (existingPayroll) {
+      if (payrollExists) {
         throw new Error("Payroll already exists for this date.");
       }
 
       await prisma.employeeCurrentPayroll.create({
         data: {
-          createdBy: employerSubAdmin.id,
+          createdByUserId,
+          createdByType,
           employeeId: employee.id,
           customEmployeeId,
-          income,
+          income: new Prisma.Decimal(income),
           date: new Date(date),
         },
       });
@@ -143,30 +191,80 @@ const bulkUploadEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
 // ##########----------Get Current Payroll----------##########
 const getCurrentPayrolls = asyncHandler(async (req, res) => {
   const userId = req.user;
+  const { search = "", page = 1, limit = 10 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
-    include: {
-      employer: true,
+  const existingUser = await prisma.customUser.findUnique({
+    where: { id: userId },
+  });
+
+  if (!existingUser) {
+    return res.respond(404, "User not found!");
+  }
+
+  let employerId;
+
+  if (existingUser.userType === "EMPLOYER") {
+    const employer = await prisma.employer.findFirst({
+      where: { userId },
+    });
+
+    if (!employer) {
+      return res.respond(404, "Employer not found!");
+    }
+
+    employerId = employer.id;
+
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+      include: {
+        employer: true,
+      },
+    });
+
+    if (!employerSubAdmin || !employerSubAdmin.employer) {
+      return res.respond(404, "Employer Sub Admin or employer not found!");
+    }
+
+    employerId = employerSubAdmin.employer.id;
+
+  } else {
+    return res.respond(403, "Unauthorized user type for fetching payroll.");
+  }
+
+  const searchFilter = {
+    OR: [
+      { employeeName: { contains: search, mode: "insensitive" } },
+      { mobile: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ],
+  };
+
+  const total = await prisma.employee.count({
+    where: {
+      employerId,
+      ...(search ? searchFilter : {}),
     },
   });
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
-  }
-
   const payrolls = await prisma.employee.findMany({
     where: {
-      employerId: employerSubAdmin.employer.id,
+      employerId,
+      ...(search ? searchFilter : {}),
+    },
+    skip,
+    take: parseInt(limit),
+    orderBy: {
+      createdAt: "desc",
     },
     select: {
       id: true,
       employeeId: true,
+      customEmployeeId: true,
       employeeName: true,
       mobile: true,
       email: true,
-      department: true,
-      designation: true,
       EmployeeCurrentPayroll: {
         orderBy: {
           date: "desc",
@@ -181,7 +279,12 @@ const getCurrentPayrolls = asyncHandler(async (req, res) => {
     },
   });
 
-  res.respond(200, "Payroll records fetched successfully.", payrolls);
+  res.respond(200, "Payroll records fetched successfully.", {
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: payrolls,
+  });
 });
 
 // ####################--------------------Base Payroll--------------------####################
@@ -203,16 +306,34 @@ const createEmployeeBasePayroll = asyncHandler(async (req, res) => {
     );
   }
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
-  });
+  const existingUser = await prisma.customUser.findUnique({ where: { id: userId } });
+  if (!existingUser) {
+    return res.respond(404, "User not found!");
+  }
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
+  let createdByUserId = userId;
+  let createdByType;
+
+  if (existingUser.userType === "EMPLOYER") {
+    createdByType = "EMPLOYER";
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    createdByType = "EMPLOYERSUBADMIN";
+
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+    });
+
+    if (!employerSubAdmin) {
+      return res.respond(404, "Employer Sub Admin not found!");
+    }
+
+    createdByUserId = employerSubAdmin.id;
+  } else {
+    return res.respond(403, "Unauthorized user type for payroll creation.");
   }
 
   const employee = await prisma.employee.findFirst({
-    where: { employeeId: customEmployeeId },
+    where: { customEmployeeId: customEmployeeId },
   });
 
   if (!employee) {
@@ -232,7 +353,8 @@ const createEmployeeBasePayroll = asyncHandler(async (req, res) => {
 
   const createPayroll = await prisma.employeeBasePayroll.create({
     data: {
-      createdBy: employerSubAdmin.id,
+      createdByUserId,
+      createdByType,
       employeeId: employee.id,
       customEmployeeId,
       attendance,
@@ -257,16 +379,34 @@ const bulkUploadEmployeeBasePayroll = asyncHandler(async (req, res) => {
     return res.respond(400, "customEmployeeId is required.");
   }
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
-  });
+  const existingUser = await prisma.customUser.findUnique({ where: { id: userId } });
+  if (!existingUser) {
+    return res.respond(404, "User not found!");
+  }
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
+  let createdByUserId = userId;
+  let createdByType;
+
+  if (existingUser.userType === "EMPLOYER") {
+    createdByType = "EMPLOYER";
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    createdByType = "EMPLOYERSUBADMIN";
+
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+    });
+
+    if (!employerSubAdmin) {
+      return res.respond(404, "Employer Sub Admin not found!");
+    }
+
+    createdByUserId = employerSubAdmin.id;
+  } else {
+    return res.respond(403, "Unauthorized user type for payroll creation.");
   }
 
   const employee = await prisma.employee.findFirst({
-    where: { employeeId: customEmployeeId },
+    where: { customEmployeeId: customEmployeeId },
   });
 
   if (!employee) {
@@ -307,7 +447,8 @@ const bulkUploadEmployeeBasePayroll = asyncHandler(async (req, res) => {
 
       await prisma.employeeBasePayroll.create({
         data: {
-          createdBy: employerSubAdmin.id,
+          createdByUserId,
+          createdByType,
           employeeId: employee.id,
           customEmployeeId,
           attendance,
@@ -336,30 +477,75 @@ const bulkUploadEmployeeBasePayroll = asyncHandler(async (req, res) => {
 // ##########----------Get Base Payroll----------##########
 const getBasePayrolls = asyncHandler(async (req, res) => {
   const userId = req.user;
+  const { search = "", page = 1, limit = 10 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
-    include: {
-      employer: true,
+  const existingUser = await prisma.customUser.findUnique({ where: { id: userId } });
+  if (!existingUser) {
+    return res.respond(404, "User not found!");
+  }
+
+  let employerId;
+
+  if (existingUser.userType === "EMPLOYER") {
+    const employer = await prisma.employer.findFirst({
+      where: { userId },
+    });
+
+    if (!employer) {
+      return res.respond(404, "Employer not found!");
+    }
+
+    employerId = employer.id;
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+      include: {
+        employer: true,
+      },
+    });
+
+    if (!employerSubAdmin || !employerSubAdmin.employer) {
+      return res.respond(404, "Employer Sub Admin or employer not found!");
+    }
+
+    employerId = employerSubAdmin.employer.id;
+  } else {
+    return res.respond(403, "Unauthorized user type for fetching payroll.");
+  }
+
+  const searchFilter = {
+    OR: [
+      { employeeName: { contains: search, mode: "insensitive" } },
+      { mobile: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ],
+  };
+
+  const total = await prisma.employee.count({
+    where: {
+      employerId,
+      ...(search ? searchFilter : {}),
     },
   });
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
-  }
-
   const payrolls = await prisma.employee.findMany({
     where: {
-      employerId: employerSubAdmin.employer.id,
+      employerId,
+      ...(search ? searchFilter : {}),
+    },
+    skip,
+    take: parseInt(limit),
+    orderBy: {
+      createdAt: "desc",
     },
     select: {
       id: true,
       employeeId: true,
+      customEmployeeId: true,
       employeeName: true,
       mobile: true,
       email: true,
-      department: true,
-      designation: true,
       EmployeeBasePayroll: {
         orderBy: {
           date: "desc",
@@ -391,16 +577,34 @@ const createEmployeeHistoricalPayroll = asyncHandler(async (req, res) => {
     );
   }
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
-  });
+  const existingUser = await prisma.customUser.findUnique({ where: { id: userId } });
+  if (!existingUser) {
+    return res.respond(404, "User not found!");
+  }
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
+  let createdByUserId = userId;
+  let createdByType;
+
+  if (existingUser.userType === "EMPLOYER") {
+    createdByType = "EMPLOYER";
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    createdByType = "EMPLOYERSUBADMIN";
+
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+    });
+
+    if (!employerSubAdmin) {
+      return res.respond(404, "Employer Sub Admin not found!");
+    }
+
+    createdByUserId = employerSubAdmin.id;
+  } else {
+    return res.respond(403, "Unauthorized user type for payroll creation.");
   }
 
   const employee = await prisma.employee.findFirst({
-    where: { employeeId: customEmployeeId },
+    where: { customEmployeeId: customEmployeeId },
   });
 
   if (!employee) {
@@ -421,7 +625,8 @@ const createEmployeeHistoricalPayroll = asyncHandler(async (req, res) => {
 
   const createPayroll = await prisma.employeeHistoricalPayroll.create({
     data: {
-      createdBy: employerSubAdmin.id,
+      createdByUserId,
+      createdByType,
       employeeId: employee.id,
       customEmployeeId,
       income,
@@ -446,16 +651,34 @@ const bulkUploadEmployeeHistoricalPayroll = asyncHandler(async (req, res) => {
     return res.respond(400, "customEmployeeId is required.");
   }
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
-  });
+  const existingUser = await prisma.customUser.findUnique({ where: { id: userId } });
+  if (!existingUser) {
+    return res.respond(404, "User not found!");
+  }
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
+  let createdByUserId = userId;
+  let createdByType;
+
+  if (existingUser.userType === "EMPLOYER") {
+    createdByType = "EMPLOYER";
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    createdByType = "EMPLOYERSUBADMIN";
+
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+    });
+
+    if (!employerSubAdmin) {
+      return res.respond(404, "Employer Sub Admin not found!");
+    }
+
+    createdByUserId = employerSubAdmin.id;
+  } else {
+    return res.respond(403, "Unauthorized user type for payroll creation.");
   }
 
   const employee = await prisma.employee.findFirst({
-    where: { employeeId: customEmployeeId },
+    where: { customEmployeeId: customEmployeeId },
   });
 
   if (!employee) {
@@ -492,7 +715,8 @@ const bulkUploadEmployeeHistoricalPayroll = asyncHandler(async (req, res) => {
 
       await prisma.employeeHistoricalPayroll.create({
         data: {
-          createdBy: employerSubAdmin.id,
+          createdByUserId,
+          createdByType,
           employeeId: employee.id,
           customEmployeeId,
           income: Number(income),
@@ -521,30 +745,75 @@ const bulkUploadEmployeeHistoricalPayroll = asyncHandler(async (req, res) => {
 // ##########----------Get Base Payroll----------##########
 const getHistoricalPayrolls = asyncHandler(async (req, res) => {
   const userId = req.user;
+  const { search = "", page = 1, limit = 10 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
-    where: { userId },
-    include: {
-      employer: true,
+  const existingUser = await prisma.customUser.findUnique({ where: { id: userId } });
+  if (!existingUser) {
+    return res.respond(404, "User not found!");
+  }
+
+  let employerId;
+
+  if (existingUser.userType === "EMPLOYER") {
+    const employer = await prisma.employer.findFirst({
+      where: { userId },
+    });
+
+    if (!employer) {
+      return res.respond(404, "Employer not found!");
+    }
+
+    employerId = employer.id;
+  } else if (existingUser.userType === "EMPLOYERSUBADMIN") {
+    const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
+      where: { userId },
+      include: {
+        employer: true,
+      },
+    });
+
+    if (!employerSubAdmin || !employerSubAdmin.employer) {
+      return res.respond(404, "Employer Sub Admin or employer not found!");
+    }
+
+    employerId = employerSubAdmin.employer.id;
+  } else {
+    return res.respond(403, "Unauthorized user type for fetching payroll.");
+  }
+
+  const searchFilter = {
+    OR: [
+      { employeeName: { contains: search, mode: "insensitive" } },
+      { mobile: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+    ],
+  };
+
+  const total = await prisma.employee.count({
+    where: {
+      employerId,
+      ...(search ? searchFilter : {}),
     },
   });
 
-  if (!employerSubAdmin) {
-    return res.respond(404, "Employer Sub Admin not found!");
-  }
-
   const payrolls = await prisma.employee.findMany({
     where: {
-      employerId: employerSubAdmin.employer.id,
+      employerId,
+      ...(search ? searchFilter : {}),
+    },
+    skip,
+    take: parseInt(limit),
+    orderBy: {
+      createdAt: "desc",
     },
     select: {
       id: true,
       employeeId: true,
+      customEmployeeId: true,
       employeeName: true,
       mobile: true,
       email: true,
-      department: true,
-      designation: true,
       EmployeeHistoricalPayroll: {
         orderBy: {
           endDate: "desc",
@@ -560,7 +829,12 @@ const getHistoricalPayrolls = asyncHandler(async (req, res) => {
     },
   });
 
-  res.respond(200, "Payroll records fetched successfully.", payrolls);
+  res.respond(200, "Payroll records fetched successfully.", {
+    total,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: payrolls,
+  });
 });
 
 module.exports = {

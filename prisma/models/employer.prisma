@@ -30,7 +30,7 @@ model Employer {
 
     employees                       Employee[]
     employerBusinessDetails         EmployerBusinessDetails?
-    EmployerLocationDetails         EmployerLocationDetails?
+    EmployerLocationDetails         EmployerLocationDetails[]
     EmployerCompanyPolicies         EmployerCompanyPolicies?
     EmployerContractType            EmployerContractType[]
     employerSubAdmin                EmployerSubAdmin[]
@@ -107,7 +107,7 @@ model EmployerBusinessDetails {
 // ##########----------Employer Business Details Model Start's here----------##########
 model EmployerLocationDetails {
     id            String   @id @default(uuid())
-    employerId    String?  @unique
+    employerId    String?
     workspaceName String?
     noOfEmployees Int?
     address       String?

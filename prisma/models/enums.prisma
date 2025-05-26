@@ -107,3 +107,9 @@ enum Urgency {
     Low
     Medium
 }
+
+// ##########----------Payroll Enums----------##########
+enum CreatorType {
+  EMPLOYER
+  EMPLOYERSUBADMIN
+}

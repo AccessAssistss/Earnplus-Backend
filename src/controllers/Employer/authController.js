@@ -187,6 +187,14 @@ const EmployerProfileCompletion = asyncHandler(async (req, res) => {
     return res.respond(404, "Employer not found!");
   }
 
+  const existingBusinessDetails = await prisma.employerBusinessDetails.findUnique({
+    where: { employerId: employer.id },
+  });
+
+  if (existingBusinessDetails) {
+    return res.respond(400, "Employer business details already exist!");
+  }
+
   const businessDetails = await prisma.employerBusinessDetails.create({
     data: {
       employerId: employer.id,
@@ -294,6 +302,14 @@ const addEmployerCompanyPolicy = asyncHandler(async (req, res) => {
 
   if (!employer) {
     return res.respond(404, "Employer not found!");
+  }
+
+  const existingCompanyPolicy = await prisma.employerCompanyPolicies.findUnique({
+    where: { employerId: employer.id },
+  });
+
+  if (existingCompanyPolicy) {
+    return res.respond(400, "Employer company policy already exist!");
   }
 
   const companyPolicy = await prisma.employerCompanyPolicies.create({
@@ -559,25 +575,6 @@ const getEmployerProfile = asyncHandler(async (req, res) => {
   }
 
   res.respond(200, "Employer fetched successfully!", employer);
-});
-
-// ##########----------Get Employer Contract Types----------##########
-const getEmployerContractTypes = asyncHandler(async (req, res) => {
-  const { employerId } = req.query;
-
-  const contractTypes = await prisma.employerContractType.findMany({
-    where: {
-      isDeleted: false,
-      employerId,
-    },
-    orderBy: { createdAt: "desc" },
-  });
-
-  res.respond(
-    200,
-    "Employer Contract Types fetched successfully!",
-    contractTypes
-  );
 });
 
 // ##########----------Delete Employer----------##########
@@ -947,35 +944,67 @@ const bulkUploadEmployees = asyncHandler(async (req, res) => {
 const getEmployeesByEmployer = asyncHandler(async (req, res) => {
   const userId = req.user;
 
+  const { search = "", page = 1, limit = 10 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
   const employer = await prisma.employer.findFirst({
     where: { userId },
-    include: {
-      employees: {
+    select: { id: true },
+  });
+
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const searchFilter = {
+    OR: [
+      { employeeName: { contains: search, mode: "insensitive" } },
+      { customEmployeeId: { contains: search, mode: "insensitive" } },
+      { email: { contains: search, mode: "insensitive" } },
+      { mobile: { contains: search, mode: "insensitive" } },
+    ],
+  };
+
+  const totalEmployees = await prisma.employee.count({
+    where: {
+      employerId: employer.id,
+      ...(search ? searchFilter : {}),
+    },
+  });
+
+  const employees = await prisma.employee.findMany({
+    where: {
+      employerId: employer.id,
+      ...(search ? searchFilter : {}),
+    },
+    skip,
+    take: parseInt(limit),
+    select: {
+      id: true,
+      employeeName: true,
+      employeeId: true,
+      customEmployeeId: true,
+      email: true,
+      mobile: true,
+      alternativeMobile: true,
+      gender: true,
+      dob: true,
+      maritalStatus: true,
+      address: true,
+      city: true,
+      nationality: true,
+      stateId: true,
+      pincode: true,
+      EmploymentDetails: {
         select: {
-          id: true,
-          employeeName: true,
-          employeeId: true,
-          customEmployeeId: true,
-          email: true,
-          mobile: true,
-          alternativeMobile: true,
-          gender: true,
-          dob: true,
-          maritalStatus: true,
-          address: true,
-          city: true,
-          nationality: true,
-          stateId: true,
-          pincode: true,
-          EmploymentDetails: {
-            select: {
-              department: true,
-              jobTitle: true,
-              dateJoined: true,
-            },
-          },
+          department: true,
+          jobTitle: true,
+          dateJoined: true,
         },
       },
+    },
+    orderBy: {
+      createdAt: "desc",
     },
   });
 
@@ -983,7 +1012,12 @@ const getEmployeesByEmployer = asyncHandler(async (req, res) => {
     return res.respond(404, "Employer not found!");
   }
 
-  res.respond(200, "Employers fetched successfully!", employer.employees);
+  res.respond(200, "Employers fetched successfully!", {
+    total: totalEmployees,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: employees,
+  });
 });
 
 // ##########----------Get Employees Profile----------##########
@@ -1038,6 +1072,108 @@ const getEmployeeProfile = asyncHandler(async (req, res) => {
   res.respond(200, "Employers fetched successfully!", employee);
 });
 
+// ##########----------Get Employer Contract Types----------##########
+const getEmployerContractTypes = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId, isDeleted: false },
+  });
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const contractTypes = await prisma.employerContractType.findMany({
+    where: {
+      isDeleted: false,
+      employerId: employer.id,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.respond(
+    200,
+    `Employer Contract Types fetched successfully!`,
+    contractTypes
+  );
+});
+
+// ##########----------Get Employer Contract Combinations----------##########
+const getEmployerContractCombinations = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { contractTypeId } = req.query;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId, isDeleted: false },
+  });
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const employerContractType = await prisma.employerContractType.findFirst({
+    where: { id: contractTypeId, isDeleted: false },
+  });
+  if (!employerContractType) {
+    return res.respond(404, "Employer Contract Type not found!");
+  }
+
+  const combinations = await prisma.employerContractTypeCombination.findMany({
+    where: {
+      isDeleted: false,
+      employerId: employer.id,
+      contractTypeId,
+    },
+    select: {
+      id: true,
+      uniqueId: true,
+      name: true,
+      paymentFrequency: true,
+      remark: true,
+      createdAt: true,
+      updatedAt: true,
+      PayoutDate: {
+        select: {
+          startDate: true,
+          endDate: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.respond(200, "Employer Contract Combinations fetched successfully!", combinations);
+});
+
+// ##########----------Get Employer Work Locations----------##########
+const getEmployerWorkLocations = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId, isDeleted: false },
+  });
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const workLocations = await prisma.employerLocationDetails.findMany({
+    where: {
+      isDeleted: false,
+      employerId: employer.id,
+    },
+    select: {
+      id: true,
+      workspaceName: true,
+      noOfEmployees: true,
+      address: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.respond(200, "Employer Work Locations fetched successfully!", workLocations);
+});
+
 module.exports = {
   registerEmployer,
   loginEmployer,
@@ -1054,4 +1190,6 @@ module.exports = {
   getAllEmployers,
   getEmployeeProfile,
   getEmployerContractTypes,
+  getEmployerContractCombinations,
+  getEmployerWorkLocations,
 };
