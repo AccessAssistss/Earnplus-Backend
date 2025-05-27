@@ -14,6 +14,7 @@ const {
   verifyAadhaarOtp,
   verifyPAN,
   checkPanStatus,
+  verifySelfie,
 } = require("../../../utils/verificationUtils");
 
 const prisma = new PrismaClient();
@@ -408,6 +409,64 @@ const checkEmployeePanStatus = asyncHandler(async (req, res) => {
   }
 });
 
+const faceLiveliness = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { verification_id } = req.body;
+
+  const user = await prisma.customUser.findUnique({ where: { id: userId } });
+  if (!user) return res.respond(404, "User not found");
+
+  const selfieFile = req.files?.selfie?.[0];
+  if (!selfieUrl) return res.respond(400, "Selfie is required");
+
+  const selfieUrl = selfieFile
+    ? `/uploads/employer/master_agreement/${selfieFile.filename}`
+    : null;
+
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId: user.id },
+  });
+
+  if (!employee) {
+    return res.respond(404, "Employee not found");
+  }
+
+  const verification = await prisma.employeeVerification.findFirst({
+    where: { employeeId: employee.id },
+  });
+
+  if (!verification) {
+    return res.respond(404, "Verification record not found");
+  }
+
+  await prisma.employeeVerification.update({
+    where: { id: verification.id },
+    data: {
+      selfie: selfieUrl,
+    },
+  });
+
+  const finalVerificationId = verification_id || uuidv4();
+
+  const responseData = await verifySelfie(selfieUrl, finalVerificationId);
+
+  if (responseData.success) {
+    await prisma.employeeVerification.update({
+      where: { id: verification.id },
+      data: { isSelfieVerified: true },
+    });
+
+    return res.respond(200, "Selfie verified successfully!", responseData);
+  } else {
+    return res.respond(
+      responseData.status_code,
+      "Face verification failed!",
+      responseData.error
+    );
+  }
+});
+
 module.exports = {
   sendUserOTP,
   verifyOTP,
@@ -416,4 +475,5 @@ module.exports = {
   handleVerifyAadhaarOtp,
   verifyEmployeePan,
   checkEmployeePanStatus,
+  faceLiveliness
 };

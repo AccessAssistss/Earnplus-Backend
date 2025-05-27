@@ -1,5 +1,7 @@
 const axios = require("axios");
 const { createLogger } = require("../utils/logger");
+const fs = require("fs");
+const FormData = require("form-data");
 
 const verificationLogger = createLogger("verification");
 
@@ -305,10 +307,78 @@ const verifyGST = async (gstin, name = null) => {
   }
 };
 
+// ##########----------Verify Selfie with Cashfree----------##########
+const verifySelfie = async (selfie, finalVerificationId) => {
+  const url = `${BASE_URL}/verification/liveliness`;
+
+  const formData = new FormData();
+  formData.append("image", fs.createReadStream(selfie));
+  formData.append("verification_id", finalVerificationId);
+  formData.append("strict_check", "true");
+
+  const headers = {
+    ...formData.getHeaders(),
+    "x-client-id": CASHFREE_CLIENT_ID,
+    "x-client-secret": CASHFREE_CLIENT_SECRET,
+  };
+
+  try {
+    verificationLogger.info("Initiating Selfie verification request", {
+      url,
+      verification_id: finalVerificationId,
+    });
+
+    const response = await axios.post(url, formData, {
+      headers,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+    });
+    const data = response.data;
+
+    verificationLogger.info("Received Selfie verification response", { data });
+
+    if (response.status === 200 && data.valid) {
+      verificationLogger.info("Selfie verified successfully");
+
+      return {
+        success: true,
+        reference_id: data.reference_id,
+        verification_id: finalVerificationId,
+        status: data.status,
+        liveliness: data.liveliness,
+        score: data.score,
+      };
+    } else {
+      verificationLogger.warn("Selfie verification failed", {
+        status: response.status,
+        message: data.message,
+      });
+
+      return {
+        success: false,
+        error: data.message || "Selfie verification failed",
+        status_code: response.status,
+      };
+    }
+  } catch (error) {
+    verificationLogger.error("Error during Selfie verification", {
+      error: error.message,
+      response: error.response?.data,
+    });
+
+    return {
+      success: false,
+      error: error.response?.data?.message || error.message,
+      status_code: error.response?.status || 500,
+    };
+  }
+};
+
 module.exports = {
   sendAadhaarOtp,
   verifyAadhaarOtp,
   verifyPAN,
   checkPanStatus,
   verifyGST,
+  verifySelfie
 };

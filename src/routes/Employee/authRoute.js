@@ -7,6 +7,7 @@ const {
   handleVerifyAadhaarOtp,
   verifyEmployeePan,
   checkEmployeePanStatus,
+  faceLiveliness,
 } = require("../../controllers/Employee/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -22,6 +23,7 @@ router.patch(
 router.patch("/handleSendAadhaarOtp", validateToken, handleSendAadhaarOtp);
 router.patch("/handleVerifyAadhaarOtp", validateToken, handleVerifyAadhaarOtp);
 router.patch("/verifyEmployeePan", validateToken, verifyEmployeePan);
+router.patch("/faceLiveliness", validateToken, faceLiveliness);
 router.patch("/checkEmployeePanStatus", validateToken, checkEmployeePanStatus);
 
 module.exports = router;

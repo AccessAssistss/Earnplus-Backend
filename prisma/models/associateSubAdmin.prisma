@@ -24,6 +24,7 @@ model AssociateSubAdmin {
     AllocateProductToEmployer   AllocateProductToEmployer[]
     queriesRaised               RaiseQuery[]                 @relation("RaisedByRelation")
     queriesAssigned             RaiseQuery[]                 @relation("AssignedToRelation")
+    KYCRequest                  KYCRequest[]
 }
 
 // ##########----------Sub-Admin Modules Model Start's here----------##########
