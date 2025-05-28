@@ -39,6 +39,7 @@ model Employer {
     AssignVariantProductToEmployer  AssignVariantProductToEmployer[]
     EmployerContractTypeCombination EmployerContractTypeCombination[]
     AllocateProductToEmployer       AllocateProductToEmployer[]
+    EmployerActivityLogs            EmployerActivityLogs[]
 }
 
 // ####################--------------------Employer Role And Module Model Start's here--------------------####################
@@ -247,4 +248,18 @@ model AllocateProductToEmployer {
     employerManager AssociateSubAdmin?           @relation(fields: [emplyerManagerId], references: [id], onDelete: Cascade)
     productVariant  VariantProduct?              @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
     workLocation    EmployerLocationDetails?     @relation(fields: [workLocationId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employer Activity Logs----------##########
+model EmployerActivityLogs {
+    id                 String   @id @default(uuid())
+    employerId         String?
+    employerSubAdminId String?
+    action             String?
+    deviceIp           String?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+
+    employer         Employer?         @relation(fields: [employerId], references: [id], onDelete: Cascade)
+    employerSubAdmin EmployerSubAdmin? @relation(fields: [employerSubAdminId], references: [id], onDelete: Cascade)
 }

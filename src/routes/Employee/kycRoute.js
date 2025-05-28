@@ -1,6 +1,6 @@
 const express = require("express");
 const validateToken = require("../../../middleware/validateJwtToken");
-const { createKYCRequest, getKYCRequest, updateKYCStatus, updateKYCStatus, getKYCDetails } = require("../../controllers/Employee/kycController");
+const { createKYCRequest, getKYCRequest, updateKYCStatus, getKYCDetails } = require("../../controllers/Employee/kycController");
 
 const router = express.Router();
 

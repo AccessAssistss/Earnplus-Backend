@@ -177,6 +177,16 @@ const loginEmployerSubAdmin = asyncHandler(async (req, res) => {
     userType: existingUser.userType,
   };
 
+  // #####-----Log EmployerSubAdmin Login Activity-----#####
+  await prisma.employerActivityLogs.create({
+    data: {
+      employerSubAdminId: existingEmployerSubAdmin.id,
+      employerId: existingEmployerSubAdmin.employerId,
+      action: `${existingEmployerSubAdmin.name} logged In!`,
+      deviceIp: req.ip,
+    },
+  });
+
   res.respond(200, "Associate Logged In successfully!", {
     user,
     accessToken,

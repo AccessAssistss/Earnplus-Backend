@@ -1174,6 +1174,91 @@ const getEmployerWorkLocations = asyncHandler(async (req, res) => {
   res.respond(200, "Employer Work Locations fetched successfully!", workLocations);
 });
 
+// ##########----------Get Counts For Employer----------##########
+const getCountsForEmployer = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const totalEmployees = await prisma.employee.count({
+    where: { employerId: employer.id },
+  });
+
+  res.respond(200, "Employee count fetched successfully!", {
+    totalEmployees,
+  });
+});
+
+// ##########----------Get Employer Activity Logs----------##########
+const getEmployerActivityLogs = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const { page = 1, limit = 10 } = req.query;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const totalLogs = await prisma.employerActivityLogs.count({
+    where: {
+      employerId: employer.id,
+      createdAt: {
+        gte: sevenDaysAgo,
+      },
+    },
+  });
+
+  const logs = await prisma.employerActivityLogs.findMany({
+    where: {
+      employerId: employer.id,
+      createdAt: {
+        gte: sevenDaysAgo,
+      },
+    },
+    skip,
+    take: parseInt(limit),
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      action: true,
+      deviceIp: true,
+      createdAt: true,
+      employerSubAdmin: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  res.respond(200, "Activity logs (last 7 days) fetched successfully!", {
+    total: totalLogs,
+    page: parseInt(page),
+    limit: parseInt(limit),
+    data: logs,
+  });
+});
+
 module.exports = {
   registerEmployer,
   loginEmployer,
@@ -1192,4 +1277,6 @@ module.exports = {
   getEmployerContractTypes,
   getEmployerContractCombinations,
   getEmployerWorkLocations,
+  getCountsForEmployer,
+  getEmployerActivityLogs
 };

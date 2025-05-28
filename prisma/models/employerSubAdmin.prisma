@@ -17,7 +17,8 @@ model EmployerSubAdmin {
     employer     Employer?     @relation(fields: [employerId], references: [id], onDelete: Cascade)
     employerRole EmployerRole? @relation(fields: [roleId], references: [id], onDelete: Cascade)
 
-    employerSubAdminModule    EmployerSubAdminModule[]
+    employerSubAdminModule EmployerSubAdminModule[]
+    EmployerActivityLogs   EmployerActivityLogs[]
 }
 
 // ##########----------Employer Sub-Admin Modules Model Start's here----------##########
