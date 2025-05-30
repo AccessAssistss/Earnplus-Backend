@@ -113,3 +113,9 @@ enum CreatorType {
   EMPLOYER
   EMPLOYERSUBADMIN
 }
+
+// ##########----------Ticket Enums----------##########
+enum Ticket {
+  PENDING
+  RESOLVED
+}

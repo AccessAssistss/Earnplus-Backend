@@ -1193,6 +1193,33 @@ const getCountsForEmployer = asyncHandler(async (req, res) => {
 
   res.respond(200, "Employee count fetched successfully!", {
     totalEmployees,
+    totalApplicants: 0,
+  });
+});
+
+// ##########----------Get Employer Analytics----------##########
+const getEmployerAnalytics = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const totalEmployees = await prisma.employee.count({
+    where: { employerId: employer.id },
+  });
+
+  res.respond(200, "Employer Analytics fetched successfully!", {
+    totalEmployees,
+    totalEmployeesUsingEWA: 0,
+    avgIncome: 0,
+    avgEWAAmountDisbursed: 0,
+    employeesWithDeliquencies: 10,
   });
 });
 
@@ -1259,6 +1286,124 @@ const getEmployerActivityLogs = asyncHandler(async (req, res) => {
   });
 });
 
+// ##########----------Create Employer Ticket----------##########
+const createEmployerTicket = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const { title, description } = req.body;
+
+  if (!title || !description) {
+    return res.respond(400, "Title and description are required!");
+  }
+
+  const newTicket = await prisma.employerTicket.create({
+    data: {
+      employerId: employer.id,
+      title,
+      description,
+    },
+  });
+
+  res.respond(201, "Employer ticket created successfully!", newTicket);
+});
+
+// ##########----------Get Tickets By Employer----------##########
+const getTicketsByEmployer = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employer = await prisma.employer.findFirst({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!employer) {
+    return res.respond(404, "Employer not found!");
+  }
+
+  const tickets = await prisma.employerTicket.findMany({
+    where: { employerId: employer.id },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.respond(200, "Employer tickets fetched successfully!", tickets);
+});
+
+// ##########----------Get Employer Tickets----------##########
+const getEmployerTickets = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!associateSubAdmin) {
+    return res.respond(404, "Associate SubAdmin not found!");
+  }
+
+  const tickets = await prisma.employerTicket.findMany({
+    orderBy: { createdAt: "desc" },
+    include: {
+      employer: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          mobile: true,
+        },
+      },
+    },
+  });
+
+  res.respond(200, "Tickets fetched successfully!", tickets);
+});
+
+// ##########----------Update Employer Ticket Status----------##########
+const updateEmployerTicketStatus = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { ticketId } = req.params;
+  const { status } = req.body;
+
+  if (!status) {
+    return res.respond(400, "Status is required!");
+  }
+
+  const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
+    where: { userId },
+    select: { id: true },
+  });
+
+  if (!associateSubAdmin) {
+    return res.respond(404, "Associate SubAdmin not found!");
+  }
+
+  const existingTicket = await prisma.employerTicket.findFirst({
+    where: {
+      id: ticketId,
+    },
+  });
+
+  if (!existingTicket) {
+    return res.respond(404, "Ticket not found!");
+  }
+
+  const updatedTicket = await prisma.employerTicket.update({
+    where: { id: ticketId },
+    data: { status },
+  });
+
+  res.respond(200, "Ticket status updated successfully!", updatedTicket);
+});
+
 module.exports = {
   registerEmployer,
   loginEmployer,
@@ -1278,5 +1423,10 @@ module.exports = {
   getEmployerContractCombinations,
   getEmployerWorkLocations,
   getCountsForEmployer,
-  getEmployerActivityLogs
+  getEmployerActivityLogs,
+  createEmployerTicket,
+  getEmployerTickets,
+  updateEmployerTicketStatus,
+  getTicketsByEmployer,
+  getEmployerAnalytics
 };

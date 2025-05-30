@@ -40,6 +40,7 @@ model Employer {
     EmployerContractTypeCombination EmployerContractTypeCombination[]
     AllocateProductToEmployer       AllocateProductToEmployer[]
     EmployerActivityLogs            EmployerActivityLogs[]
+    EmployerTicket                  EmployerTicket[]
 }
 
 // ####################--------------------Employer Role And Module Model Start's here--------------------####################
@@ -262,4 +263,17 @@ model EmployerActivityLogs {
 
     employer         Employer?         @relation(fields: [employerId], references: [id], onDelete: Cascade)
     employerSubAdmin EmployerSubAdmin? @relation(fields: [employerSubAdminId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employer Tickets----------##########
+model EmployerTicket {
+    id          String   @id @default(uuid())
+    employerId  String?
+    title       String?
+    status      Ticket?  @default(PENDING)
+    description String?
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    employer Employer? @relation(fields: [employerId], references: [id], onDelete: Cascade)
 }

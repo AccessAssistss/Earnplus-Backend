@@ -19,6 +19,12 @@ const {
   getEmployerWorkLocations,
   getCountsForEmployer,
   getEmployerActivityLogs,
+  createEmployerTicket,
+  getEmployerTickets,
+  updateEmployerTicketStatus,
+  getTicketsByEmployer,
+  getEmployerAnalytics,
+  
 } = require("../../controllers/Employer/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
 const multer = require("multer");
@@ -72,7 +78,12 @@ router.get("/getEmployerProfile", validateToken, getEmployerProfile);
 router.get("/getEmployerContractCombinations", validateToken, getEmployerContractCombinations);
 router.get("/getEmployerWorkLocations", validateToken, getEmployerWorkLocations);
 router.get("/getCountsForEmployer", validateToken, getCountsForEmployer);
+router.get("/getEmployerAnalytics", validateToken, getEmployerAnalytics);
 router.get("/getEmployerActivityLogs", validateToken, getEmployerActivityLogs);
+router.post("/createEmployerTicket", validateToken, createEmployerTicket);
+router.get("/getEmployerTickets", validateToken, getEmployerTickets);
+router.get("/getTicketsByEmployer", validateToken, getTicketsByEmployer);
+router.patch("/updateEmployerTicketStatus", validateToken, updateEmployerTicketStatus);
 router.delete("/deleteEmployer", validateToken, deleteEmployer);
 
 module.exports = router;
