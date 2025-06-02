@@ -140,7 +140,7 @@ const loginAssociate = asyncHandler(async (req, res) => {
     userType: existingUser.userType,
   };
 
-  res.respond(201, "Associate Logged In successfully!", {
+  res.respond(200, "Associate Logged In successfully!", {
     user,
     accessToken,
     refreshToken,
