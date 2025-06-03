@@ -316,6 +316,64 @@ const deactivateAssociateSubAdmin = asyncHandler(async (req, res) => {
   res.respond(200, "Associate SubAdmin deactivated successfully.", isActive);
 });
 
+// ##########----------Get Associate SubAdmins----------##########
+const getAssociateSubAdmins = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const {
+    page = 1,
+    limit = 10,
+    search = '',
+  } = req.query;
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId },
+  });
+
+  if (!associate) {
+    return res.respond(404, "Associate not found!");
+  }
+
+  const where = {
+    OR: search
+      ? [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { mobile: { contains: search, mode: 'insensitive' } },
+      ]
+      : undefined,
+  };
+
+  const [subAdmins, totalCount] = await Promise.all([
+    prisma.associateSubAdmin.findMany({
+      where,
+      skip,
+      take: Number(limit),
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        mobile: true,
+        isActive: true,
+        isDeleted: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    }),
+    prisma.associateSubAdmin.count({ where }),
+  ]);
+
+  res.respond(200, "Sub-admins fetched successfully!", {
+    total: totalCount,
+    page: Number(page),
+    limit: Number(limit),
+    totalPages: Math.ceil(totalCount / limit),
+    data: subAdmins,
+  },);
+});
+
 // ##########----------Add Employer By Associate SubAdmin----------##########
 const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
   const user = req.user;
@@ -656,14 +714,36 @@ const deleteAssociateSubAdmin = asyncHandler(async (req, res) => {
   res.respond(200, "SubAdmin deleted successfully!");
 });
 
+// ##########----------Delete Associate SubAdmin By Associate----------##########
+const deleteAssociateSubAdminByAssociate = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+
+  const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
+    where: { id: userId },
+  });
+
+  if (!associateSubAdmin) {
+    return res.respond(404, "SubAdmin not found!");
+  }
+
+  await prisma.associateSubAdmin.update({
+    where: { id: associateSubAdmin.id },
+    data: { isDeleted: true },
+  });
+
+  res.respond(200, "SubAdmin deleted successfully!");
+});
+
 module.exports = {
   createAssociateSubAdmin,
   loginAssociateSubAdmin,
   updateAssociateSubAdmin,
   deactivateAssociateSubAdmin,
+  getAssociateSubAdmins,
   addEmployerByAssociateSubAdmin,
   verifyGSTAndPAN,
   getEmployersByAssociateSubAdmin,
   getEmployerDetails,
   deleteAssociateSubAdmin,
+  deleteAssociateSubAdminByAssociate
 };

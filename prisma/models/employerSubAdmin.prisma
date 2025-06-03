@@ -1,4 +1,4 @@
-// ####################--------------------Employer Role And Module Model End's here--------------------####################
+// ####################--------------------Employer Sub-Admin Model--------------------####################
 model EmployerSubAdmin {
     id         String   @id @default(uuid())
     userId     String?  @unique
@@ -21,7 +21,7 @@ model EmployerSubAdmin {
     EmployerActivityLogs   EmployerActivityLogs[]
 }
 
-// ##########----------Employer Sub-Admin Modules Model Start's here----------##########
+// ##########----------Employer Sub-Admin Modules Model----------##########
 model EmployerSubAdminModule {
     id                 String   @id @default(uuid())
     employerSubAdminId String?

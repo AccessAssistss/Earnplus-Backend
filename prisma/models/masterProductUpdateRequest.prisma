@@ -24,6 +24,7 @@ model MasterProductUpdateRequest {
     masterProductCustomerUpdates    MasterProductCustomerTypeUpdate[]
 }
 
+// ##########----------Master Core Update Model----------##########
 model MasterProductCoreUpdate {
     id                 String      @id @default(uuid())
     updateRequestId    String      @unique

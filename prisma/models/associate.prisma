@@ -1,4 +1,4 @@
-// ##########----------Associate Profile Model Start's here----------##########
+// ##########----------Associate Profile Model----------##########
 model Associate {
   id        String      @id @default(uuid())
   userId    String?     @unique
@@ -18,7 +18,7 @@ model Associate {
   Module            Module[]
 }
 
-// ####################--------------------Role And Module Model Start's here--------------------####################
+// ####################--------------------Role And Module Model--------------------####################
 model Role {
   id          String     @id @default(uuid())
   associateId String?

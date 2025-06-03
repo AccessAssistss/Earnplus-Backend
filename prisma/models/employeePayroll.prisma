@@ -1,4 +1,4 @@
-// ##########----------Employee Current Payroll Model Start's here----------##########
+// ##########----------Employee Current Payroll Model----------##########
 model EmployeeCurrentPayroll {
     id               String      @id @default(uuid())
     createdByUserId  String
@@ -13,7 +13,7 @@ model EmployeeCurrentPayroll {
     employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Employee Base Payroll Model Start's here----------##########
+// ##########----------Employee Base Payroll Model----------##########
 model EmployeeBasePayroll {
     id               String   @id @default(uuid())
     createdByUserId  String
@@ -29,7 +29,7 @@ model EmployeeBasePayroll {
     employee         Employee?         @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Employee Histroical Payroll Model Start's here----------##########
+// ##########----------Employee Histroical Payroll Model----------##########
 model EmployeeHistoricalPayroll {
     id               String   @id @default(uuid())
     createdByUserId  String

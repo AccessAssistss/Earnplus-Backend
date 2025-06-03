@@ -1,4 +1,4 @@
-// ##########----------Employer Profile Model Start's here----------##########
+// ##########----------Employer Profile Model----------##########
 model Employer {
     id                    String             @id @default(uuid())
     userId                String?            @unique
@@ -43,7 +43,7 @@ model Employer {
     EmployerTicket                  EmployerTicket[]
 }
 
-// ####################--------------------Employer Role And Module Model Start's here--------------------####################
+// ####################--------------------Employer Role And Module Model--------------------####################
 model EmployerRole {
     id         String    @id @default(uuid())
     employerId String?
@@ -71,7 +71,7 @@ model EmployerModule {
     EmployerSubAdminModule EmployerSubAdminModule[]
 }
 
-// ####################--------------------Industry Type Model Start's here--------------------####################
+// ####################--------------------Industry Type Model--------------------####################
 model IndustryType {
     id        String   @id @default(uuid())
     name      String?
@@ -82,7 +82,7 @@ model IndustryType {
     EmployerBusinessDetails EmployerBusinessDetails[]
 }
 
-// ##########----------Employer Business Details Model Start's here----------##########
+// ##########----------Employer Business Details Model----------##########
 model EmployerBusinessDetails {
     id                  String    @id @default(uuid())
     employerId          String?   @unique
@@ -106,7 +106,7 @@ model EmployerBusinessDetails {
     industryType IndustryType? @relation(fields: [industryTypeId], references: [id])
 }
 
-// ##########----------Employer Business Details Model Start's here----------##########
+// ##########----------Employer Business Details Model----------##########
 model EmployerLocationDetails {
     id            String   @id @default(uuid())
     employerId    String?
@@ -129,7 +129,7 @@ model EmployerLocationDetails {
     EmploymentDetails         EmploymentDetails[]
 }
 
-// ##########----------Employer Business Details Model Start's here----------##########
+// ##########----------Employer Business Details Model----------##########
 model EmployerCompanyPolicies {
     id                 String   @id @default(uuid())
     employerId         String?  @unique
@@ -150,7 +150,7 @@ model EmployerCompanyPolicies {
     employer Employer? @relation(fields: [employerId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Contract Type Model Start's here----------##########
+// ##########----------Contract Type Model----------##########
 model ContractType {
     id                   String                 @id @default(uuid())
     name                 String?
@@ -161,7 +161,7 @@ model ContractType {
     EmployerContractType EmployerContractType[]
 }
 
-// ##########----------Employer Contract Type Model Start's here----------##########
+// ##########----------Employer Contract Type Model----------##########
 model EmployerContractType {
     id             String   @id @default(uuid())
     employerId     String?
@@ -177,7 +177,7 @@ model EmployerContractType {
     EmploymentDetails               EmploymentDetails[]
 }
 
-// ##########----------Employer Contract Type Combination Model Start's here----------##########
+// ##########----------Employer Contract Type Combination Model----------##########
 model EmployerContractTypeCombination {
     id               String   @id @default(uuid())
     employerId       String?
@@ -198,7 +198,7 @@ model EmployerContractTypeCombination {
     EmploymentDetails           EmploymentDetails[]
 }
 
-// ##########----------Payout Dates Model Start's here----------##########
+// ##########----------Payout Dates Model----------##########
 model PayoutDate {
     id                    String    @id @default(uuid())
     contractCombinationId String?
@@ -211,7 +211,7 @@ model PayoutDate {
     contractCombination EmployerContractTypeCombination? @relation(fields: [contractCombinationId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Payout Dates Model Start's here----------##########
+// ##########----------Payout Dates Model----------##########
 model ContractCombinationRuleBook {
     id                    String   @id @default(uuid())
     contractCombinationId String?
@@ -231,7 +231,7 @@ model ContractCombinationRuleBook {
     @@unique([contractCombinationId, name])
 }
 
-// ##########----------Allocate Product To Employer Model Start's here----------##########
+// ##########----------Allocate Product To Employer Model----------##########
 model AllocateProductToEmployer {
     id               String   @id @default(uuid())
     employerId       String?

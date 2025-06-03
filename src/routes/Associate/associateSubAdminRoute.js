@@ -9,6 +9,8 @@ const {
   createAssociateSubAdmin,
   updateAssociateSubAdmin,
   deactivateAssociateSubAdmin,
+  getAssociateSubAdmins,
+  deleteAssociateSubAdminByAssociate,
 } = require("../../controllers/Associate/associateSubAdminController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -25,6 +27,11 @@ router.patch(
   "/deactivateAssociateSubAdmin/:subAdminId",
   validateToken,
   deactivateAssociateSubAdmin
+);
+router.get(
+  "/getAssociateSubAdmins",
+  validateToken,
+  getAssociateSubAdmins
 );
 router.post(
   "/addEmployerByAssociateSubAdmin",
@@ -46,6 +53,10 @@ router.delete(
   "/deleteAssociateSubAdmin",
   validateToken,
   deleteAssociateSubAdmin
+);
+router.delete(
+  "/deleteAssociateSubAdminByAssociate",
+  deleteAssociateSubAdminByAssociate
 );
 
 module.exports = router;

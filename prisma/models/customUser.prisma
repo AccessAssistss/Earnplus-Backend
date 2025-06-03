@@ -1,4 +1,4 @@
-// ####################--------------------Custom User Model Start's here--------------------####################
+// ####################--------------------Custom User Model--------------------####################
 model CustomUser {
     id                String   @id @default(uuid())
     email             String?  @unique
@@ -16,7 +16,7 @@ model CustomUser {
     associateSubAdmin AssociateSubAdmin?
 }
 
-// ####################--------------------Country, State and District Model Start's here--------------------####################
+// ####################--------------------Country, State and District Model--------------------####################
 // ####################--------------------Country Model--------------------####################
 model Country {
     id          String   @id @default(uuid())

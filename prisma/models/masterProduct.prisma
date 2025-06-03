@@ -76,7 +76,7 @@ model MasterProduct {
     MasterProductVersion            MasterProductVersion[]
 }
 
-// ##########----------Master Product Purpose Model Starts's here----------##########
+// ##########----------Master Product Purpose Model----------##########
 model MasterProductPurpose {
     id              String @id @default(uuid())
     masterProductId String
@@ -86,7 +86,7 @@ model MasterProductPurpose {
     productPurpose ProductPurpose @relation(fields: [purposeId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Common UseCase Model Starts's here----------##########
+// ##########----------Master Product Common UseCase Model----------##########
 model MasterProductCommonUseCase {
     id              String @id @default(uuid())
     masterProductId String
@@ -96,7 +96,7 @@ model MasterProductCommonUseCase {
     commonuseCase CommonUseCase @relation(fields: [commonuseCaseId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Customer Type Model Starts's here----------##########
+// ##########----------Master Product Customer Type Model----------##########
 model MasterProductCustomerType {
     id              String @id @default(uuid())
     masterProductId String

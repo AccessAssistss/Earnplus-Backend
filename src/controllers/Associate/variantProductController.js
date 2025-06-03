@@ -15,7 +15,6 @@ const createVariantProduct = asyncHandler(async (req, res) => {
     variantType,
     remark,
     productType,
-
     eligibility,
     feeStructure,
     withdrawLogic,

@@ -1,4 +1,4 @@
-// ##########----------Sub-Admin Profile Model Start's here----------##########
+// ##########----------Sub-Admin Profile Model----------##########
 model AssociateSubAdmin {
     id          String      @id @default(uuid())
     userId      String?     @unique
@@ -27,7 +27,7 @@ model AssociateSubAdmin {
     KYCRequest                  KYCRequest[]
 }
 
-// ##########----------Sub-Admin Modules Model Start's here----------##########
+// ##########----------Sub-Admin Modules Model----------##########
 model AssociateSubAdminModule {
     id                  String             @id @default(uuid())
     associateSubAdminId String?
@@ -39,7 +39,7 @@ model AssociateSubAdminModule {
     module              Module?            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Query Category Model Start's here----------##########
+// ##########----------Query Category Model----------##########
 model QueryCategory {
     id        String   @id @default(uuid())
     name      String?
@@ -51,7 +51,7 @@ model QueryCategory {
     queries          RaiseQuery[]
 }
 
-// ##########----------Query Sub-Category Model Start's here----------##########
+// ##########----------Query Sub-Category Model----------##########
 model QuerySubCategory {
     id              String   @id @default(uuid())
     queryCategoryId String?
@@ -66,7 +66,7 @@ model QuerySubCategory {
     queries RaiseQuery[]
 }
 
-// ##########----------Query Model Start's here----------##########
+// ##########----------Query Model----------##########
 model RaiseQuery {
     id            String             @id @default(uuid())
     raisedById    String?

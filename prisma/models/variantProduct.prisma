@@ -1,4 +1,4 @@
-// ##########----------Varient Product Model Starts's here----------##########
+// ##########----------Varient Product Model----------##########
 model VariantProduct {
     id               String      @id @default(uuid())
     masterProductId  String
@@ -28,7 +28,7 @@ model VariantProduct {
     queries                        RaiseQuery[]
 }
 
-// ##########----------Varient Product Eligibility Model Starts's here----------##########
+// ##########----------Varient Product Eligibility Model----------##########
 model VariantProductEligibility {
     id                String            @id @default(uuid())
     varientProductId  String            @unique
