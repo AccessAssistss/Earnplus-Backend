@@ -1,5 +1,5 @@
 # === Load environment variables ===
-source /home/aman/Sourabh/Nodejs/Earnplus/.env
+source /root/Earnplus-Backend/.env
 
 # === Delete .sql files older than 7 days ===
 find "$BACKUP_DIR" -type f -name "*.sql" -mtime +7 -exec rm -f {} \;

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # === Load environment variables ===
-source /home/aman/Sourabh/Nodejs/Earnplus/.env
+source /root/Earnplus-Backend/.env
 
 # === Timestamped filename ===
 TIMESTAMP=$(date +"%Y%m%d_%H%M")
@@ -23,4 +23,4 @@ pg_dump -U "$PGUSER" "$PGDATABASE" > "$FULL_PATH"
 echo "Backup completed: $FULL_PATH"
 
 # === Run cleanup script (optional) ===
-/home/aman/Sourabh/Nodejs/Earnplus/dbScripts/cleanupOldBackups.sh
+/root/Earnplus-Backend/dbScripts/cleanupOldBackups.sh
