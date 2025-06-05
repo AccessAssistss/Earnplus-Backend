@@ -42,4 +42,4 @@ uploads/
 prisma/schema.prisma
 
 # Backup files (your DB dumps)
-/home/aman/Sourabh/Nodejs/Earnplus/dbBackup/
+/root/Earnplus-Backend/dbBackup
