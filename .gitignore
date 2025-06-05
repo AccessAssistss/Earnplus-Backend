@@ -40,3 +40,6 @@ coverage/
 # Optional: ignore uploads (if storing locally)
 uploads/
 prisma/schema.prisma
+
+# Backup files (your DB dumps)
+/home/aman/Sourabh/Nodejs/Earnplus/dbBackup/
