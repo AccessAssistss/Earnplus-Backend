@@ -9,31 +9,30 @@ const createMasterProduct = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
     productCategoryId,
-    productType,
     productName,
     productDescription,
-    loanStructure,
-    feeStructure,
-    securityCompliance,
-    disbursementRules,
-    performance,
+    productCode,
+    loanTypeId,
+    deliveryChannelId,
+    partnerId,
+    financialTerms,
+    eligibilityCriteria,
+    creditBureauConfig,
+    financialStatements,
+    behavioralData,
+    riskScoring,
     purposeIds = [],
-    commonUseCaseIds = [],
-    customerTypeIds = [],
+    segments = []
   } = req.body;
 
   if (
     !productName ||
     !productCategoryId ||
-    !productType ||
-    !loanStructure ||
-    !feeStructure ||
-    !securityCompliance ||
-    !disbursementRules ||
-    !performance ||
-    purposeIds.length === 0 ||
-    commonUseCaseIds.length === 0 ||
-    customerTypeIds.length === 0
+    !productCode ||
+    !loanTypeId ||
+    !deliveryChannelId ||
+    !partnerId ||
+    purposeIds.length === 0
   ) {
     return res.respond(400, "All fields are required, including associations.");
   }
@@ -59,7 +58,7 @@ const createMasterProduct = asyncHandler(async (req, res) => {
   }
 
   const existingCode = await prisma.masterProduct.findFirst({
-    where: { productCode: generatedCode },
+    where: { productId: generatedCode },
   });
   if (existingCode) {
     return res.respond(
@@ -71,43 +70,105 @@ const createMasterProduct = asyncHandler(async (req, res) => {
   const result = await prisma.$transaction(async (tx) => {
     const product = await tx.masterProduct.create({
       data: {
-        productManagerId: productManager.id,
-        versionId: 1,
         productCategoryId,
-        productType,
         productName,
-        productCode: generatedCode,
+        productId: generatedCode,
+        productCode,
         productDescription,
+        loanTypeId,
+        deliveryChannelId,
+        partnerId,
+        versionId,
 
-        MasterProductLoanStructure: {
-          create: loanStructure,
-        },
-        MasterProductFeeStructure: {
-          create: feeStructure,
-        },
-        MasterProductSecurityCompliance: {
-          create: securityCompliance,
-        },
-        MasterProductDisbursementRules: {
-          create: disbursementRules,
-        },
-        MasterProductPerformance: {
-          create: performance,
-        },
         MasterProductPurpose: {
-          create: purposeIds.map((id) => ({
-            productPurpose: { connect: { id } },
+          create: purposes?.map((purposeId) => ({
+            purposeId,
           })),
         },
-        MasterProductCommonUseCase: {
-          create: commonUseCaseIds.map((id) => ({
-            commonuseCase: { connect: { id } },
+        MasterProductSegment: {
+          create: segments?.map((segmentId) => ({
+            segmentId,
           })),
         },
-        MasterProductCustomerType: {
-          create: customerTypeIds.map((id) => ({
-            customerType: { connect: { id } },
-          })),
+
+        financialTerms: financialTerms && {
+          create: {
+            ...financialTerms,
+            FinancialDisbursementMode: {
+              create: disbursementModes?.map((disbursementId) => ({
+                disbursementId,
+              })),
+            },
+            FinancialRepaymentMode: {
+              create: repaymentModes?.map((repaymentId) => ({
+                repaymentId,
+              })),
+            },
+          },
+        },
+
+        eligibilityCriteria: eligibilityCriteria && {
+          create: {
+            ...eligibilityCriteria,
+            minDocumentsRequired: {
+              create: eligibilityCriteria.documents?.map((documentId) => ({
+                documentId,
+              })),
+            },
+            documentSubmissionModes: {
+              set: eligibilityCriteria.documentSubmissionModes || [],
+            },
+            documentVerificationModes: {
+              set: eligibilityCriteria.documentVerificationModes || [],
+            },
+            employmentTypesAllowed: {
+              create: eligibilityCriteria.employmentTypes?.map((employmentId) => ({
+                employmentId,
+              })),
+            },
+          },
+        },
+
+        creditBureauConfig: creditBureauConfig && {
+          create: creditBureauConfig,
+        },
+
+        financialStatements: financialStatements && {
+          create: financialStatements,
+        },
+
+        behavioralData: behavioralData && {
+          create: behavioralData,
+        },
+
+        riskScoring: riskScoring && {
+          create: {
+            ...riskScoring,
+            internalScoreVars: {
+              create: internalScoreVars?.map((scoreId) => ({
+                scoreId,
+              })),
+            },
+            externalScoreInputs: {
+              create: externalScoreInputs?.map((externalId) => ({
+                externalId,
+              })),
+            },
+          },
+        },
+
+        Collateral: collateralData && {
+          create: {
+            ...collateralData,
+            collateralDocs: {
+              create: collateralData.doc?.map((docId) => ({
+                docId,
+              })),
+            },
+            guarantorIncomeProofTypes: {
+              set: collateralData.guarantorIncomeProofTypes || [],
+            },
+          },
         },
       },
     });

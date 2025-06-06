@@ -155,7 +155,6 @@ model MasterProductCommonUseCaseUpdate {
     commonUseCaseId String
 
     updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-    commonUseCase CommonUseCase              @relation(fields: [commonUseCaseId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Customer Type Update Model----------##########
@@ -165,5 +164,4 @@ model MasterProductCustomerTypeUpdate {
     customerTypeId  String
 
     updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-    customerType  CustomerType               @relation(fields: [customerTypeId], references: [id], onDelete: Cascade)
 }

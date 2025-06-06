@@ -28,15 +28,19 @@ model ProductSegment {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
+
+    MasterProductSegment MasterProductSegment[]
 }
 
-// ##########----------Product Segment Model----------##########
+// ##########----------Loan Type Model----------##########
 model LoanType {
     id        String   @id @default(uuid())
     name      String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
+
+    MasterProduct MasterProduct[]
 }
 
 // ##########----------Product Partner Model----------##########
@@ -46,58 +50,46 @@ model ProductPartner {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
-}
 
-// ##########----------Product Common UseCase Model----------##########
-model CommonUseCase {
-    id                                String                             @id @default(uuid())
-    name                              String?                            @db.VarChar(100)
-    createdAt                         DateTime                           @default(now())
-    updatedAt                         DateTime                           @updatedAt
-    isDeleted                         Boolean                            @default(false)
-    MasterProductCommonUseCase        MasterProductCommonUseCase[]
-    masterProductCommonUseCaseUpdates MasterProductCommonUseCaseUpdate[]
-}
-
-// ##########----------Target Customer Type Model----------##########
-model CustomerType {
-    id                               String                            @id @default(uuid())
-    name                             String?                           @db.VarChar(100)
-    createdAt                        DateTime                          @default(now())
-    updatedAt                        DateTime                          @updatedAt
-    isDeleted                        Boolean                           @default(false)
-    MasterProductCustomerType        MasterProductCustomerType[]
-    masterProductCustomerTypeUpdates MasterProductCustomerTypeUpdate[]
+    MasterProduct MasterProduct[]
 }
 
 // ##########----------Master Product Model----------##########
 model MasterProduct {
-    id                 String      @id @default(uuid())
+    id                 String          @id @default(uuid())
     productManagerId   String?
     productCategoryId  String?
-    productType        ProductType
+    productName        String?         @db.VarChar(100)
+    productId          String?         @db.VarChar(100)
+    productCode        String?         @db.VarChar(100)
+    productDescription String?         @db.VarChar(100)
     versionId          Int
-    productName        String?     @db.VarChar(100)
-    productCode        String?     @db.VarChar(100)
-    productDescription String?     @db.VarChar(100)
-    createdAt          DateTime    @default(now())
-    updatedAt          DateTime    @updatedAt
-    isDeleted          Boolean     @default(false)
+    loanTypeId         String
+    deliveryChannel    DeliveryChannel
+    partnerId          String?
+    status             ProductStatus
+    createdAt          DateTime        @default(now())
+    updatedAt          DateTime        @updatedAt
+    isDeleted          Boolean         @default(false)
 
     productCategory ProductCategory?   @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
     productManager  AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
+    loanType        LoanType?          @relation(fields: [loanTypeId], references: [id], onDelete: Cascade)
+    productPartner  ProductPartner?    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 
-    MasterProductLoanStructure      MasterProductLoanStructure?
-    MasterProductFeeStructure       MasterProductFeeStructure?
-    MasterProductSecurityCompliance MasterProductSecurityCompliance?
-    MasterProductDisbursementRules  MasterProductDisbursementRules?
-    MasterProductPerformance        MasterProductPerformance?
-    MasterProductPurpose            MasterProductPurpose[]
-    MasterProductCommonUseCase      MasterProductCommonUseCase[]
-    MasterProductCustomerType       MasterProductCustomerType[]
-    VariantProduct                  VariantProduct[]
-    MasterProductUpdateRequest      MasterProductUpdateRequest[]
-    MasterProductVersion            MasterProductVersion[]
+    financialTerms      FinancialTerms?
+    eligibilityCriteria EligibilityCriteria?
+    creditBureauConfig  CreditBureauConfig?
+    financialStatements FinancialStatements?
+    behavioralData      BehavioralData?
+    riskScoring         RiskScoring?
+    Collateral          Collateral?
+
+    MasterProductPurpose       MasterProductPurpose[]
+    VariantProduct             VariantProduct[]
+    MasterProductUpdateRequest MasterProductUpdateRequest[]
+    MasterProductVersion       MasterProductVersion[]
+    MasterProductSegment       MasterProductSegment[]
 }
 
 // ##########----------Master Product Purpose Model----------##########
@@ -110,128 +102,289 @@ model MasterProductPurpose {
     productPurpose ProductPurpose @relation(fields: [purposeId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Common UseCase Model----------##########
-model MasterProductCommonUseCase {
+// ##########----------Master Product Segment Model----------##########
+model MasterProductSegment {
     id              String @id @default(uuid())
     masterProductId String
-    commonuseCaseId String
+    segmentId       String
 
-    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-    commonuseCase CommonUseCase @relation(fields: [commonuseCaseId], references: [id], onDelete: Cascade)
+    masterProduct  MasterProduct  @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    productSegment ProductSegment @relation(fields: [segmentId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Master Product Customer Type Model----------##########
-model MasterProductCustomerType {
-    id              String @id @default(uuid())
-    masterProductId String
-    customerTypeId  String
+// ##########----------Disbursement Mode Model----------##########
+model DisbursementMode {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
 
-    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-    customerType  CustomerType  @relation(fields: [customerTypeId], references: [id], onDelete: Cascade)
+    FinancialDisbursementMode FinancialDisbursementMode[]
 }
 
-// ##########----------Master Product Loan Structure Model----------##########
-model MasterProductLoanStructure {
-    id                          String       @id @default(uuid())
-    masterProductId             String       @unique
-    minLoanAmount               Int?
-    maxLoanAmount               Int?
-    tenureType                  TenureType
-    tenureUnit                  TenureUnit
-    minTenure                   Int?
-    maxTenure                   Int?
-    allowedTenureValues         String?      @db.VarChar(50)
-    defaultTenure               String?      @db.VarChar(50)
-    isTenureBasedOnPaymentCycle Boolean?
-    tenureCalcLogic             String?      @db.VarChar(50)
-    allowRepaymentOverride      Boolean?
-    interestType                InterestType
-    interestRate                Int?
-    gracePeriod                 Int?
-    penalInterestRate           Int?
-    moratoriumPeriod            Int?
-    repaymentMethod             String?      @db.VarChar(50)
-    latePaymentFee              Int?
-    prePaymentAllowed           Boolean?
-    paymentCharges              Int?
-    lockinPeriod                Int?
-    createdAt                   DateTime     @default(now())
-    updatedAt                   DateTime     @updatedAt
-    isDeleted                   Boolean      @default(false)
+// ##########----------Repayment Mode Model----------##########
+model RepaymentModes {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
 
-    masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    FinancialRepaymentMode FinancialRepaymentMode[]
+}
+
+model FinancialTerms {
+    id                  String       @id @default(uuid())
+    masterProductId     String       @unique
+    minLoanAmount       Int
+    maxLoanAmount       Int
+    minTenureMonths     Int
+    maxTenureMonths     Int
+    interestRateType    InterestType
+    interestRateMin     Float
+    interestRateMax     Float
+    processingFeeType   FeeType
+    processingFeeValue  Float
+    latePaymentFeeType  FeeType
+    latePaymentFeeValue Float
+    prepaymentAllowed   Boolean
+    prepaymentFeeType   FeeType
+    prepaymentFeeValue  Float
+    emiFrequency        EMIFrequency
+
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+
+    FinancialDisbursementMode FinancialDisbursementMode[]
+    FinancialRepaymentMode    FinancialRepaymentMode[]
+}
+
+// ##########----------Financial Disbursement Mode Model----------##########
+model FinancialDisbursementMode {
+    id             String @id @default(uuid())
+    financialId    String
+    disbursementId String
+
+    FinancialTerms   FinancialTerms   @relation(fields: [financialId], references: [id], onDelete: Cascade)
+    disbursementMode DisbursementMode @relation(fields: [disbursementId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Financial Repayment Mode Model----------##########
+model FinancialRepaymentMode {
+    id          String @id @default(uuid())
+    financialId String
+    repaymentId String
+
+    FinancialTerms FinancialTerms @relation(fields: [financialId], references: [id], onDelete: Cascade)
+    RepaymentModes RepaymentModes @relation(fields: [repaymentId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employment Type Model----------##########
+model EmploymentType {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    EligibilityEmploymentType EligibilityEmploymentType[]
+}
+
+// ##########----------Document Model----------##########
+model Document {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    EligibilityDocument EligibilityDocument[]
 }
 
 // ##########----------Master Product Fee Structure Model----------##########
-model MasterProductFeeStructure {
-    id                   String   @id @default(uuid())
-    masterProductId      String   @unique
-    processingFee        Int?
-    processingFeeGst     Int?
-    setupFee             Int?
-    setupFeeGst          Int?
-    subscriptionOption   Boolean?
-    perTransactionFee    Int?
-    perTransactionFeeGst Int?
-    insuranceCharge      Int?
-    insuranceChargeGst   Int?
-    otherCharges         Int?
-    otherChargesGst      Int?
-    createdAt            DateTime @default(now())
-    updatedAt            DateTime @updatedAt
-    isDeleted            Boolean  @default(false)
+model EligibilityCriteria {
+    id                        String                      @id @default(uuid())
+    masterProductId           String                      @unique
+    minAge                    Int
+    maxAge                    Int
+    minMonthlyIncome          Int
+    minBusinessVintage        Int
+    minBureauScore            Int
+    bureauType                BureauType
+    blacklistFlags            BlacklistFlag[]
+    minDocumentsRequired      EligibilityDocument[]
+    documentSubmissionModes   SubmissionMode[]
+    documentVerificationModes VerificationMode[]
+    employmentTypesAllowed    EligibilityEmploymentType[]
 
-    masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Eligibility Employment Model----------##########
+model EligibilityEmploymentType {
+    id            String @id @default(uuid())
+    eligibilityId String
+    employmentId  String
+
+    EligibilityCriteria EligibilityCriteria @relation(fields: [eligibilityId], references: [id], onDelete: Cascade)
+    EmploymentType      EmploymentType      @relation(fields: [employmentId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Eligibility Document Model----------##########
+model EligibilityDocument {
+    id            String @id @default(uuid())
+    eligibilityId String
+    documentId    String
+
+    EligibilityCriteria EligibilityCriteria @relation(fields: [eligibilityId], references: [id], onDelete: Cascade)
+    Document            Document            @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Security Compliance Model----------##########
-model MasterProductSecurityCompliance {
-    id                    String                @id @default(uuid())
-    masterProductId       String                @unique
-    collateralRequired    Boolean?
-    collateralType        CollateralType?
-    kycRequired           Boolean?
-    coBorrowerRequired    Boolean?
-    insuranceBundeled     Boolean?
-    creditBureauMandatory Boolean?
-    minCibil              Int?
-    concentFormat         ConcentCaptureFormat?
-    defaultReporting      Int?
-    riskCategory          RiskCategory?
-    createdAt             DateTime              @default(now())
-    updatedAt             DateTime              @updatedAt
-    isDeleted             Boolean               @default(false)
+model CreditBureauConfig {
+    id                      String            @id @default(uuid())
+    masterProductId         String            @unique
+    creditBureauSources     BureauType[]
+    minScoreRequired        Int
+    maxActiveLoans          Int
+    maxCreditUtilization    Float
+    enquiriesLast6Months    Int
+    loanDelinquencyAllowed  DelinquencyOption
+    bureauDataFreshnessDays Int
+    customBureauFlags       BlacklistFlag[]
+    scoreDecayTolerance     Int
 
-    masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
 }
 
-// ##########----------Master Product Disbursement Rule Model----------##########
-model MasterProductDisbursementRules {
-    id                String             @id @default(uuid())
-    masterProductId   String             @unique
-    disbursementMode  DisbursementModes?
-    varientAllowed    Boolean?
-    apiEnabledProduct Boolean?
-    createdAt         DateTime           @default(now())
-    updatedAt         DateTime           @updatedAt
-    isDeleted         Boolean            @default(false)
+// ##########----------Master Product Financial Statement Model----------##########
+model FinancialStatements {
+    id                     String                  @id @default(uuid())
+    masterProductId        String                  @unique
+    minMonthlyCredit       Int
+    minAverageBalance      Int
+    salaryCreditPattern    SalaryPattern
+    bouncesLast3Months     Int
+    netIncomeRecognition   IncomeRecognitionMethod
+    cashDepositsCapPercent Float
+    statementSources       StatementSource[]
+    accountTypes           AccountType[]
+    pdfParsingRequired     Boolean
 
-    masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
 }
 
 // ##########----------Master Product Performance Model----------##########
-model MasterProductPerformance {
-    id                          String   @id @default(uuid())
-    masterProductId             String   @unique
-    monitoringType              String?
-    delinquencyTriggerThreshold String?
-    portfolioCap                Int?
-    reviewCycle                 String?
-    createdAt                   DateTime @default(now())
-    updatedAt                   DateTime @updatedAt
-    isDeleted                   Boolean  @default(false)
+model BehavioralData {
+    id                         String             @id @default(uuid())
+    masterProductId            String             @unique
+    salaryRegularityThreshold  Int
+    spendingConsistencyPercent Float
+    upiSpendToIncomeRatio      Float
+    billPaymentHistory         BillPaymentHistory
+    digitalFootprintRequired   Boolean
+    locationConsistencyKm      Int
+    repeatBorrowerBehavior     BorrowerBehavior
 
-    masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+}
+
+// ##########----------Score Variable Model----------##########
+model ScoreVariable {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    RiskScoreVariable RiskScoreVariable[]
+}
+
+// ##########----------External Score Model----------##########
+model ExternalScore {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    RiskExternalScore RiskExternalScore[]
+}
+
+model RiskScoring {
+    id                  String              @id @default(uuid())
+    masterProductId     String              @unique
+    internalScoreVars   RiskScoreVariable[]
+    externalScoreInputs RiskExternalScore[]
+    riskCategoryMapping Int
+    maxDTI              Int
+    maxLTV              Int
+    coBorrowerRequired  Boolean             @default(false)
+
+    MasterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+}
+
+// ##########----------Risk Score Variable Model----------##########
+model RiskScoreVariable {
+    id            String @id @default(uuid())
+    riskScoringId String
+    scoreId       String
+
+    RiskScoring   RiskScoring   @relation(fields: [riskScoringId], references: [id], onDelete: Cascade)
+    ScoreVariable ScoreVariable @relation(fields: [scoreId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Risk External Score Model----------##########
+model RiskExternalScore {
+    id            String @id @default(uuid())
+    riskScoringId String
+    externalId    String
+
+    RiskScoring   RiskScoring   @relation(fields: [riskScoringId], references: [id], onDelete: Cascade)
+    ExternalScore ExternalScore @relation(fields: [externalId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Ownership Document Model----------##########
+model OwnershipDocument {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    CollateralDocument CollateralDocument[]
+}
+
+model Collateral {
+    id                          String                       @id @default(uuid())
+    masterProductId             String                       @unique
+    collateralType              CollateralType
+    collateralValue             Int
+    collateralValuationDate     DateTime
+    collateralDocs              CollateralDocument[]
+    collateralOwnerName         String
+    ownershipVerified           OwnershipVerificationStatus
+    guarantorRequired           Boolean
+    guarantorName               String?
+    guarantorRelationship       GuarantorRelationship?
+    guarantorPAN                String?                      @db.VarChar(10)
+    guarantorCreditBureau       CreditBureau?
+    guarantorCreditScore        Int?
+    guarantorMonthlyIncome      Int?
+    guarantorIncomeProofTypes   IncomeProofType[]
+    guarantorVerificationStatus GuarantorVerificationStatus?
+
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+}
+
+// ##########----------Collateral Document Model----------##########
+model CollateralDocument {
+    id           String @id @default(uuid())
+    collateralId String
+    docId        String
+
+    Collateral        Collateral        @relation(fields: [collateralId], references: [id], onDelete: Cascade)
+    OwnershipDocument OwnershipDocument @relation(fields: [docId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Version Model----------##########
