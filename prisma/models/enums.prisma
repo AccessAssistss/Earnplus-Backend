@@ -36,6 +36,21 @@ enum LegalIdentityType {
 }
 
 // ##########----------Product Enums----------##########
+enum DeliveryChannel {
+    Mobile_App
+    Field_Agent
+    Call_Center
+    Embedded_Api
+    Partner_Portal
+    Whatsapp_Bot
+}
+
+enum ProductStatus {
+    Draft
+    Active
+    Archived
+}
+
 enum ProductType {
     SECURED
     UNSECURED
@@ -93,6 +108,14 @@ enum RepaymentMode {
     SELFPAY
     EMI
     BNPL
+}
+
+enum EMIFrequency {
+    Daily
+    Weekly
+    Biweekly
+    Monthly
+    Custom
 }
 
 enum UpdateRequestStatus {

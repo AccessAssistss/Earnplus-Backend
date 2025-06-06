@@ -6,7 +6,7 @@ const {
   softDeleteProductCategory,
   createProductPurpose,
   updateProductPurpose,
-  getProductPurposesByProductCategory,
+  getProductPurposes,
   softDeleteProductPurpose,
 } = require("../../controllers/Associate/productCategoryController");
 
@@ -25,8 +25,8 @@ router.patch(
 router.post("/createProductPurpose", createProductPurpose);
 router.put("/updateProductPurpose/:productPurposeId", updateProductPurpose);
 router.get(
-  "/getProductPurposesByProductCategory/:procuctCategoryId",
-  getProductPurposesByProductCategory
+  "/getProductPurposes",
+  getProductPurposes
 );
 router.patch(
   "/softDeleteProductPurpose/:productPurposeId",

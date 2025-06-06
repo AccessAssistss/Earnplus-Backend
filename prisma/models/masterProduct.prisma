@@ -6,22 +6,46 @@ model ProductCategory {
     updatedAt    DateTime @updatedAt
     isDeleted    Boolean  @default(false)
 
-    ProductPurpose ProductPurpose[]
-    MasterProduct  MasterProduct[]
+    MasterProduct MasterProduct[]
 }
 
 // ##########----------Product Purpose Model----------##########
 model ProductPurpose {
-    id                String   @id @default(uuid())
-    productCategoryId String?
-    purpose           String?
-    createdAt         DateTime @default(now())
-    updatedAt         DateTime @updatedAt
-    isDeleted         Boolean  @default(false)
+    id        String   @id @default(uuid())
+    purpose   String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
 
-    productCategory             ProductCategory?             @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
     MasterProductPurpose        MasterProductPurpose[]
     masterProductPurposeUpdates MasterProductPurposeUpdate[]
+}
+
+// ##########----------Product Segment Model----------##########
+model ProductSegment {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+}
+
+// ##########----------Product Segment Model----------##########
+model LoanType {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+}
+
+// ##########----------Product Partner Model----------##########
+model ProductPartner {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
 }
 
 // ##########----------Product Common UseCase Model----------##########

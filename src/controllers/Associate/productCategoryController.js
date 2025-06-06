@@ -104,9 +104,9 @@ const softDeleteProductCategory = asyncHandler(async (req, res) => {
 // ####################--------------------Product Purpose--------------------####################
 // ##########----------Create Product Purpose----------##########
 const createProductPurpose = asyncHandler(async (req, res) => {
-  const { purpose, productCategoryId } = req.body;
+  const { purpose } = req.body;
 
-  if ((!purpose, !productCategoryId)) {
+  if ((!purpose)) {
     return res.respond(
       400,
       "Product Purpose name And Product Category ID are required!"
@@ -116,7 +116,6 @@ const createProductPurpose = asyncHandler(async (req, res) => {
   const existingProductPurpose = await prisma.productPurpose.findFirst({
     where: {
       purpose: { equals: purpose, mode: "insensitive" },
-      productCategoryId,
       isDeleted: false,
     },
   });
@@ -124,18 +123,18 @@ const createProductPurpose = asyncHandler(async (req, res) => {
   if (existingProductPurpose) {
     return res.respond(
       400,
-      "Product Purpose with this name already exists in the procuct Category"
+      "Product Purpose with this name already exists!"
     );
   }
 
   const productPurpose = await prisma.productPurpose.create({
-    data: { purpose, productCategoryId },
+    data: { purpose },
   });
 
   res.respond(200, "Product Purpose Created Successfully!", productPurpose);
 });
 
-// ##########----------Update ProductPurpose----------##########
+// ##########----------Update Product Purpose----------##########
 const updateProductPurpose = asyncHandler(async (req, res) => {
   const { purpose } = req.body;
 
@@ -145,7 +144,6 @@ const updateProductPurpose = asyncHandler(async (req, res) => {
   const existingProductPurpose = await prisma.productPurpose.findFirst({
     where: {
       purpose: { equals: purpose, mode: "insensitive" },
-      productCategoryId,
       isDeleted: false,
       NOT: {
         id: req.params.productPurposeId,
@@ -156,7 +154,7 @@ const updateProductPurpose = asyncHandler(async (req, res) => {
   if (existingProductPurpose) {
     return res.respond(
       400,
-      "Product Purpose with this name already exists in the procuct Category"
+      "Product Purpose with this name already exists!"
     );
   }
 
@@ -172,12 +170,10 @@ const updateProductPurpose = asyncHandler(async (req, res) => {
   );
 });
 
-// ##########----------Get All Product Purposes by Product Category----------##########
-const getProductPurposesByProductCategory = asyncHandler(async (req, res) => {
-  const { productCategoryId } = req.params;
-
+// ##########----------Get All Product Purposes----------##########
+const getProductPurposes = asyncHandler(async (req, res) => {
   const productPurpose = await prisma.productPurpose.findMany({
-    where: { productCategoryId, isDeleted: false },
+    where: { isDeleted: false },
     orderBy: { purpose: "asc" },
   });
 
@@ -207,6 +203,6 @@ module.exports = {
   softDeleteProductCategory,
   createProductPurpose,
   updateProductPurpose,
-  getProductPurposesByProductCategory,
+  getProductPurposes,
   softDeleteProductPurpose,
 };
