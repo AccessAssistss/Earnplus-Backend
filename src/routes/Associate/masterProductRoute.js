@@ -1,6 +1,13 @@
 const express = require("express");
 const {
   createMasterProduct,
+  createFinancialTerms,
+  createEligibilityCriteria,
+  createCreditBureauConfig,
+  createFinancialStatements,
+  createBehavioralData,
+  createRiskScoring,
+  createCollateral,
   getAllMasterProducts,
   getMasterProductDetails,
   submitMasterProductUpdateRequest,
@@ -14,6 +21,13 @@ const validateToken = require("../../../middleware/validateJwtToken");
 const router = express.Router();
 
 router.post("/createMasterProduct", validateToken, createMasterProduct);
+router.post("/createFinancialTerms", validateToken, createFinancialTerms);
+router.post("/createEligibilityCriteria", validateToken, createEligibilityCriteria);
+router.post("/createCreditBureauConfig", validateToken, createCreditBureauConfig);
+router.post("/createFinancialStatements", validateToken, createFinancialStatements);
+router.post("/createBehavioralData", validateToken, createBehavioralData);
+router.post("/createRiskScoring", validateToken, createRiskScoring);
+router.post("/createCollateral", validateToken, createCollateral);
 router.post("/submitMasterProductUpdateRequest", validateToken, submitMasterProductUpdateRequest);
 router.patch("/approveMasterProductUpdateRequest/:requestId", validateToken, approveMasterProductUpdateRequest);
 router.patch("/rejectMasterProductUpdateRequest/:requestId", validateToken, rejectMasterProductUpdateRequest);

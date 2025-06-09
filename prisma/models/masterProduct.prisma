@@ -6,7 +6,8 @@ model ProductCategory {
     updatedAt    DateTime @updatedAt
     isDeleted    Boolean  @default(false)
 
-    MasterProduct MasterProduct[]
+    MasterProduct              MasterProduct[]
+    MasterProductUpdateRequest MasterProductUpdateRequest[]
 }
 
 // ##########----------Product Purpose Model----------##########
@@ -29,7 +30,8 @@ model ProductSegment {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    MasterProductSegment MasterProductSegment[]
+    MasterProductSegment       MasterProductSegment[]
+    MasterProductSegmentUpdate MasterProductSegmentUpdate[]
 }
 
 // ##########----------Loan Type Model----------##########
@@ -40,7 +42,8 @@ model LoanType {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    MasterProduct MasterProduct[]
+    MasterProduct              MasterProduct[]
+    MasterProductUpdateRequest MasterProductUpdateRequest[]
 }
 
 // ##########----------Product Partner Model----------##########
@@ -51,7 +54,8 @@ model ProductPartner {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    MasterProduct MasterProduct[]
+    MasterProduct              MasterProduct[]
+    MasterProductUpdateRequest MasterProductUpdateRequest[]
 }
 
 // ##########----------Master Product Model----------##########
@@ -120,7 +124,8 @@ model DisbursementMode {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    FinancialDisbursementMode FinancialDisbursementMode[]
+    FinancialDisbursementMode       FinancialDisbursementMode[]
+    FinancialDisbursementModeUpdate FinancialDisbursementModeUpdate[]
 }
 
 // ##########----------Repayment Mode Model----------##########
@@ -131,7 +136,8 @@ model RepaymentModes {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    FinancialRepaymentMode FinancialRepaymentMode[]
+    FinancialRepaymentMode       FinancialRepaymentMode[]
+    FinancialRepaymentModeUpdate FinancialRepaymentModeUpdate[]
 }
 
 model FinancialTerms {
@@ -153,10 +159,10 @@ model FinancialTerms {
     prepaymentFeeValue  Float
     emiFrequency        EMIFrequency
 
-    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-
     FinancialDisbursementMode FinancialDisbursementMode[]
     FinancialRepaymentMode    FinancialRepaymentMode[]
+
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Financial Disbursement Mode Model----------##########
@@ -187,7 +193,8 @@ model EmploymentType {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    EligibilityEmploymentType EligibilityEmploymentType[]
+    EligibilityEmploymentType       EligibilityEmploymentType[]
+    EligibilityEmploymentTypeUpdate EligibilityEmploymentTypeUpdate[]
 }
 
 // ##########----------Document Model----------##########
@@ -198,7 +205,8 @@ model Document {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    EligibilityDocument EligibilityDocument[]
+    EligibilityDocument       EligibilityDocument[]
+    EligibilityDocumentUpdate EligibilityDocumentUpdate[]
 }
 
 // ##########----------Master Product Fee Structure Model----------##########
@@ -297,7 +305,8 @@ model ScoreVariable {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    RiskScoreVariable RiskScoreVariable[]
+    RiskScoreVariable       RiskScoreVariable[]
+    RiskScoreVariableUpdate RiskScoreVariableUpdate[]
 }
 
 // ##########----------External Score Model----------##########
@@ -309,6 +318,7 @@ model ExternalScore {
     isDeleted Boolean  @default(false)
 
     RiskExternalScore RiskExternalScore[]
+    RiskExternalScoreUpdate RiskExternalScoreUpdate[]
 }
 
 model RiskScoring {
@@ -353,6 +363,7 @@ model OwnershipDocument {
     isDeleted Boolean  @default(false)
 
     CollateralDocument CollateralDocument[]
+    CollateralDocumentUpdate CollateralDocumentUpdate[]
 }
 
 model Collateral {

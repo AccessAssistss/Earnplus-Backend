@@ -51,12 +51,6 @@ enum ProductStatus {
     Archived
 }
 
-enum ProductType {
-    SECURED
-    UNSECURED
-    NA
-}
-
 enum InterestType {
     FLAT
     REDUCING
@@ -64,50 +58,10 @@ enum InterestType {
     CUSTOM
 }
 
-enum TenureType {
-    Fixed
-    Flexible
-    EventBased
-}
-
-enum TenureUnit {
-    Days
-    Weeks
-    Months
-    PayoutLinked
-}
-
-enum CollateralType {
-    GOLD
-    VEHICLE
-    PROPERTY
-    OTHER
-}
-
-enum ConcentCaptureFormat {
-    DIGITAL
-    PAPER
-    BIOMETRIC
-}
-
-enum RiskCategory {
-    HIGH
-    MODERATE
-    LOW
-}
-
-enum DisbursementModes {
-    NEFT
-    IMPS
-    UPI
-}
-
-enum RepaymentMode {
-    LIEN
-    ENACH
-    SELFPAY
-    EMI
-    BNPL
+enum FeeType {
+  FLAT
+  PERCENTAGE
+  NONE
 }
 
 enum EMIFrequency {
@@ -116,18 +70,6 @@ enum EMIFrequency {
     Biweekly
     Monthly
     Custom
-}
-
-enum UpdateRequestStatus {
-    PENDING
-    APPROVED
-    REJECTED
-}
-
-enum FeeType {
-  FLAT
-  PERCENTAGE
-  NONE
 }
 
 enum BureauType {
@@ -146,22 +88,6 @@ enum BlacklistFlag {
   WATCHLIST
   LOAN_OVERDUES
   MULTIPLE_ENQUIRIES
-}
-
-enum DocumentType {
-  PAN
-  AADHAAR
-  VOTER_ID
-  DRIVING_LICENSE
-  BUSINESS_REGISTRATION
-  GST_CERTIFICATE
-  BANK_STATEMENT_3M
-  SALARY_SLIP_3M
-  UTILITY_BILL
-  UDYAM_CERTIFICATE
-  SHOP_ESTABLISHMENT_LICENSE
-  POS_STATEMENT
-  OTHERS
 }
 
 enum SubmissionMode {
@@ -235,6 +161,118 @@ enum BorrowerBehavior {
   EXTERNAL_HISTORY
 }
 
+enum CollateralType {
+    GOLD
+    VEHICLE
+    PROPERTY
+    OTHER
+}
+
+enum OwnershipVerificationStatus {
+  YES
+  NO
+  PENDING
+}
+
+enum GuarantorRelationship {
+  PARENT
+  SPOUSE
+  EMPLOYER
+  RELATIVE
+  BUSINESS_PARTNER
+  OTHER
+}
+
+enum IncomeProofType {
+  SALARY_SLIP
+  BANK_STATEMENT
+  ITR
+  PENSION_SLIP
+  OTHERS
+}
+
+enum GuarantorVerificationStatus {
+  VERIFIED
+  REJECTED
+  PENDING
+}
+
+// ####################--------------------To Be Removed--------------------####################
+
+enum ProductType {
+    SECURED
+    UNSECURED
+    NA
+}
+
+enum CreditBureau {
+  CIBIL
+  EXPERIAN
+  CRIF
+  EQUIFAX
+}
+
+enum TenureType {
+    Fixed
+    Flexible
+    EventBased
+}
+
+enum TenureUnit {
+    Days
+    Weeks
+    Months
+    PayoutLinked
+}
+
+enum ConcentCaptureFormat {
+    DIGITAL
+    PAPER
+    BIOMETRIC
+}
+
+enum RiskCategory {
+    HIGH
+    MODERATE
+    LOW
+}
+
+enum DisbursementModes {
+    NEFT
+    IMPS
+    UPI
+}
+
+enum RepaymentMode {
+    LIEN
+    ENACH
+    SELFPAY
+    EMI
+    BNPL
+}
+
+enum UpdateRequestStatus {
+    PENDING
+    APPROVED
+    REJECTED
+}
+
+enum DocumentType {
+  PAN
+  AADHAAR
+  VOTER_ID
+  DRIVING_LICENSE
+  BUSINESS_REGISTRATION
+  GST_CERTIFICATE
+  BANK_STATEMENT_3M
+  SALARY_SLIP_3M
+  UTILITY_BILL
+  UDYAM_CERTIFICATE
+  SHOP_ESTABLISHMENT_LICENSE
+  POS_STATEMENT
+  OTHERS
+}
+
 enum InternalScoreVariable {
   INCOME_STABILITY
   EMPLOYER_TYPE
@@ -259,42 +297,6 @@ enum CollateralOwnershipDoc {
   GOLD_INVOICE
   FD_CERTIFICATE
   ENCUMBRANCE_CERTIFICATE
-}
-
-enum OwnershipVerificationStatus {
-  YES
-  NO
-  PENDING
-}
-
-enum GuarantorRelationship {
-  PARENT
-  SPOUSE
-  EMPLOYER
-  RELATIVE
-  BUSINESS_PARTNER
-  OTHER
-}
-
-enum CreditBureau {
-  CIBIL
-  EXPERIAN
-  CRIF
-  EQUIFAX
-}
-
-enum IncomeProofType {
-  SALARY_SLIP
-  BANK_STATEMENT
-  ITR
-  PENSION_SLIP
-  OTHERS
-}
-
-enum GuarantorVerificationStatus {
-  VERIFIED
-  REJECTED
-  PENDING
 }
 
 // ##########----------Query Enums----------##########
