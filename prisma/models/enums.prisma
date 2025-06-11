@@ -197,6 +197,12 @@ enum GuarantorVerificationStatus {
   PENDING
 }
 
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 // ####################--------------------To Be Removed--------------------####################
 
 enum ProductType {

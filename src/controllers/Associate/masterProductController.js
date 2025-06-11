@@ -658,50 +658,70 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const updateRequest = await prisma.$transaction(async (tx) => {
     return await tx.masterProductUpdateRequest.create({
       data: {
-        productManagerId: productManager.id,
-        masterProductId,
-        productCategoryId,
+        productManager: {
+          connect: { id: productManager.id }
+        },
+        masterProduct: {
+          connect: { id: masterProductId }
+        },
+        productCategory: {
+          connect: { id: productCategoryId }
+        },
+        loanType: {
+          connect: { id: loanTypeId }
+        },
+        productPartner: {
+          connect: { id: partnerId }
+        },
         productName,
         productDescription,
-        loanTypeId,
         deliveryChannel,
-        partnerId,
 
         financialTermsUpdate: financialTermsUpdate
           ? {
             create: {
-              ...financialTermsUpdate,
-              FinancialDisbursementModeUpdate: {
-                createMany: {
-                  data: financialTermsUpdate.disbursementModeIds.map((disbursementId) => ({ disbursementId }))
-                }
-              },
-              FinancialRepaymentModeUpdate: {
-                createMany: {
-                  data: financialTermsUpdate.repaymentModeIds.map((repaymentId) => ({ repaymentId }))
-                }
-              }
-            }
+              ...(() => {
+                const {
+                  disbursementModeIds = [],
+                  repaymentModeIds = [],
+                  ...cleanData
+                } = financialTermsUpdate;
+
+                return {
+                  ...cleanData,
+                  FinancialDisbursementModeUpdate: {
+                    create: disbursementModeIds?.map((disbursementId) => ({ disbursementId })),
+                  },
+                  FinancialRepaymentModeUpdate: {
+                    create: repaymentModeIds?.map((repaymentId) => ({ repaymentId })),
+                  },
+                };
+              })(),
+            },
           }
           : undefined,
 
-        eligibilityCriteriaUpdate: eligibilityCriteriaUpdate
-          ? {
-            create: {
-              ...eligibilityCriteriaUpdate,
-              minDocumentsRequired: {
-                createMany: {
-                  data: eligibilityCriteriaUpdate.documentIds.map((documentId) => ({ documentId }))
-                }
-              },
-              employmentTypesAllowed: {
-                createMany: {
-                  data: eligibilityCriteriaUpdate.employmentIds.map((employmentId) => ({ employmentId }))
-                }
-              }
-            }
+        eligibilityCriteriaUpdate: eligibilityCriteriaUpdate && {
+          create: {
+            ...(() => {
+              const {
+                documentIds = [],
+                employmentIds = [],
+                ...rest
+              } = eligibilityCriteriaUpdate;
+
+              return {
+                ...rest,
+                minDocumentsRequired: {
+                  create: documentIds.map((documentId) => ({ documentId })),
+                },
+                employmentTypesAllowed: {
+                  create: employmentIds.map((employmentId) => ({ employmentId })),
+                },
+              };
+            })()
           }
-          : undefined,
+        },
 
         creditBureauConfigUpdate: creditBureauConfigUpdate
           ? { create: creditBureauConfigUpdate }
@@ -715,52 +735,57 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
           ? { create: behavioralDataUpdate }
           : undefined,
 
-        riskScoringUpdate: riskScoringUpdate
-          ? {
-            create: {
-              ...riskScoringUpdate,
-              internalScoreVars: {
-                createMany: {
-                  data: riskScoringUpdate.scoreVariableIds.map((scoreId) => ({ scoreId }))
-                }
-              },
-              externalScoreInputs: {
-                createMany: {
-                  data: riskScoringUpdate.externalScoreIds.map((externalId) => ({ externalId }))
-                }
-              }
-            }
-          }
-          : undefined,
+        riskScoringUpdate: riskScoringUpdate && {
+          create: {
+            ...(() => {
+              const {
+                scoreVariableIds = [],
+                externalScoreIds = [],
+                ...rest
+              } = riskScoringUpdate;
 
-        CollateralUpdate: collateralUpdate
-          ? {
-            create: {
-              ...collateralUpdate,
-              collateralDocs: {
-                createMany: {
-                  data: collateralUpdate.documentIds.map((docId) => ({ docId }))
-                }
-              }
-            }
+              return {
+                ...rest,
+                internalScoreVars: {
+                  create: scoreVariableIds.map((scoreId) => ({ scoreId })),
+                },
+                externalScoreInputs: {
+                  create: externalScoreIds.map((externalId) => ({ externalId })),
+                },
+              };
+            })()
           }
-          : undefined,
+        },
+
+        CollateralUpdate: collateralUpdate && {
+          create: {
+            ...(() => {
+              const {
+                documentIds = [],
+                ...rest
+              } = collateralUpdate;
+
+              return {
+                ...rest,
+                collateralDocs: {
+                  create: documentIds.map((docId) => ({ docId })),
+                },
+              };
+            })()
+          }
+        },
 
         MasterProductPurposeUpdate: purposeIds
           ? {
-            createMany: {
-              data: purposeIds.map((purposeId) => ({ purposeId }))
-            }
+            create: purposeIds.map((purposeId) => ({ purposeId }))
           }
           : undefined,
 
         MasterProductSegmentUpdate: segmentIds
           ? {
-            createMany: {
-              data: segmentIds.map((segmentId) => ({ segmentId }))
-            }
+            create: segmentIds.map((segmentId) => ({ segmentId }))
           }
-          : undefined
+          : undefined,
       }
     });
   });
@@ -782,10 +807,10 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   });
 
   if (!associate) {
-    return res.respond(403, "associate not found!");
+    return res.respond(403, "Only associates can approve update requests.");
   }
 
-  const request = await prisma.masterProductUpdateRequest.findUnique({
+  const updateRequest = await prisma.masterProductUpdateRequest.findUnique({
     where: { id: requestId },
     include: {
       masterProduct: true,
@@ -793,174 +818,317 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
         include: {
           FinancialDisbursementModeUpdate: true,
           FinancialRepaymentModeUpdate: true,
-        },
+        }
       },
       eligibilityCriteriaUpdate: {
         include: {
           minDocumentsRequired: true,
           employmentTypesAllowed: true,
-        },
+        }
       },
       creditBureauConfigUpdate: true,
       financialStatementsUpdate: true,
       behavioralDataUpdate: true,
-      riskScoringUpdate: true,
-      CollateralUpdate: true,
+      riskScoringUpdate: {
+        include: {
+          internalScoreVars: true,
+          externalScoreInputs: true,
+        }
+      },
+      CollateralUpdate: {
+        include: {
+          collateralDocs: true,
+        }
+      },
       MasterProductPurposeUpdate: true,
       MasterProductSegmentUpdate: true,
     },
   });
 
-  if (!request) {
+  if (!updateRequest) {
     return res.respond(404, "Update request not found.");
   }
 
-  const currentProduct = request.masterProduct;
+  const sanitizeUpdateData = (obj, excludeKeys = ["id", "updateRequestId", "createdAt", "updatedAt", "masterProductId", "updateRequestID"]) => {
+    if (Array.isArray(obj)) {
+      return obj.map((item) => sanitizeUpdateData(item, excludeKeys));
+    } else if (typeof obj === "object" && obj !== null) {
+      return Object.entries(obj).reduce((acc, [key, value]) => {
+        if (!excludeKeys.includes(key)) {
+          acc[key] = sanitizeUpdateData(value, excludeKeys);
+        }
+        return acc;
+      }, {});
+    }
+    return obj;
+  };
+
+  const currentProduct = updateRequest.masterProduct;
   const newVersionId = currentProduct.versionId + 1;
 
-  function cleanUpdateData(data, disallowedFields = ["id", "updateRequestId", "createdAt", "updatedAt"]) {
-    const cleaned = { ...data };
-    for (const field of disallowedFields) {
-      delete cleaned[field];
-    }
-    return cleaned;
-  }
+  const oldProductSnapshot = await tx.masterProduct.findUnique({
+    where: { id: currentProduct.id },
+    include: {
+      MasterProductPurpose: true,
+      MasterProductSegment: true,
+      financialTerms: {
+        include: {
+          FinancialDisbursementMode: true,
+          FinancialRepaymentMode: true,
+        },
+      },
+      eligibilityCriteria: {
+        include: {
+          minDocumentsRequired: true,
+          employmentTypesAllowed: true,
+        },
+      },
+      creditBureauConfig: true,
+      financialStatements: true,
+      behavioralData: true,
+      riskScoring: {
+        include: {
+          internalScoreVars: true,
+          externalScoreInputs: true,
+        },
+      },
+      Collateral: {
+        include: {
+          collateralDocs: true,
+        },
+      },
+    },
+  });
 
-  await prisma.$transaction(async (tx) => {
+  const updatedMasterProduct = await prisma.$transaction(async (tx) => {
     await tx.masterProductVersion.create({
       data: {
         masterProductId: currentProduct.id,
         versionId: currentProduct.versionId,
-        snapshot: JSON.parse(JSON.stringify(currentProduct)),
+        snapshot: JSON.parse(JSON.stringify(oldProductSnapshot)),
       },
     });
 
-    await tx.masterProduct.update({
+    const sanitizedUpdate = {
+      financialTermsUpdate: sanitizeUpdateData(updateRequest.financialTermsUpdate),
+      eligibilityCriteriaUpdate: sanitizeUpdateData(updateRequest.eligibilityCriteriaUpdate),
+      creditBureauConfigUpdate: sanitizeUpdateData(updateRequest.creditBureauConfigUpdate),
+      financialStatementsUpdate: sanitizeUpdateData(updateRequest.financialStatementsUpdate),
+      behavioralDataUpdate: sanitizeUpdateData(updateRequest.behavioralDataUpdate),
+      riskScoringUpdate: sanitizeUpdateData(updateRequest.riskScoringUpdate),
+      CollateralUpdate: sanitizeUpdateData(updateRequest.CollateralUpdate),
+      MasterProductPurposeUpdate: sanitizeUpdateData(updateRequest.MasterProductPurposeUpdate),
+      MasterProductSegmentUpdate: sanitizeUpdateData(updateRequest.MasterProductSegmentUpdate),
+    };
+
+    function parseSafeDate(dateValue) {
+      if (!dateValue) return null;
+      const date = new Date(dateValue);
+      return date instanceof Date && !isNaN(date) ? date : null;
+    }
+
+    const updatedProduct = await tx.masterProduct.update({
       where: { id: currentProduct.id },
       data: {
-        productName: request.productName,
-        productDescription: request.productDescription,
-        productCategoryId: request.productCategoryId,
         versionId: newVersionId,
+        productName: updateRequest.productName,
+        productDescription: updateRequest.productDescription,
+        deliveryChannel: updateRequest.deliveryChannel,
+        productCategory: {
+          connect: { id: updateRequest.productCategoryId }
+        },
+        loanType: {
+          connect: { id: updateRequest.loanTypeId }
+        },
+        productPartner: {
+          connect: { id: updateRequest.partnerId }
+        },
+
+        MasterProductPurpose: {
+          deleteMany: {},
+          create: sanitizedUpdate.MasterProductPurposeUpdate.map((p) => ({
+            purposeId: p.purposeId,
+          })),
+        },
+        MasterProductSegment: {
+          deleteMany: {},
+          create: sanitizedUpdate.MasterProductSegmentUpdate.map((s) => ({
+            segmentId: s.segmentId,
+          })),
+        },
+
+        financialTerms: sanitizedUpdate.financialTermsUpdate && {
+          upsert: {
+            update: {
+              FinancialDisbursementMode: {
+                deleteMany: {},
+                create: sanitizedUpdate.financialTermsUpdate.FinancialDisbursementModeUpdate?.map(d => ({
+                  disbursementId: d.disbursementId
+                })),
+              },
+              FinancialRepaymentMode: {
+                deleteMany: {},
+                create: sanitizedUpdate.financialTermsUpdate.FinancialRepaymentModeUpdate?.map(r => ({
+                  repaymentId: r.repaymentId
+                })),
+              },
+              ...(() => {
+                const {
+                  FinancialDisbursementModeUpdate,
+                  FinancialRepaymentModeUpdate,
+                  ...rest
+                } = sanitizedUpdate.financialTermsUpdate;
+                return rest;
+              })()
+            },
+            create: {
+              FinancialDisbursementMode: {
+                create: sanitizedUpdate.financialTermsUpdate.FinancialDisbursementModeUpdate?.map(d => ({
+                  disbursementId: d.disbursementId
+                })),
+              },
+              FinancialRepaymentMode: {
+                create: sanitizedUpdate.financialTermsUpdate.FinancialRepaymentModeUpdate?.map(r => ({
+                  repaymentId: r.repaymentId
+                })),
+              },
+              ...(() => {
+                const {
+                  FinancialDisbursementModeUpdate,
+                  FinancialRepaymentModeUpdate,
+                  ...rest
+                } = sanitizedUpdate.financialTermsUpdate;
+                return rest;
+              })()
+            }
+          }
+        },
+
+        eligibilityCriteria: sanitizedUpdate.eligibilityCriteriaUpdate && {
+          upsert: {
+            update: {
+              ...sanitizedUpdate.eligibilityCriteriaUpdate,
+              minDocumentsRequired: {
+                deleteMany: {},
+                create: sanitizedUpdate.eligibilityCriteriaUpdate.minDocumentsRequired?.map(d => ({
+                  documentId: d.documentId
+                }))
+              },
+              employmentTypesAllowed: {
+                deleteMany: {},
+                create: sanitizedUpdate.eligibilityCriteriaUpdate.employmentTypesAllowed?.map(e => ({
+                  employmentId: e.employmentId
+                }))
+              }
+            },
+            create: {
+              ...sanitizedUpdate.eligibilityCriteriaUpdate,
+              minDocumentsRequired: {
+                create: sanitizedUpdate.eligibilityCriteriaUpdate.minDocumentsRequired?.map(d => ({
+                  documentId: d.documentId
+                }))
+              },
+              employmentTypesAllowed: {
+                create: sanitizedUpdate.eligibilityCriteriaUpdate.employmentTypesAllowed?.map(e => ({
+                  employmentId: e.employmentId
+                }))
+              }
+            }
+          }
+        },
+
+        creditBureauConfig: sanitizedUpdate.creditBureauConfigUpdate && {
+          upsert: {
+            update: sanitizedUpdate.creditBureauConfigUpdate,
+            create: sanitizedUpdate.creditBureauConfigUpdate,
+          }
+        },
+
+        financialStatements: sanitizedUpdate.financialStatementsUpdate && {
+          upsert: {
+            update: sanitizedUpdate.financialStatementsUpdate,
+            create: sanitizedUpdate.financialStatementsUpdate,
+          }
+        },
+
+        behavioralData: sanitizedUpdate.behavioralDataUpdate && {
+          upsert: {
+            update: sanitizedUpdate.behavioralDataUpdate,
+            create: sanitizedUpdate.behavioralDataUpdate,
+          }
+        },
+
+        riskScoring: sanitizedUpdate.riskScoringUpdate && {
+          upsert: {
+            update: {
+              ...sanitizedUpdate.riskScoringUpdate,
+              internalScoreVars: {
+                deleteMany: {},
+                create: sanitizedUpdate.riskScoringUpdate.internalScoreVars?.map((s) => ({
+                  scoreId: s.scoreId,
+                })),
+              },
+              externalScoreInputs: {
+                deleteMany: {},
+                create: sanitizedUpdate.riskScoringUpdate.externalScoreInputs?.map((e) => ({
+                  externalId: e.externalId,
+                })),
+              },
+            },
+            create: {
+              ...sanitizedUpdate.riskScoringUpdate,
+              internalScoreVars: {
+                create: sanitizedUpdate.riskScoringUpdate.internalScoreVars?.map((s) => ({
+                  scoreId: s.scoreId,
+                })),
+              },
+              externalScoreInputs: {
+                create: sanitizedUpdate.riskScoringUpdate.externalScoreInputs?.map((e) => ({
+                  externalId: e.externalId,
+                })),
+              },
+            }
+          }
+        },
+
+        Collateral: sanitizedUpdate.CollateralUpdate && {
+          upsert: {
+            update: {
+              ...sanitizedUpdate.CollateralUpdate,
+              collateralValuationDate: parseSafeDate(sanitizedUpdate.CollateralUpdate.collateralValuationDate) || new Date(),
+              collateralDocs: {
+                deleteMany: {},
+                create: sanitizedUpdate.CollateralUpdate.collateralDocs?.map((d) => ({
+                  docId: d.docId,
+                })),
+              },
+            },
+            create: {
+              ...sanitizedUpdate.CollateralUpdate,
+              collateralValuationDate: parseSafeDate(sanitizedUpdate.CollateralUpdate.collateralValuationDate) || new Date(),
+              collateralDocs: {
+                create: sanitizedUpdate.CollateralUpdate.collateralDocs?.map((d) => ({
+                  docId: d.docId,
+                })),
+              },
+            }
+          }
+        },
       },
-    });
-
-    if (request.financialTermsUpdate) {
-      await tx.masterProductFinancialTerms.update({
-        where: { masterProductId: currentProduct.id },
-        data: cleanUpdateData(request.financialTermsUpdate),
-      });
-
-      await tx.financialDisbursementMode.deleteMany({
-        where: { financialTermsId: request.financialTermsUpdate.id },
-      });
-      await tx.financialDisbursementMode.createMany({
-        data: request.financialTermsUpdate.FinancialDisbursementModeUpdate.map((f) => ({
-          financialTermsId: request.financialTermsUpdate.id,
-          disbursementId: f.disbursementId,
-        })),
-      });
-
-      await tx.financialRepaymentMode.deleteMany({
-        where: { financialTermsId: request.financialTermsUpdate.id },
-      });
-      await tx.financialRepaymentMode.createMany({
-        data: request.financialTermsUpdate.FinancialRepaymentModeUpdate.map((f) => ({
-          financialTermsId: request.financialTermsUpdate.id,
-          repaymentId: f.repaymentId,
-        })),
-      });
-    }
-
-    if (request.eligibilityCriteriaUpdate) {
-      await tx.masterProductEligibility.update({
-        where: { masterProductId: currentProduct.id },
-        data: cleanUpdateData(request.eligibilityCriteriaUpdate),
-      });
-
-      await tx.eligibilityDocument.deleteMany({
-        where: { eligibilityId: request.eligibilityCriteriaUpdate.id },
-      });
-      await tx.eligibilityDocument.createMany({
-        data: request.eligibilityCriteriaUpdate.minDocumentsRequired.map((d) => ({
-          eligibilityId: request.eligibilityCriteriaUpdate.id,
-          documentId: d.documentId,
-        })),
-      });
-
-      await tx.eligibilityEmploymentType.deleteMany({
-        where: { eligibilityId: request.eligibilityCriteriaUpdate.id },
-      });
-      await tx.eligibilityEmploymentType.createMany({
-        data: request.eligibilityCriteriaUpdate.employmentTypesAllowed.map((e) => ({
-          eligibilityId: request.eligibilityCriteriaUpdate.id,
-          employmentId: e.employmentId,
-        })),
-      });
-    }
-
-    if (request.creditBureauConfigUpdate) {
-      await tx.masterProductCreditBureau.update({
-        where: { masterProductId: currentProduct.id },
-        data: cleanUpdateData(request.creditBureauConfigUpdate),
-      });
-    }
-
-    if (request.financialStatementsUpdate) {
-      await tx.masterProductStatements.update({
-        where: { masterProductId: currentProduct.id },
-        data: cleanUpdateData(request.financialStatementsUpdate),
-      });
-    }
-
-    if (request.behavioralDataUpdate) {
-      await tx.masterProductBehavioral.update({
-        where: { masterProductId: currentProduct.id },
-        data: cleanUpdateData(request.behavioralDataUpdate),
-      });
-    }
-
-    if (request.riskScoringUpdate) {
-      await tx.masterProductRiskScore.update({
-        where: { masterProductId: currentProduct.id },
-        data: cleanUpdateData(request.riskScoringUpdate),
-      });
-    }
-
-    if (request.CollateralUpdate) {
-      await tx.masterProductCollateral.update({
-        where: { masterProductId: currentProduct.id },
-        data: cleanUpdateData(request.CollateralUpdate),
-      });
-    }
-
-    await tx.masterProductPurpose.deleteMany({
-      where: { masterProductId: currentProduct.id },
-    });
-    await tx.masterProductPurpose.createMany({
-      data: request.MasterProductPurposeUpdate.map((p) => ({
-        masterProductId: currentProduct.id,
-        purposeId: p.purposeId,
-      })),
-    });
-
-    await tx.masterProductSegment.deleteMany({
-      where: { masterProductId: currentProduct.id },
-    });
-    await tx.masterProductSegment.createMany({
-      data: request.MasterProductSegmentUpdate.map((s) => ({
-        masterProductId: currentProduct.id,
-        segmentId: s.segmentId,
-      })),
     });
 
     await tx.masterProductUpdateRequest.update({
       where: { id: requestId },
-      data: { isApproved: true, isDeleted: true },
+      data: {
+        isApproved: true,
+        isDeleted: true,
+      }
     });
+
+    return updatedProduct;
   });
 
-  return res.respond(200, "Update request approved and applied!");
+  res.respond(200, "Master Product update approved and applied successfully.", updatedMasterProduct);
 });
 
 // ##########----------Reject Master Product Update Request----------##########
@@ -1001,6 +1169,122 @@ const rejectMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   );
 });
 
+// ##########----------Create Master Product Delete Request----------##########
+const createMasterProductDeleteRequest = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { masterProductId, reason } = req.body;
+
+  const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+  });
+
+  if (!associateSubAdmin) {
+    return res.respond(403, "associate subadmin not found!");
+  }
+
+  const product = await prisma.masterProduct.findFirst({
+    where: {
+      id: masterProductId,
+      isDeleted: false,
+    },
+  });
+
+  if (!product) {
+    return res.respond(404, "MasterProduct not found or already deleted!");
+  }
+
+  const existingRequest = await prisma.masterProductDeleteRequest.findFirst({
+    where: {
+      masterProductId,
+      status: 'PENDING',
+    },
+  });
+
+  if (existingRequest) {
+    return res.respond(400, "A delete request is already pending for this product!");
+  }
+
+  const deleteRequest = await prisma.masterProductDeleteRequest.create({
+    data: {
+      masterProductId,
+      reason,
+      requestedById: associateSubAdmin.id,
+    },
+  });
+
+  return res.respond(200, "Delete request submitted successfully!", deleteRequest);
+});
+
+// ##########----------Approve Master Product Delete Request----------##########
+const approveMasterProductDeleteRequest = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { requestId } = req.body;
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(403, "associate not found!");
+  }
+
+  const request = await prisma.masterProductDeleteRequest.findUnique({
+    where: { id: requestId },
+    include: { masterProduct: true },
+  });
+
+  if (!request || request.status !== 'PENDING') {
+    return res.status(404).json({ message: 'Valid pending delete request not found' });
+  }
+
+  await prisma.$transaction([
+    prisma.masterProduct.update({
+      where: { id: request.masterProductId },
+      data: { isDeleted: true },
+    }),
+    prisma.masterProductDeleteRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'APPROVED',
+      },
+    }),
+  ]);
+
+  return res.respond(200, "MasterProduct deleted (soft) successfully!");
+});
+
+// ##########----------Reject Master Product Delete Request----------##########
+const rejectMasterProductDeleteRequest = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { requestId } = req.body;
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(403, "associate not found!");
+  }
+
+  const request = await prisma.masterProductDeleteRequest.findUnique({
+    where: { id: requestId },
+  });
+
+  if (!request || request.status !== 'PENDING') {
+    return res.status(404).json({ message: 'Valid pending delete request not found' });
+  }
+
+  await prisma.masterProductDeleteRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'REJECTED',
+        reason: reason || request.reason,
+      },
+    });
+
+  return res.respond(200, "Delete request rejected successfully!");
+});
+
 // ##########----------Get All Master Products----------##########
 const getAllMasterProducts = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -1016,9 +1300,18 @@ const getAllMasterProducts = asyncHandler(async (req, res) => {
     return res.respond(403, "Only Product Managers can get products.");
   }
 
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.masterProduct.count({
+    where: {
+      isDeleted: false,
+    },
+  });
+
   const masterProducts = await prisma.masterProduct.findMany({
     where: {
-      productManagerId: productManager.id,
       isDeleted: false,
     },
     select: {
@@ -1036,9 +1329,17 @@ const getAllMasterProducts = asyncHandler(async (req, res) => {
     orderBy: {
       createdAt: "desc",
     },
+    skip,
+    take: limit,
   });
 
-  res.respond(200, "Master Products fetched successfully!", masterProducts);
+  res.respond(200, "Master Products fetched successfully!", {
+    totalItems: totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
+    pageSize: limit,
+    data: masterProducts,
+  });
 });
 
 // ##########----------Get Master Product Details----------##########
@@ -1061,7 +1362,6 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
     where: {
       id: productId,
       isDeleted: false,
-      productManagerId: productManager.id,
     },
     select: {
       id: true,
@@ -1316,6 +1616,9 @@ module.exports = {
   submitMasterProductUpdateRequest,
   approveMasterProductUpdateRequest,
   rejectMasterProductUpdateRequest,
+  createMasterProductDeleteRequest,
+  approveMasterProductDeleteRequest,
+  rejectMasterProductDeleteRequest,
   getAllMasterProducts,
   getMasterProductDetails,
   getMasterProductVersions,

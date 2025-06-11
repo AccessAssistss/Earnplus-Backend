@@ -94,6 +94,7 @@ model MasterProduct {
     MasterProductUpdateRequest MasterProductUpdateRequest[]
     MasterProductVersion       MasterProductVersion[]
     MasterProductSegment       MasterProductSegment[]
+    MasterProductDeleteRequest MasterProductDeleteRequest[]
 }
 
 // ##########----------Master Product Purpose Model----------##########
@@ -317,7 +318,7 @@ model ExternalScore {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    RiskExternalScore RiskExternalScore[]
+    RiskExternalScore       RiskExternalScore[]
     RiskExternalScoreUpdate RiskExternalScoreUpdate[]
 }
 
@@ -362,7 +363,7 @@ model OwnershipDocument {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    CollateralDocument CollateralDocument[]
+    CollateralDocument       CollateralDocument[]
     CollateralDocumentUpdate CollateralDocumentUpdate[]
 }
 
@@ -407,4 +408,19 @@ model MasterProductVersion {
     createdAt       DateTime @default(now())
 
     masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+}
+
+// ##########----------Master Product Delete Request Model----------##########
+model MasterProductDeleteRequest {
+    id              String        @id @default(uuid())
+    masterProductId String
+    requestedById   String
+    status          RequestStatus @default(PENDING)
+    reason          String?
+    createdAt       DateTime      @default(now())
+    updatedAt       DateTime      @updatedAt
+    isDeleted       Boolean       @default(false)
+
+    masterProduct MasterProduct     @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    requestedBy   AssociateSubAdmin @relation(fields: [requestedById], references: [id], onDelete: Cascade)
 }

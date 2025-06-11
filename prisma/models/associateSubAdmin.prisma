@@ -25,6 +25,7 @@ model AssociateSubAdmin {
     queriesRaised               RaiseQuery[]                 @relation("RaisedByRelation")
     queriesAssigned             RaiseQuery[]                 @relation("AssignedToRelation")
     KYCRequest                  KYCRequest[]
+    MasterProductDeleteRequest MasterProductDeleteRequest[]
 }
 
 // ##########----------Sub-Admin Modules Model----------##########
