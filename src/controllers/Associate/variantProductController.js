@@ -13,13 +13,10 @@ const createVariantProduct = asyncHandler(async (req, res) => {
     masterProductId,
     variantName,
     variantType,
+    variantCode,
     remark,
     productType,
-    eligibility,
-    feeStructure,
-    withdrawLogic,
-    repayment,
-    validity,
+    partnerId
   } = req.body;
 
   const productManager = await prisma.associateSubAdmin.findFirst({
@@ -52,91 +49,215 @@ const createVariantProduct = asyncHandler(async (req, res) => {
     },
   });
 
-  const variantCode = generateVariantProductCode(
+  const generatedCode = generateVariantProductCode(
     masterProduct.productCode,
     variantName,
     variantCount
   );
 
-  const createdVariant = await prisma.variantProduct.create({
-    data: {
-      masterProductId,
-      productManagerId: productManager.id,
-      variantName,
-      variantType,
-      variantCode,
-      remark,
-      productType,
-
-      VariantProductEligibility: {
-        create: {
-          minEmploymentDays: eligibility.minEmploymentDays,
-          disbursementMode: eligibility.disbursementMode,
-          minSalary: eligibility.minSalary,
-          maxSalary: eligibility.maxSalary,
-          paymentFrequency: eligibility.paymentFrequency,
-        },
+  const result = await prisma.$transaction(async (tx) => {
+    const product = await tx.variantProduct.create({
+      data: {
+        masterProductId,
+        productManagerId: productManager.id,
+        variantName,
+        variantType,
+        variantCode,
+        variantId: generatedCode,
+        remark,
+        productType,
+        partnerId,
       },
+    });
 
-      VariantProductFeeStructure: {
-        create: {
-          setupFee: feeStructure.setupFee,
-          perTransactionFee: feeStructure.perTransactionFee,
-          subscriptionOption: feeStructure.subscriptionOption,
-          feePayer: feeStructure.feePayer,
-          gst: feeStructure.gst,
-          penalty: feeStructure.penalty,
-          insuranceFee: feeStructure.insuranceFee,
-          insuranceCalcOn: feeStructure.insuranceCalcOn,
-        },
-      },
-
-      VariantProductWithdrawLogic: {
-        create: {
-          minWithdrawAmount: withdrawLogic.minWithdrawAmount,
-          maxWithdrawAmount: withdrawLogic.maxWithdrawAmount,
-          minAccrued: withdrawLogic.minAccrued,
-          maxAccrued: withdrawLogic.maxAccrued,
-          maxWithdrawlPerMonth: withdrawLogic.maxWithdrawlPerMonth,
-          frequencyRule: withdrawLogic.frequencyRule,
-        },
-      },
-
-      VariantProductRepayment: {
-        create: {
-          repaymentMode: repayment.repaymentMode,
-          eNachRequired: repayment.eNachRequired,
-          autoDebit: repayment.autoDebit,
-        },
-      },
-
-      VariantProductValidity: {
-        create: {
-          activationDate: validity.activationDate,
-          validityPeriod: validity.validityPeriod,
-          workLocation: validity.workLocation,
-          minSalary: validity.minSalary,
-          maxSalary: validity.maxSalary,
-        },
-      },
-    },
-    include: {
-      VariantProductEligibility: true,
-      VariantProductFeeStructure: true,
-      VariantProductWithdrawLogic: true,
-      VariantProductRepayment: true,
-      VariantProductValidity: true,
-    },
+    return product;
   });
 
   return res.respond(
     201,
     "Variant Product created successfully!",
-    createdVariant
+    result
   );
 });
 
-// ##########----------SUbmit Variant Product Update Request----------##########
+// ##########----------Create Variant Product Parameter----------##########
+const createVariantProductParameter = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const {
+    variantProductId,
+    minLoanAmount,
+    maxLoanAmount,
+    minTenureMonths,
+    maxTenureMonths,
+    interestRateType,
+    interestRateMin,
+    interestRateMax,
+    processingFeeType,
+    processingFeeValue,
+    latePaymentFeeType,
+    latePaymentFeeValue,
+    penalInterestApplicable,
+    emiFrequency,
+    prepaymentFeeType,
+    prepaymentFeeValue,
+    penalInterestRate,
+    minAge,
+    maxAge,
+  } = req.body;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(
+      403,
+      "Only Product Managers can create variant products."
+    );
+  }
+
+  const exists = await prisma.variantProduct.findUnique({
+    where: { id: variantProductId },
+  });
+
+  if (!exists) {
+    return res.respond(404, "Variant Product not found.");
+  }
+
+  const parameter = await prisma.variantProductParameter.create({
+    data: {
+      variantProductId,
+      minLoanAmount,
+      maxLoanAmount,
+      minTenureMonths,
+      maxTenureMonths,
+      interestRateType,
+      interestRateMin,
+      interestRateMax,
+      processingFeeType,
+      processingFeeValue,
+      latePaymentFeeType,
+      latePaymentFeeValue,
+      penalInterestApplicable,
+      emiFrequency,
+      prepaymentFeeType,
+      prepaymentFeeValue,
+      penalInterestRate,
+      minAge,
+      maxAge,
+    },
+  });
+
+  return res.respond(201, "Variant Product Parameters created!", parameter);
+});
+
+// ##########----------Create Variant Product Other Charges----------##########
+const createVariantProductOtherCharges = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const {
+    variantProductId,
+    chequeBounceCharge,
+    dublicateNocCharge,
+    furnishingCharge,
+    chequeSwapCharge,
+    revocation,
+    documentCopyCharge,
+    stampDutyCharge,
+    nocCharge,
+    incidentalCharge,
+  } = req.body;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(
+      403,
+      "Only Product Managers can create variant products."
+    );
+  }
+
+  const exists = await prisma.variantProduct.findUnique({
+    where: { id: variantProductId },
+  });
+
+  if (!exists) {
+    return res.respond(404, "Variant Product not found.");
+  }
+
+  const charges = await prisma.variantProductOtherCharges.create({
+    data: {
+      variantProductId,
+      chequeBounceCharge,
+      dublicateNocCharge,
+      furnishingCharge,
+      chequeSwapCharge,
+      revocation,
+      documentCopyCharge,
+      stampDutyCharge,
+      nocCharge,
+      incidentalCharge,
+    },
+  });
+
+  return res.respond(201, "Other Charges created!", charges);
+});
+
+// ##########----------Create Variant Product Repayment----------##########
+const createVariantProductRepayment = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const {
+    variantProductId,
+    incentiveType,
+    incentiveValue,
+    payoutMode,
+    incentiveReversalConditions,
+  } = req.body;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(
+      403,
+      "Only Product Managers can create variant products."
+    );
+  }
+
+  const exists = await prisma.variantProduct.findUnique({
+    where: { id: variantProductId },
+  });
+
+  if (!exists) {
+    return res.respond(404, "Variant Product not found.");
+  }
+
+  const repayment = await prisma.variantProductRepayment.create({
+    data: {
+      variantProductId,
+      incentiveType,
+      incentiveValue,
+      payoutMode,
+      incentiveReversalConditions,
+    },
+  });
+
+  return res.respond(201, "Repayment details created!", repayment);
+});
+
+// ##########----------Submit Variant Product Update Request----------##########
 const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
@@ -181,33 +302,33 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
       status: "pending",
       coreUpdate: coreUpdate
         ? {
-            create: coreUpdate,
-          }
+          create: coreUpdate,
+        }
         : undefined,
       eligibilityUpdate: eligibilityUpdate
         ? {
-            create: eligibilityUpdate,
-          }
+          create: eligibilityUpdate,
+        }
         : undefined,
       feeUpdate: feeUpdate
         ? {
-            create: feeUpdate,
-          }
+          create: feeUpdate,
+        }
         : undefined,
       withdrawLogicUpdate: withdrawLogicUpdate
         ? {
-            create: withdrawLogicUpdate,
-          }
+          create: withdrawLogicUpdate,
+        }
         : undefined,
       repaymentUpdate: repaymentUpdate
         ? {
-            create: repaymentUpdate,
-          }
+          create: repaymentUpdate,
+        }
         : undefined,
       validityUpdate: validityUpdate
         ? {
-            create: validityUpdate,
-          }
+          create: validityUpdate,
+        }
         : undefined,
     },
     include: {
@@ -411,11 +532,9 @@ const getVariantProductDetail = asyncHandler(async (req, res) => {
       masterProduct: true,
       productManager: { select: { id: true, userId: true } },
 
-      VariantProductEligibility: true,
-      VariantProductFeeStructure: true,
-      VariantProductWithdrawLogic: true,
+      VariantProductParameter: true,
+      VariantProductOtherCharges: true,
       VariantProductRepayment: true,
-      VariantProductValidity: true,
     },
   });
 
@@ -602,6 +721,9 @@ const getVariantProductVersionById = asyncHandler(async (req, res) => {
 
 module.exports = {
   createVariantProduct,
+  createVariantProductParameter,
+  createVariantProductOtherCharges,
+  createVariantProductRepayment,
   submitVariantProductUpdateRequest,
   approveVariantProductUpdateRequest,
   rejectVariantProductUpdateRequest,

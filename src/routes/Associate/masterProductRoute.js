@@ -18,6 +18,7 @@ const {
   createMasterProductDeleteRequest,
   approveMasterProductDeleteRequest,
   rejectMasterProductDeleteRequest,
+  getAllMasterProductUpdateRequests,
 } = require("../../controllers/Associate/masterProductController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -32,6 +33,7 @@ router.post("/createBehavioralData", validateToken, createBehavioralData);
 router.post("/createRiskScoring", validateToken, createRiskScoring);
 router.post("/createCollateral", validateToken, createCollateral);
 router.post("/submitMasterProductUpdateRequest", validateToken, submitMasterProductUpdateRequest);
+router.get("/getAllMasterProductUpdateRequests", validateToken, getAllMasterProductUpdateRequests);
 router.patch("/approveMasterProductUpdateRequest/:requestId", validateToken, approveMasterProductUpdateRequest);
 router.patch("/rejectMasterProductUpdateRequest/:requestId", validateToken, rejectMasterProductUpdateRequest);
 router.post("/createMasterProductDeleteRequest", validateToken, createMasterProductDeleteRequest);

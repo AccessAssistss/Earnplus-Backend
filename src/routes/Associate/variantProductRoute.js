@@ -11,11 +11,17 @@ const {
   getVariantProductVersions,
   getVariantProductVersionById,
   getAssignedVariantProducts,
+  createVariantProductParameter,
+  createVariantProductOtherCharges,
+  createVariantProductRepayment,
 } = require("../../controllers/Associate/variantProductController");
 
 const router = express.Router();
 
 router.post("/createVariantProduct", validateToken, createVariantProduct);
+router.post("/createVariantProductParameter", validateToken, createVariantProductParameter);
+router.post("/createVariantProductOtherCharges", validateToken, createVariantProductOtherCharges);
+router.post("/createVariantProductRepayment", validateToken, createVariantProductRepayment);
 router.post(
   "/submitVariantProductUpdateRequest",
   validateToken,

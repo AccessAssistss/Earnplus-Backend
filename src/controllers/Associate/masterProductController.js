@@ -797,6 +797,32 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   );
 });
 
+// ##########----------Get Master Product Update Requests----------##########
+const getAllMasterProductUpdateRequests = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can view update requests.");
+  }
+
+  const updateRequests = await prisma.masterProductUpdateRequest.findMany({
+    where: {
+      isDeleted: false,
+      isApproved: false,
+      isRejected: false,
+    },
+  });
+
+  res.respond(200, "Fetched all update requests successfully.", updateRequests);
+});
+
 // ##########----------Approve Master Product Update Request----------##########
 const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -1275,12 +1301,12 @@ const rejectMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   }
 
   await prisma.masterProductDeleteRequest.update({
-      where: { id: requestId },
-      data: {
-        status: 'REJECTED',
-        reason: reason || request.reason,
-      },
-    });
+    where: { id: requestId },
+    data: {
+      status: 'REJECTED',
+      reason: reason || request.reason,
+    },
+  });
 
   return res.respond(200, "Delete request rejected successfully!");
 });
@@ -1614,6 +1640,7 @@ module.exports = {
   createRiskScoring,
   createCollateral,
   submitMasterProductUpdateRequest,
+  getAllMasterProductUpdateRequests,
   approveMasterProductUpdateRequest,
   rejectMasterProductUpdateRequest,
   createMasterProductDeleteRequest,

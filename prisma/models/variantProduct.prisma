@@ -3,11 +3,13 @@ model VariantProduct {
     id               String      @id @default(uuid())
     masterProductId  String
     productManagerId String
+    versionId        Int
+    variantId        String      @db.VarChar(60)
     productType      ProductType
     variantName      String      @db.VarChar(150)
     variantType      String      @db.VarChar(30)
     variantCode      String      @db.VarChar(60)
-    versionId        Int
+    partnerId        String?
     remark           String
     createdAt        DateTime    @default(now())
     updatedAt        DateTime    @updatedAt
@@ -15,12 +17,11 @@ model VariantProduct {
 
     masterProduct  MasterProduct      @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
     productManager AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
+    productPartner ProductPartner?    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 
-    VariantProductEligibility      VariantProductEligibility?
-    VariantProductFeeStructure     VariantProductFeeStructure?
-    VariantProductWithdrawLogic    VariantProductWithdrawLogic?
+    VariantProductParameter        VariantProductParameter?
+    VariantProductOtherCharges     VariantProductOtherCharges?
     VariantProductRepayment        VariantProductRepayment?
-    VariantProductValidity         VariantProductValidity?
     VariantProductUpdateRequest    VariantProductUpdateRequest[]
     VariantProductVersion          VariantProductVersion[]
     AssignVariantProductToEmployer AssignVariantProductToEmployer[]
@@ -28,34 +29,45 @@ model VariantProduct {
     queries                        RaiseQuery[]
 }
 
-// ##########----------Varient Product Eligibility Model----------##########
-model VariantProductEligibility {
-    id                String            @id @default(uuid())
-    varientProductId  String            @unique
-    minEmploymentDays ProductType
-    disbursementMode  DisbursementModes
-    minSalary         String            @db.VarChar(30)
-    maxSalary         String            @db.VarChar(60)
-    paymentFrequency  String
-    createdAt         DateTime          @default(now())
-    updatedAt         DateTime          @updatedAt
-    isDeleted         Boolean           @default(false)
+// ##########----------Variant Product Parameter Model----------##########
+model VariantProductParameter {
+    id                      String       @id @default(uuid())
+    variantProductId        String       @unique
+    minLoanAmount           Int
+    maxLoanAmount           Int
+    minTenureMonths         Int
+    maxTenureMonths         Int
+    interestRateType        InterestType
+    interestRateMin         Float
+    interestRateMax         Float
+    processingFeeType       FeeType
+    processingFeeValue      Float
+    latePaymentFeeType      FeeType
+    latePaymentFeeValue     Float
+    penalInterestApplicable Boolean
+    emiFrequency            EMIFrequency
+    prepaymentFeeType       FeeType
+    prepaymentFeeValue      Float
+    penalInterestRate       Int
+    minAge                  Int
+    maxAge                  Int
 
-    varientProduct VariantProduct @relation(fields: [varientProductId], references: [id], onDelete: Cascade)
+    variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Fee Structure Model----------##########
-model VariantProductFeeStructure {
+// ##########----------Variant Product Other Charges Model----------##########
+model VariantProductOtherCharges {
     id                 String   @id @default(uuid())
     variantProductId   String   @unique
-    setupFee           Int?
-    perTransactionFee  Int?
-    subscriptionOption Boolean?
-    feePayer           String?
-    gst                Int?
-    penalty            Int?
-    insuranceFee       Int?
-    insuranceCalcOn    Int?
+    chequeBounceCharge Int?
+    dublicateNocCharge Int?
+    furnishingCharge   Int?
+    chequeSwapCharge   Int?
+    revocation         Int?
+    documentCopyCharge Int?
+    stampDutyCharge    Int?
+    nocCharge          Int?
+    incidentalCharge   Int?
     createdAt          DateTime @default(now())
     updatedAt          DateTime @updatedAt
     isDeleted          Boolean  @default(false)
@@ -63,49 +75,17 @@ model VariantProductFeeStructure {
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Withdrawl Logic Model----------##########
-model VariantProductWithdrawLogic {
-    id                   String   @id @default(uuid())
-    variantProductId     String   @unique
-    minWithdrawAmount    Int?
-    maxWithdrawAmount    Int?
-    minAccrued           Int?
-    maxAccrued           Int?
-    maxWithdrawlPerMonth Int?
-    frequencyRule        String?
-    createdAt            DateTime @default(now())
-    updatedAt            DateTime @updatedAt
-    isDeleted            Boolean  @default(false)
-
-    variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
-}
-
 // ##########----------Variant Product Repayment Model----------##########
 model VariantProductRepayment {
-    id               String         @id @default(uuid())
-    variantProductId String         @unique
-    repaymentMode    RepaymentMode?
-    eNachRequired    Boolean
-    autoDebit        Boolean
-    createdAt        DateTime       @default(now())
-    updatedAt        DateTime       @updatedAt
-    isDeleted        Boolean        @default(false)
-
-    variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Variant Product Validity Model----------##########
-model VariantProductValidity {
-    id               String    @id @default(uuid())
-    variantProductId String    @unique
-    activationDate   DateTime?
-    validityPeriod   DateTime
-    workLocation     String
-    minSalary        Int
-    maxSalary        Int
-    createdAt        DateTime  @default(now())
-    updatedAt        DateTime  @updatedAt
-    isDeleted        Boolean   @default(false)
+    id                          String   @id @default(uuid())
+    variantProductId            String   @unique
+    incentiveType               String
+    incentiveValue              Int
+    payoutMode                  String
+    incentiveReversalConditions String
+    createdAt                   DateTime @default(now())
+    updatedAt                   DateTime @updatedAt
+    isDeleted                   Boolean  @default(false)
 
     variantProduct VariantProduct? @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 }
