@@ -1,61 +1,80 @@
 // ##########----------Custom User Enums----------##########
 enum UserType {
-    ASSOCIATE
-    EMPLOYER
-    EMPLOYEE
-    ASSOCIATESUBADMIN
-    EMPLOYERSUBADMIN
+  ASSOCIATE
+  EMPLOYER
+  EMPLOYEE
+  ASSOCIATESUBADMIN
+  EMPLOYERSUBADMIN
 }
 
 // ##########----------Employee Enums----------##########
 enum Gender {
-    Male
-    Female
-    Others
+  Male
+  Female
+  Others
 }
 
 enum KycStatus {
-    Pending
-    InProcess
-    Completed
+  Pending
+  InProcess
+  Completed
 }
 
 enum MaritalStatus {
-    Married
-    Single
-    Divorced
+  Married
+  Single
+  Divorced
 }
 
 // ##########----------Employer Enums----------##########
 enum LegalIdentityType {
-    Pvt_Ltd
-    LLP
-    Partnership
-    Govt_Org
-    Sole_Proprietor
+  Pvt_Ltd
+  LLP
+  Partnership
+  Govt_Org
+  Sole_Proprietor
+}
+
+// ##########----------Query Enums----------##########
+enum Urgency {
+  High
+  Low
+  Medium
+}
+
+// ##########----------Payroll Enums----------##########
+enum CreatorType {
+  EMPLOYER
+  EMPLOYERSUBADMIN
+}
+
+// ##########----------Ticket Enums----------##########
+enum Ticket {
+  PENDING
+  RESOLVED
 }
 
 // ##########----------Product Enums----------##########
 enum DeliveryChannel {
-    Mobile_App
-    Field_Agent
-    Call_Center
-    Embedded_Api
-    Partner_Portal
-    Whatsapp_Bot
+  Mobile_App
+  Field_Agent
+  Call_Center
+  Embedded_Api
+  Partner_Portal
+  Whatsapp_Bot
 }
 
 enum ProductStatus {
-    Draft
-    Active
-    Archived
+  Draft
+  Active
+  Archived
 }
 
 enum InterestType {
-    FLAT
-    REDUCING
-    ZERO
-    CUSTOM
+  FLAT
+  REDUCING
+  ZERO
+  CUSTOM
 }
 
 enum FeeType {
@@ -65,11 +84,11 @@ enum FeeType {
 }
 
 enum EMIFrequency {
-    Daily
-    Weekly
-    Biweekly
-    Monthly
-    Custom
+  Daily
+  Weekly
+  Biweekly
+  Monthly
+  Custom
 }
 
 enum BureauType {
@@ -162,10 +181,10 @@ enum BorrowerBehavior {
 }
 
 enum CollateralType {
-    GOLD
-    VEHICLE
-    PROPERTY
-    OTHER
+  GOLD
+  VEHICLE
+  PROPERTY
+  OTHER
 }
 
 enum OwnershipVerificationStatus {
@@ -203,12 +222,10 @@ enum RequestStatus {
   REJECTED
 }
 
-// ####################--------------------To Be Removed--------------------####################
-
 enum ProductType {
-    SECURED
-    UNSECURED
-    NA
+  SECURED
+  UNSECURED
+  NA
 }
 
 enum CreditBureau {
@@ -216,110 +233,4 @@ enum CreditBureau {
   EXPERIAN
   CRIF
   EQUIFAX
-}
-
-enum TenureType {
-    Fixed
-    Flexible
-    EventBased
-}
-
-enum TenureUnit {
-    Days
-    Weeks
-    Months
-    PayoutLinked
-}
-
-enum ConcentCaptureFormat {
-    DIGITAL
-    PAPER
-    BIOMETRIC
-}
-
-enum RiskCategory {
-    HIGH
-    MODERATE
-    LOW
-}
-
-enum DisbursementModes {
-    NEFT
-    IMPS
-    UPI
-}
-
-enum RepaymentMode {
-    LIEN
-    ENACH
-    SELFPAY
-    EMI
-    BNPL
-}
-
-enum UpdateRequestStatus {
-    PENDING
-    APPROVED
-    REJECTED
-}
-
-enum DocumentType {
-  PAN
-  AADHAAR
-  VOTER_ID
-  DRIVING_LICENSE
-  BUSINESS_REGISTRATION
-  GST_CERTIFICATE
-  BANK_STATEMENT_3M
-  SALARY_SLIP_3M
-  UTILITY_BILL
-  UDYAM_CERTIFICATE
-  SHOP_ESTABLISHMENT_LICENSE
-  POS_STATEMENT
-  OTHERS
-}
-
-enum InternalScoreVariable {
-  INCOME_STABILITY
-  EMPLOYER_TYPE
-  BANK_STATEMENT_SCORE
-  EXISTING_LOAN_HISTORY
-  FIELD_VERIFICATION_SCORE
-  DIGITAL_BEHAVIOR_SCORE
-}
-
-enum ExternalScoreInput {
-  CREDIT_BUREAU
-  TELECOM_SCORE
-  GST_DATA_SCORE
-  ALTERNATE_CREDIT_SCORES
-  UTILITY_BILL_HISTORY
-}
-
-enum CollateralOwnershipDoc {
-  TITLE_DEED
-  PROPERTY_TAX_RECEIPT
-  VEHICLE_RC
-  GOLD_INVOICE
-  FD_CERTIFICATE
-  ENCUMBRANCE_CERTIFICATE
-}
-
-// ##########----------Query Enums----------##########
-enum Urgency {
-    High
-    Low
-    Medium
-}
-
-// ##########----------Payroll Enums----------##########
-enum CreatorType {
-  EMPLOYER
-  EMPLOYERSUBADMIN
-}
-
-// ##########----------Ticket Enums----------##########
-enum Ticket {
-  PENDING
-  RESOLVED
 }

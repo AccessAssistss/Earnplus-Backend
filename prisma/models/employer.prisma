@@ -14,6 +14,9 @@ model Employer {
     cin                   String?
     signedMasterAgreement String?
     kycDocuments          String?
+    boardResolution       String?
+    onboardingSOP         String?
+    additionalDoc         String?
     approvalEmail         String?
     step                  Int?               @default(1)
     isPassGenerated       Boolean?           @default(false)
@@ -127,6 +130,7 @@ model EmployerLocationDetails {
 
     AllocateProductToEmployer AllocateProductToEmployer[]
     EmploymentDetails         EmploymentDetails[]
+    ContractCombinationRuleBook ContractCombinationRuleBook[]
 }
 
 // ##########----------Employer Business Details Model----------##########
@@ -183,9 +187,10 @@ model EmployerContractTypeCombination {
     employerId       String?
     contractTypeId   String?
     uniqueId         String?
-    name             String?
-    paymentFrequency Int?
-    remark           String?
+    triggerNextMonth Boolean?
+    accuralStartAt   DateTime
+    accuralEndAt     DateTime
+    payoutDate       DateTime
     createdAt        DateTime @default(now())
     updatedAt        DateTime @updatedAt
     isDeleted        Boolean  @default(false)
@@ -193,42 +198,24 @@ model EmployerContractTypeCombination {
     employer     Employer?             @relation(fields: [employerId], references: [id], onDelete: Cascade)
     contractType EmployerContractType? @relation(fields: [contractTypeId], references: [id], onDelete: Cascade)
 
-    PayoutDate                  PayoutDate[]
     ContractCombinationRuleBook ContractCombinationRuleBook[]
     EmploymentDetails           EmploymentDetails[]
-}
-
-// ##########----------Payout Dates Model----------##########
-model PayoutDate {
-    id                    String    @id @default(uuid())
-    contractCombinationId String?
-    startDate             DateTime?
-    endDate               DateTime?
-    createdAt             DateTime  @default(now())
-    updatedAt             DateTime  @updatedAt
-    isDeleted             Boolean   @default(false)
-
-    contractCombination EmployerContractTypeCombination? @relation(fields: [contractCombinationId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Payout Dates Model----------##########
 model ContractCombinationRuleBook {
     id                    String   @id @default(uuid())
     contractCombinationId String?
-    name                  String?
-    tenureRule            Int?
-    salaryBand            Int?
-    designation           String?
-    remark                String?
+    workLoacationId       String?
+    workingPeriod         Int?
     createdAt             DateTime @default(now())
     updatedAt             DateTime @updatedAt
     isDeleted             Boolean  @default(false)
 
     contractCombination EmployerContractTypeCombination? @relation(fields: [contractCombinationId], references: [id], onDelete: Cascade)
+    workLocation        EmployerLocationDetails?         @relation(fields: [workLoacationId], references: [id], onDelete: Cascade)
 
     AllocateProductToEmployer AllocateProductToEmployer[]
-
-    @@unique([contractCombinationId, name])
 }
 
 // ##########----------Allocate Product To Employer Model----------##########

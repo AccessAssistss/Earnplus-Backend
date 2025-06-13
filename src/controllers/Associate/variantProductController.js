@@ -61,6 +61,7 @@ const createVariantProduct = asyncHandler(async (req, res) => {
         masterProductId,
         productManagerId: productManager.id,
         variantName,
+        versionId: 1,
         variantType,
         variantCode,
         variantId: generatedCode,
@@ -216,6 +217,7 @@ const createVariantProductRepayment = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
     variantProductId,
+    penalInterestApplicable,
     incentiveType,
     incentiveValue,
     payoutMode,
@@ -244,9 +246,18 @@ const createVariantProductRepayment = asyncHandler(async (req, res) => {
     return res.respond(404, "Variant Product not found.");
   }
 
+  const existingRepayment = await prisma.variantProductRepayment.findUnique({
+    where: { variantProductId },
+  });
+
+  if (existingRepayment) {
+    return res.respond(400, "Repayment already exists for this variant product.");
+  }
+
   const repayment = await prisma.variantProductRepayment.create({
     data: {
       variantProductId,
+      penalInterestApplicable,
       incentiveType,
       incentiveValue,
       payoutMode,
@@ -262,17 +273,18 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
     variantProductId,
-    updateType,
-    coreUpdate,
-    eligibilityUpdate,
-    feeUpdate,
-    withdrawLogicUpdate,
+    productType,
+    variantName,
+    variantType,
+    partnerId,
+    remark,
+    parameterUpdate,
+    otherChargesUpdate,
     repaymentUpdate,
-    validityUpdate,
   } = req.body;
 
   if (!variantProductId) {
-    return res.respond(400, "Required fields missing.");
+    return res.respond(400, "Required field missing.");
   }
 
   const productManager = await prisma.associateSubAdmin.findFirst({
@@ -298,46 +310,35 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const updateRequest = await prisma.variantProductUpdateRequest.create({
     data: {
       variantProductId,
-      updateType,
-      status: "pending",
-      coreUpdate: coreUpdate
+      productManagerId: productManager.id,
+      productType,
+      variantName,
+      variantType,
+      partnerId,
+      remark,
+
+      VariantProductParameterUpdate: parameterUpdate
         ? {
-          create: coreUpdate,
+          create: parameterUpdate,
         }
         : undefined,
-      eligibilityUpdate: eligibilityUpdate
+
+      VariantProductOtherChargesUpdate: otherChargesUpdate
         ? {
-          create: eligibilityUpdate,
+          create: otherChargesUpdate,
         }
         : undefined,
-      feeUpdate: feeUpdate
-        ? {
-          create: feeUpdate,
-        }
-        : undefined,
-      withdrawLogicUpdate: withdrawLogicUpdate
-        ? {
-          create: withdrawLogicUpdate,
-        }
-        : undefined,
-      repaymentUpdate: repaymentUpdate
+
+      VariantProductRepaymentUpdate: repaymentUpdate
         ? {
           create: repaymentUpdate,
         }
         : undefined,
-      validityUpdate: validityUpdate
-        ? {
-          create: validityUpdate,
-        }
-        : undefined,
     },
     include: {
-      coreUpdate: true,
-      eligibilityUpdate: true,
-      feeUpdate: true,
-      withdrawLogicUpdate: true,
-      repaymentUpdate: true,
-      validityUpdate: true,
+      VariantProductParameterUpdate: true,
+      VariantProductOtherChargesUpdate: true,
+      VariantProductRepaymentUpdate: true,
     },
   });
 
@@ -364,21 +365,10 @@ const approveVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const request = await prisma.variantProductUpdateRequest.findUnique({
     where: { id: requestId },
     include: {
-      variantProduct: {
-        include: {
-          VariantProductEligibility: true,
-          VariantProductFeeStructure: true,
-          VariantProductWithdrawLogic: true,
-          VariantProductRepayment: true,
-          VariantProductValidity: true,
-        },
-      },
-      coreUpdate: true,
-      eligibilityUpdate: true,
-      feeUpdate: true,
-      withdrawLogicUpdate: true,
-      repaymentUpdate: true,
-      validityUpdate: true,
+      variantProduct: true,
+      VariantProductParameterUpdate: true,
+      VariantProductOtherChargesUpdate: true,
+      VariantProductRepaymentUpdate: true,
     },
   });
 
@@ -389,10 +379,7 @@ const approveVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const { variantProduct } = request;
   const newVersionId = variantProduct.versionId + 1;
 
-  function cleanPrismaUpdateData(
-    data,
-    disallowedFields = ["id", "updateRequestId", "createdAt", "updatedAt"]
-  ) {
+  function cleanPrismaUpdateData(data, disallowedFields = ["id", "updateRequestId", "createdAt", "updatedAt", "isDeleted"]) {
     const cleaned = { ...data };
     for (const field of disallowedFields) {
       delete cleaned[field];
@@ -412,48 +399,45 @@ const approveVariantProductUpdateRequest = asyncHandler(async (req, res) => {
     await tx.variantProduct.update({
       where: { id: variantProduct.id },
       data: {
-        variantName: request.coreUpdate.variantName,
-        variantType: request.coreUpdate.variantType,
-        variantCode: request.coreUpdate.variantCode,
-        remark: request.coreUpdate.remark,
-        productType: request.coreUpdate.productType,
+        variantName: request.variantName,
+        variantType: request.variantType,
+        productType: request.productType,
+        partnerId: request.partnerId,
+        remark: request.remark,
         versionId: newVersionId,
       },
     });
 
-    await tx.variantProductEligibility.update({
-      where: { varientProductId: variantProduct.id },
-      data: cleanPrismaUpdateData(request.eligibilityUpdate),
-    });
+    if (request.VariantProductParameterUpdate) {
+      await tx.variantProductParameter.update({
+        where: { variantProductId: variantProduct.id },
+        data: cleanPrismaUpdateData(request.VariantProductParameterUpdate),
+      });
+    }
 
-    await tx.variantProductFeeStructure.update({
-      where: { variantProductId: variantProduct.id },
-      data: cleanPrismaUpdateData(request.feeUpdate),
-    });
+    if (request.VariantProductOtherChargesUpdate) {
+      await tx.variantProductOtherCharges.update({
+        where: { variantProductId: variantProduct.id },
+        data: cleanPrismaUpdateData(request.VariantProductOtherChargesUpdate),
+      });
+    }
 
-    await tx.variantProductWithdrawLogic.update({
-      where: { variantProductId: variantProduct.id },
-      data: cleanPrismaUpdateData(request.withdrawLogicUpdate),
-    });
-
-    await tx.variantProductRepayment.update({
-      where: { variantProductId: variantProduct.id },
-      data: cleanPrismaUpdateData(request.repaymentUpdate),
-    });
-
-    await tx.variantProductValidity.update({
-      where: { variantProductId: variantProduct.id },
-      data: cleanPrismaUpdateData(request.validityUpdate),
-    });
+    if (request.VariantProductRepaymentUpdate) {
+      await tx.variantProductRepayment.update({
+        where: { variantProductId: variantProduct.id },
+        data: cleanPrismaUpdateData(request.VariantProductRepaymentUpdate),
+      });
+    }
 
     await tx.variantProductUpdateRequest.update({
       where: { id: requestId },
       data: {
+        isDeleted: true,
         isApproved: true,
-        isRejected: true,
       },
     });
   });
+
   return res.respond(200, "Variant Product Update Request Approved!");
 });
 
@@ -473,7 +457,6 @@ const rejectVariantProductUpdateRequest = asyncHandler(async (req, res) => {
     where: { id: requestId },
     data: {
       isRejected: true,
-      status: "rejected",
       rejectionReason: reason,
     },
   });
@@ -508,6 +491,8 @@ const getAllVariantProductsByProduct = asyncHandler(async (req, res) => {
       variantType: true,
       variantCode: true,
       productType: true,
+      versionId: true,
+      partnerId: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -521,7 +506,19 @@ const getAllVariantProductsByProduct = asyncHandler(async (req, res) => {
 
 // ##########----------Get Variant Product Details----------##########
 const getVariantProductDetail = asyncHandler(async (req, res) => {
+  const userId = req.user;
   const { variantProductId } = req.params;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can access this data.");
+  }
 
   const variant = await prisma.variantProduct.findFirst({
     where: {

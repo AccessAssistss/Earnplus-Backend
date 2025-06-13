@@ -13,8 +13,14 @@ const {
   deleteAssociateSubAdminByAssociate,
 } = require("../../controllers/Associate/associateSubAdminController");
 const validateToken = require("../../../middleware/validateJwtToken");
+const multerErrorHandler = require("../../../middleware/multerErrorHandler");
+const createUploadMiddleware = require("../../../middleware/upload");
+
+const { EMPLOYER_FILE_FIELDS } = require("../../../utils/fileFieldMapper")
 
 const router = express.Router();
+
+const uploadEmployerFiles = createUploadMiddleware("employer", EMPLOYER_FILE_FIELDS);
 
 router.post("/createAssociateSubAdmin", validateToken, createAssociateSubAdmin);
 router.post("/loginAssociateSubAdmin", loginAssociateSubAdmin);
@@ -34,9 +40,7 @@ router.get(
   getAssociateSubAdmins
 );
 router.post(
-  "/addEmployerByAssociateSubAdmin",
-  validateToken,
-  addEmployerByAssociateSubAdmin
+  "/addEmployerByAssociateSubAdmin", validateToken, uploadEmployerFiles, multerErrorHandler, addEmployerByAssociateSubAdmin
 );
 router.patch("/verifyGSTAndPAN", validateToken, verifyGSTAndPAN);
 router.get(

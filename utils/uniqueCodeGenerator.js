@@ -24,7 +24,7 @@ const generateUniqueEmployeeId = async (
   employerId,
   employerInternalId
 ) => {
-   const baseEmployerId = employerId.replace("-", "");
+  const baseEmployerId = employerId.replace("-", "");
 
   const latestEmployee = await prisma.employee.findFirst({
     where: {
@@ -38,7 +38,7 @@ const generateUniqueEmployeeId = async (
   });
 
   let newEmployeeId = `EE-${baseEmployerId}-0001`;
-  
+
   if (latestEmployee?.customEmployeeId) {
     const parts = latestEmployee.customEmployeeId.split("-");
     const lastNumber = parseInt(parts[2], 10);
@@ -74,9 +74,21 @@ const generateUniqueEmployerId = async () => {
   return newEmployerId;
 };
 
+const generateUniqueContractCombinationId = async (employerId) => {
+  if (!employerId) throw new Error("Employer ID is required");
+
+  const count = await prisma.employerContractTypeCombination.count({
+    where: { employerId },
+  });
+
+  const sequence = String(count + 1).padStart(3, "0");
+  return `PAY-${employerId}-${sequence}`;
+};
+
 module.exports = {
   generateProductCode,
   generateVariantProductCode,
   generateUniqueEmployeeId,
   generateUniqueEmployerId,
+  generateUniqueContractCombinationId
 };

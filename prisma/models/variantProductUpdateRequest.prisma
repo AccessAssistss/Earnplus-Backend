@@ -1,102 +1,85 @@
 // ##########----------Variant Product Update Request Model----------##########
 model VariantProductUpdateRequest {
-    id               String   @id @default(uuid())
+    id               String      @id @default(uuid())
     variantProductId String
-    updateType       String
-    status           String
-    isApproved       Boolean  @default(false)
-    isRejected       Boolean  @default(false)
-    rejectionReason  String?
-    createdAt        DateTime @default(now())
-    updatedAt        DateTime @updatedAt
+    productManagerId String
+    productType      ProductType
+    variantName      String      @db.VarChar(150)
+    variantType      String      @db.VarChar(30)
+    partnerId        String?
+    remark           String
+    isApproved       Boolean     @default(false)
+    isrejected       Boolean     @default(false)
+    rejectionReason  String
+    createdAt        DateTime    @default(now())
+    updatedAt        DateTime    @updatedAt
+    isDeleted        Boolean     @default(false)
 
     variantProduct VariantProduct @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
 
-    coreUpdate          VariantProductCoreUpdate?
-    eligibilityUpdate   VariantProductEligibilityUpdate?
-    feeUpdate           VariantProductFeeStructureUpdate?
-    withdrawLogicUpdate VariantProductWithdrawLogicUpdate?
-    repaymentUpdate     VariantProductRepaymentUpdate?
-    validityUpdate      VariantProductValidityUpdate?
+    VariantProductParameterUpdate    VariantProductParameterUpdate?
+    VariantProductOtherChargesUpdate VariantProductOtherChargesUpdate?
+    VariantProductRepaymentUpdate    VariantProductRepaymentUpdate?
 }
 
-// ##########----------Variant Product Core Update Model----------##########
-model VariantProductCoreUpdate {
-    id              String      @id @default(uuid())
-    updateRequestId String      @unique
-    variantName     String
-    variantType     String
-    variantCode     String?
-    versionId       Int
-    remark          String
-    productType     ProductType
+// ##########----------Variant Product Parameter Update Model----------##########
+model VariantProductParameterUpdate {
+    id                      String       @id @default(uuid())
+    updateRequestId         String       @unique
+    minLoanAmount           Int
+    maxLoanAmount           Int
+    minTenureMonths         Int
+    maxTenureMonths         Int
+    interestRateType        InterestType
+    interestRateMin         Float
+    interestRateMax         Float
+    processingFeeType       FeeType
+    processingFeeValue      Float
+    latePaymentFeeType      FeeType
+    latePaymentFeeValue     Float
+    penalInterestApplicable Boolean
+    emiFrequency            EMIFrequency
+    prepaymentFeeType       FeeType
+    prepaymentFeeValue      Float
+    penalInterestRate       Int
+    minAge                  Int
+    maxAge                  Int
 
-    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    VariantProductUpdateRequest VariantProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Variant Product Eligibility Update Model----------##########
-model VariantProductEligibilityUpdate {
-    id                String            @id @default(uuid())
-    updateRequestId   String            @unique
-    minEmploymentDays ProductType
-    disbursementMode  DisbursementModes
-    minSalary         String
-    maxSalary         String
-    paymentFrequency  String
-
-    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Variant Product Fee Structure Update Model----------##########
-model VariantProductFeeStructureUpdate {
+// ##########----------Variant Product Other Charges Update Model----------##########
+model VariantProductOtherChargesUpdate {
     id                 String   @id @default(uuid())
     updateRequestId    String   @unique
-    setupFee           Int?
-    perTransactionFee  Int?
-    subscriptionOption Boolean?
-    feePayer           String?
-    gst                Int?
-    penalty            Int?
-    insuranceFee       Int?
-    insuranceCalcOn    Int?
+    chequeBounceCharge Int?
+    dublicateNocCharge Int?
+    furnishingCharge   Int?
+    chequeSwapCharge   Int?
+    revocation         Int?
+    documentCopyCharge Int?
+    stampDutyCharge    Int?
+    nocCharge          Int?
+    incidentalCharge   Int?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    isDeleted          Boolean  @default(false)
 
-    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Variant Product Withdraw Logic Update Model----------##########
-model VariantProductWithdrawLogicUpdate {
-    id                   String  @id @default(uuid())
-    updateRequestId      String  @unique
-    minWithdrawAmount    Int?
-    maxWithdrawAmount    Int?
-    minAccrued           Int?
-    maxAccrued           Int?
-    maxWithdrawlPerMonth Int?
-    frequencyRule        String?
-
-    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    VariantProductUpdateRequest VariantProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Variant Product Repayment Update Model----------##########
 model VariantProductRepaymentUpdate {
-    id              String         @id @default(uuid())
-    updateRequestId String         @unique
-    repaymentMode   RepaymentMode?
-    eNachRequired   Boolean
-    autoDebit       Boolean
+    id                          String   @id @default(uuid())
+    updateRequestId             String   @unique
+    penalInterestApplicable     Boolean
+    incentiveType               String?
+    incentiveValue              Int?
+    payoutMode                  String?
+    incentiveReversalConditions String?
+    createdAt                   DateTime @default(now())
+    updatedAt                   DateTime @updatedAt
+    isDeleted                   Boolean  @default(false)
 
-    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Variant Product Validity Update Model----------##########
-model VariantProductValidityUpdate {
-    id              String    @id @default(uuid())
-    updateRequestId String    @unique
-    activationDate  DateTime?
-    validityPeriod  DateTime
-    workLocation    String
-    minSalary       Int
-    maxSalary       Int
-
-    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    VariantProductUpdateRequest VariantProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }

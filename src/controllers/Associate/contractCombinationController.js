@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const { asyncHandler } = require("../../../utils/asyncHandler");
+const { generateUniqueContractCombinationId } = require("../../../utils/uniqueCodeGenerator");
 
 const prisma = new PrismaClient();
 
@@ -9,24 +10,22 @@ const createContractCombination = asyncHandler(async (req, res) => {
   const {
     employerId,
     contractTypeId,
-    name,
-    paymentFrequency,
-    remark,
-    payoutDates,
+    accuralStartAt,
+    accuralEndAt,
+    payoutDate,
+    triggerNextMonth = false
   } = req.body;
 
   if (
     !employerId ||
     !contractTypeId ||
-    !name ||
-    !paymentFrequency ||
-    !remark ||
-    !Array.isArray(payoutDates) ||
-    payoutDates.length === 0
+    !accuralStartAt ||
+    !accuralEndAt ||
+    !payoutDate
   ) {
     return res.respond(
       400,
-      "All fields are required with at least one payout date!"
+      "All fields are required!"
     );
   }
 
@@ -54,34 +53,18 @@ const createContractCombination = asyncHandler(async (req, res) => {
     return res.respond(404, "Employer Contract Type not found!");
   }
 
-  const count = await prisma.employerContractTypeCombination.count({
-    where: { employerId },
-  });
-
-  const sequence = String(count + 1).padStart(3, "0");
-  const uniqueId = `CT-${employerId}-${sequence}`;
+  const uniqueId = await generateUniqueContractCombinationId(employerId);
 
   const combination = await prisma.employerContractTypeCombination.create({
     data: {
       employerId,
       contractTypeId,
       uniqueId,
-      name,
-      paymentFrequency,
-      remark,
+      triggerNextMonth,
+      accuralStartAt: new Date(accuralStartAt),
+      accuralEndAt: new Date(accuralEndAt),
+      payoutDate: new Date(payoutDate),
     },
-  });
-
-  function isValidDate(date) {
-    return date && !isNaN(new Date(date).getTime());
-  }
-
-  await prisma.payoutDate.createMany({
-    data: payoutDates.map((date) => ({
-      contractCombinationId: combination.id,
-      startDate: isValidDate(date.startDate) ? new Date(date.startDate) : null,
-      endDate: isValidDate(date.endDate) ? new Date(date.endDate) : null,
-    })),
   });
 
   res.respond(201, "Contract Combination created successfully!", combination);
@@ -91,6 +74,10 @@ const createContractCombination = asyncHandler(async (req, res) => {
 const getContractCombinations = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { employerId, contractTypeId } = req.query;
+
+  if (!employerId || !contractTypeId) {
+    return res.respond(400, "employerId and contractTypeId are required!");
+  }
 
   const ERM = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
@@ -125,17 +112,12 @@ const getContractCombinations = asyncHandler(async (req, res) => {
     select: {
       id: true,
       uniqueId: true,
-      name: true,
-      paymentFrequency: true,
-      remark: true,
+      triggerNextMonth: true,
+      accuralStartAt: true,
+      accuralEndAt: true,
+      payoutDate: true,
       createdAt: true,
       updatedAt: true,
-      PayoutDate: {
-        select: {
-          startDate: true,
-          endDate: true,
-        },
-      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -148,21 +130,11 @@ const createContractRuleBook = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
     contractCombinationId,
-    name,
-    tenureRule,
-    salaryBand,
-    designation,
-    remark,
+    workLoacationId,
+    workingPeriod,
   } = req.body;
 
-  if (
-    !contractCombinationId ||
-    !name ||
-    !tenureRule ||
-    !remark ||
-    !salaryBand ||
-    !designation
-  ) {
+  if (!contractCombinationId || !workLoacationId || !workingPeriod) {
     return res.respond(400, "All fields are required!");
   }
 
@@ -184,14 +156,18 @@ const createContractRuleBook = asyncHandler(async (req, res) => {
     return res.respond(404, "Contract Combination not found!");
   }
 
+  const workLocation = await prisma.employerLocationDetails.findFirst({
+    where: { id: workLoacationId, isDeleted: false },
+  });
+  if (!workLocation) {
+    return res.respond(404, "Work location not found!");
+  }
+
   const ruleBook = await prisma.contractCombinationRuleBook.create({
     data: {
       contractCombinationId,
-      name,
-      tenureRule,
-      salaryBand,
-      designation,
-      remark,
+      workLoacationId,
+      workingPeriod,
     },
   });
 
@@ -205,6 +181,10 @@ const createContractRuleBook = asyncHandler(async (req, res) => {
 const getContractRuleBooks = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { contractCombinationId } = req.query;
+
+  if (!contractCombinationId) {
+    return res.respond(400, "contractCombinationId is required!");
+  }
 
   const ERM = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
@@ -221,15 +201,13 @@ const getContractRuleBooks = asyncHandler(async (req, res) => {
       isDeleted: false,
       contractCombinationId,
     },
-    select: {
+   select: {
       id: true,
-      name: true,
-      tenureRule: true,
-      salaryBand: true,
-      designation: true,
-      remark: true,
+      workingPeriod: true,
+      workLoacationId: true,
       createdAt: true,
       updatedAt: true,
+      workLocation: true,
     },
     orderBy: { createdAt: "desc" },
   });

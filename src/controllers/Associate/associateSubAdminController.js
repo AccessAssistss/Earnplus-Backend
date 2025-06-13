@@ -377,7 +377,6 @@ const getAssociateSubAdmins = asyncHandler(async (req, res) => {
 // ##########----------Add Employer By Associate SubAdmin----------##########
 const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
   const user = req.user;
-
   const {
     userType = "EMPLOYER",
     email,
@@ -447,6 +446,32 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
 
   const hashed = await hashPassword(password);
 
+  const signedMasterAgreementFile = req.files?.signedMasterAgreement?.[0];
+  const kycDocumentsFile = req.files?.kycDocuments?.[0];
+  const boardResolutionFile = req.files?.boardResolution?.[0];
+  const onboardingSOPFile = req.files?.onboardingSOP?.[0];
+  const additionalDocFile = req.files?.additionalDoc?.[0];
+
+  const signedMasterAgreementUrl = signedMasterAgreementFile
+    ? `/uploads/employer/master_agreement/${signedMasterAgreementFile.filename}`
+    : null;
+
+  const kycDocumentsUrl = kycDocumentsFile
+    ? `/uploads/employer/kyc_documents/${kycDocumentsFile.filename}`
+    : null;
+
+  const boardResolutionUrl = boardResolutionFile
+    ? `/uploads/employer/board_resolution/${boardResolutionFile.filename}`
+    : null;
+
+  const onboardingSOPUrl = onboardingSOPFile
+    ? `/uploads/employer/onboarding_sop/${onboardingSOPFile.filename}`
+    : null;
+
+  const additionalDocUrl = additionalDocFile
+    ? `/uploads/employer/additional_doc/${additionalDocFile.filename}`
+    : null;
+
   const employer = await prisma.employer.create({
     data: {
       user: {
@@ -464,6 +489,11 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
       cin,
       legalIdentity,
       employerId: newEmployerId,
+      signedMasterAgreement: signedMasterAgreementUrl,
+      kycDocuments: kycDocumentsUrl,
+      boardResolution: boardResolutionUrl,
+      onboardingSOP: onboardingSOPUrl,
+      additionalDoc: additionalDocUrl,
     },
   });
 

@@ -79,10 +79,11 @@ model VariantProductOtherCharges {
 model VariantProductRepayment {
     id                          String   @id @default(uuid())
     variantProductId            String   @unique
-    incentiveType               String
-    incentiveValue              Int
-    payoutMode                  String
-    incentiveReversalConditions String
+    penalInterestApplicable     Boolean
+    incentiveType               String?
+    incentiveValue              Int?
+    payoutMode                  String?
+    incentiveReversalConditions String?
     createdAt                   DateTime @default(now())
     updatedAt                   DateTime @updatedAt
     isDeleted                   Boolean  @default(false)
