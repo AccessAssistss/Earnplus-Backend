@@ -1351,6 +1351,11 @@ const getAllMasterProducts = asyncHandler(async (req, res) => {
       status: true,
       createdAt: true,
       updatedAt: true,
+      _count: {
+        select: {
+          VariantProduct: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -1359,12 +1364,20 @@ const getAllMasterProducts = asyncHandler(async (req, res) => {
     take: limit,
   });
 
+  const formattedProducts = masterProducts.map((product) => {
+  const { _count, ...rest } = product;
+  return {
+    ...rest,
+    VariantProduct: _count?.VariantProduct || 0,
+  };
+});
+
   res.respond(200, "Master Products fetched successfully!", {
     totalItems: totalCount,
     currentPage: page,
     totalPages: Math.ceil(totalCount / limit),
     pageSize: limit,
-    data: masterProducts,
+    data: formattedProducts,
   });
 });
 

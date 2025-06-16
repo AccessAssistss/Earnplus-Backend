@@ -22,10 +22,11 @@ model AssociateSubAdmin {
     VariantProduct              VariantProduct[]
     masterProductUpdateRequests MasterProductUpdateRequest[]
     AllocateProductToEmployer   AllocateProductToEmployer[]
-    queriesRaised               RaiseQuery[]                 @relation("RaisedByRelation")
-    queriesAssigned             RaiseQuery[]                 @relation("AssignedToRelation")
+    queriesRaised               RaiseQuery[]                  @relation("RaisedByRelation")
+    queriesAssigned             RaiseQuery[]                  @relation("AssignedToRelation")
     KYCRequest                  KYCRequest[]
-    MasterProductDeleteRequest MasterProductDeleteRequest[]
+    MasterProductDeleteRequest  MasterProductDeleteRequest[]
+    VariantProductDeleteRequest VariantProductDeleteRequest[]
 }
 
 // ##########----------Sub-Admin Modules Model----------##########

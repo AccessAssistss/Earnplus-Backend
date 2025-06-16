@@ -1404,6 +1404,32 @@ const updateEmployerTicketStatus = asyncHandler(async (req, res) => {
   res.respond(200, "Ticket status updated successfully!", updatedTicket);
 });
 
+// ##########----------Get Employers----------##########
+const getEmployers = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employers = await prisma.employer.findMany({
+    where: {
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      employerId: true,
+      name: true,
+      email: true,
+      mobile: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  res.respond(200, "Employers fetched successfully!", employers);
+});
+
 module.exports = {
   registerEmployer,
   loginEmployer,
@@ -1428,5 +1454,6 @@ module.exports = {
   getEmployerTickets,
   updateEmployerTicketStatus,
   getTicketsByEmployer,
-  getEmployerAnalytics
+  getEmployerAnalytics,
+  getEmployers
 };

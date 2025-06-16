@@ -464,6 +464,90 @@ const rejectVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   res.respond(200, "Variant Product Update Request Rejected!");
 });
 
+// ##########----------Create Variant Product Delete Request----------##########
+const createVariantProductDeleteRequest = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { variantProductId, reason } = req.body;
+
+  const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+  });
+
+  if (!associateSubAdmin) {
+    return res.respond(403, "associate subadmin not found!");
+  }
+
+  const product = await prisma.variantProduct.findFirst({
+    where: {
+      id: variantProductId,
+      isDeleted: false,
+    },
+  });
+
+  if (!product) {
+    return res.respond(404, "Variant Product not found or already deleted!");
+  }
+
+  const existingRequest = await prisma.variantProductDeleteRequest.findFirst({
+    where: {
+      variantProductId,
+      status: 'PENDING',
+    },
+  });
+
+  if (existingRequest) {
+    return res.respond(400, "A delete request is already pending for this product!");
+  }
+
+  const deleteRequest = await prisma.variantProductDeleteRequest.create({
+    data: {
+      variantProductId,
+      reason,
+      requestedById: associateSubAdmin.id,
+    },
+  });
+
+  return res.respond(200, "Delete request submitted successfully!", deleteRequest);
+});
+
+// ##########----------Approve Variant Product Delete Request----------##########
+const approveVariantProductDeleteRequest = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { requestId } = req.body;
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(403, "associate not found!");
+  }
+
+  const request = await prisma.variantProductDeleteRequest.findUnique({
+    where: { id: requestId },
+    include: { variantProduct: true },
+  });
+
+  if (!request || request.status !== 'PENDING') {
+    return res.status(404).json({ message: 'Valid pending delete request not found' });
+  }
+
+  await prisma.$transaction([
+    prisma.variantProduct.update({
+      where: { id: request.variantProductId },
+      data: { isDeleted: true },
+    }),
+    prisma.variantProductDeleteRequest.update({
+      where: { id: requestId },
+      data: {
+        status: 'APPROVED',
+      },
+    }),
+  ]);
+
+  return res.respond(200, "Variant Product deleted (soft) successfully!");
+});
+
 // ##########----------Get All Variant Products By Product----------##########
 const getAllVariantProductsByProduct = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -653,6 +737,42 @@ const getAssignedVariantProducts = asyncHandler(async (req, res) => {
   );
 });
 
+// ##########----------Get Assigned Employer By Varient----------##########
+const getAssignedEmployers = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { variantId } = req.params;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: { role: true },
+  });
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can access this data.");
+  }
+
+  const assignments = await prisma.assignVariantProductToEmployer.findMany({
+    where: {
+      variantProductId: variantId
+    },
+    include: {
+      employer: {
+        select: {
+          id: true,
+          employerId: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: { aasignmentDate: "desc" },
+  });
+
+  return res.respond(
+    200,
+    "Assigned variant products fetched successfully!",
+    assignments
+  );
+});
+
 // ##########----------Variant product Versions----------##########
 const getVariantProductVersions = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -724,10 +844,13 @@ module.exports = {
   submitVariantProductUpdateRequest,
   approveVariantProductUpdateRequest,
   rejectVariantProductUpdateRequest,
+  createVariantProductDeleteRequest,
+  approveVariantProductDeleteRequest,
   getAllVariantProductsByProduct,
   getVariantProductDetail,
   assignVariantProductToEmployer,
   getAssignedVariantProducts,
+  getAssignedEmployers,
   getVariantProductVersions,
   getVariantProductVersionById,
 };

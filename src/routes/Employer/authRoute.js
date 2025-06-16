@@ -24,6 +24,7 @@ const {
   updateEmployerTicketStatus,
   getTicketsByEmployer,
   getEmployerAnalytics,
+  getEmployers,
   
 } = require("../../controllers/Employer/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
@@ -74,6 +75,7 @@ router.patch(
   handleEmployerActivationStatus
 );
 router.get("/getAllEmployers", validateToken, getAllEmployers);
+router.get("/getEmployers", validateToken, getEmployers);
 router.get("/getEmployerProfile", validateToken, getEmployerProfile);
 router.get("/getEmployerContractCombinations", validateToken, getEmployerContractCombinations);
 router.get("/getEmployerWorkLocations", validateToken, getEmployerWorkLocations);

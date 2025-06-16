@@ -14,6 +14,9 @@ const {
   createVariantProductParameter,
   createVariantProductOtherCharges,
   createVariantProductRepayment,
+  createVariantProductDeleteRequest,
+  approveVariantProductDeleteRequest,
+  getAssignedEmployers,
 } = require("../../controllers/Associate/variantProductController");
 
 const router = express.Router();
@@ -37,13 +40,23 @@ router.patch(
   validateToken,
   rejectVariantProductUpdateRequest
 );
+router.post(
+  "/createVariantProductDeleteRequest",
+  validateToken,
+  createVariantProductDeleteRequest
+);
+router.patch(
+  "/approveVariantProductDeleteRequest",
+  validateToken,
+  approveVariantProductDeleteRequest
+);
 router.get(
   "/getAllVariantProductsByProduct/:productId",
   validateToken,
   getAllVariantProductsByProduct
 );
 router.get(
-  "/getVariantProductDetail/:productId",
+  "/getVariantProductDetail/:variantProductId",
   validateToken,
   getVariantProductDetail
 );
@@ -56,6 +69,11 @@ router.get(
   "/getAssignedVariantProducts/:employerId",
   validateToken,
   getAssignedVariantProducts
+);
+router.get(
+  "/getAssignedEmployers/:variantId",
+  validateToken,
+  getAssignedEmployers
 );
 router.get(
   "/getVariantProductVersions/:variantProductId",
