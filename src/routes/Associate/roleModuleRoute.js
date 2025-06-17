@@ -8,6 +8,7 @@ const {
   updateModule,
   getModulesByRole,
   softDeleteModule,
+  getAllModules,
 } = require("../../controllers/Associate/roleModuleController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -23,6 +24,7 @@ router.patch("/softDeleteRole/:roleId", softDeleteRole);
 router.post("/createModule", validateToken, createModule);
 router.put("/updateModule/:moduleId", validateToken, updateModule);
 router.get("/getModulesByRole/:roleId", getModulesByRole);
+router.get("/getAllModules", getAllModules);
 router.patch("/softDeleteModule/:moduleId", softDeleteModule);
 
 module.exports = router;

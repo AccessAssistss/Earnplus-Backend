@@ -234,6 +234,16 @@ const softDeleteModule = asyncHandler(async (req, res) => {
   res.respond(200, "Module deleted (soft delete) successfully!", deletedModule);
 });
 
+// ##########----------Get All Modules----------##########
+const getAllModules = asyncHandler(async (req, res) => {
+  const modules = await prisma.module.findMany({
+    where: { isDeleted: false },
+    orderBy: { moduleName: "asc" },
+  });
+
+  res.respond(200, "modules fetched Successfully!", modules);
+});
+
 module.exports = {
   createRole,
   updateRole,
@@ -242,5 +252,6 @@ module.exports = {
   createModule,
   updateModule,
   getModulesByRole,
+  getAllModules,
   softDeleteModule,
 };

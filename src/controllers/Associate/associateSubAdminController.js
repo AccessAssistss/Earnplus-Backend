@@ -163,6 +163,19 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
 
   const existingSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { email },
+    include: {
+      AssociateSubAdminModule: {
+        where: { isDeleted: false },
+        include: {
+          module: {
+            select: {
+              id: true,
+              moduleName: true
+            }
+          }
+        },
+      },
+    },
   });
 
   if (!existingSubAdmin) {
@@ -186,12 +199,18 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
     existingUser.id
   );
 
+  const modules = existingSubAdmin.AssociateSubAdminModule.map((item) => ({
+    id: item.module?.id,
+    moduleName: item.module?.moduleName,
+  }));
+
   const user = {
     id: existingSubAdmin.id,
     name: existingSubAdmin.name,
     email: existingSubAdmin.email,
     mobile: existingSubAdmin.mobile,
     role: existingUser.role,
+    modules
   };
 
   res.respond(201, "SubAdmin Logged In successfully!", {
@@ -382,6 +401,8 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
     email,
     name,
     mobile,
+    altMobile,
+    portal,
     gst,
     pan,
     cin,
@@ -410,9 +431,9 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
     return res.respond(400, "SubAdmin not found!");
   }
 
-  if (existingSubAdmin.role.roleName !== "ERM") {
-    return res.respond(400, "You don't have access to Add Employer!");
-  }
+  // if (existingSubAdmin.role.roleName !== "ERM") {
+  //   return res.respond(400, "You don't have access to Add Employer!");
+  // }
 
   const existingUser = await prisma.customUser.findFirst({
     where: {
@@ -488,6 +509,8 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
       pan,
       cin,
       legalIdentity,
+      altMobile,
+      portal,
       employerId: newEmployerId,
       signedMasterAgreement: signedMasterAgreementUrl,
       kycDocuments: kycDocumentsUrl,

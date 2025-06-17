@@ -9,6 +9,8 @@ model Employer {
     email                 String?
     password              String
     mobile                String?
+    altMobile             String?
+    portal                String?
     gst                   String?
     pan                   String?
     cin                   String?
@@ -128,8 +130,8 @@ model EmployerLocationDetails {
     state    State?    @relation(fields: [stateId], references: [id])
     district District? @relation(fields: [districtId], references: [id])
 
-    AllocateProductToEmployer AllocateProductToEmployer[]
-    EmploymentDetails         EmploymentDetails[]
+    AllocateProductToEmployer   AllocateProductToEmployer[]
+    EmploymentDetails           EmploymentDetails[]
     ContractCombinationRuleBook ContractCombinationRuleBook[]
 }
 
