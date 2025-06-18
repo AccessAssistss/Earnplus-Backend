@@ -22,13 +22,15 @@ model MasterProductUpdateRequest {
     loanType        LoanType?          @relation(fields: [loanTypeId], references: [id], onDelete: Cascade)
     productPartner  ProductPartner?    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 
-    financialTermsUpdate      FinancialTermsUpdate?
-    eligibilityCriteriaUpdate EligibilityCriteriaUpdate?
-    creditBureauConfigUpdate  CreditBureauConfigUpdate?
-    financialStatementsUpdate FinancialStatementsUpdate?
-    behavioralDataUpdate      BehavioralDataUpdate?
-    riskScoringUpdate         RiskScoringUpdate?
-    CollateralUpdate          CollateralUpdate?
+    financialTermsUpdate            FinancialTermsUpdate?
+    eligibilityCriteriaUpdate       EligibilityCriteriaUpdate?
+    creditBureauConfigUpdate        CreditBureauConfigUpdate?
+    financialStatementsUpdate       FinancialStatementsUpdate?
+    behavioralDataUpdate            BehavioralDataUpdate?
+    riskScoringUpdate               RiskScoringUpdate?
+    CollateralUpdate                CollateralUpdate?
+    masterProductOtherChargesUpdate MasterProductOtherChargesUpdate?
+    masterProductRepaymentUpdate    MasterProductRepaymentUpdate?
 
     MasterProductPurposeUpdate MasterProductPurposeUpdate[]
     MasterProductSegmentUpdate MasterProductSegmentUpdate[]
@@ -253,4 +255,40 @@ model CollateralDocumentUpdate {
 
     CollateralUpdate  CollateralUpdate  @relation(fields: [collateralId], references: [id], onDelete: Cascade)
     OwnershipDocument OwnershipDocument @relation(fields: [docId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Other Charges Update Model----------##########
+model MasterProductOtherChargesUpdate {
+    id                 String   @id @default(uuid())
+    updateRequestId    String   @unique
+    chequeBounceCharge Int?
+    dublicateNocCharge Int?
+    furnishingCharge   Int?
+    chequeSwapCharge   Int?
+    revocation         Int?
+    documentCopyCharge Int?
+    stampDutyCharge    Int?
+    nocCharge          Int?
+    incidentalCharge   Int?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    isDeleted          Boolean  @default(false)
+
+    masterProductUpdate MasterProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Repayment Update Model----------##########
+model MasterProductRepaymentUpdate {
+    id                          String   @id @default(uuid())
+    updateRequestId             String   @unique
+    penalInterestApplicable     Boolean
+    incentiveType               String?
+    incentiveValue              Int?
+    payoutMode                  String?
+    incentiveReversalConditions String?
+    createdAt                   DateTime @default(now())
+    updatedAt                   DateTime @updatedAt
+    isDeleted                   Boolean  @default(false)
+
+    masterProductUpdate MasterProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }

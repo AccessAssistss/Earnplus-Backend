@@ -601,29 +601,46 @@ const getEmployersByAssociateSubAdmin = asyncHandler(async (req, res) => {
 
   const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId },
-    include: {
-      Employer: {
-        select: {
-          id: true,
-          employerId: true,
-          name: true,
-          email: true,
-          mobile: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      },
-    },
   });
 
   if (!associateSubAdmin) {
-    return res.respond(404, "SubAdmin not found!");
+    return res.respond(400, "SubAdmin not found!");
   }
+
+  const employers = await prisma.employer.findMany({
+    where: {
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      employerId: true,
+      name: true,
+      email: true,
+      mobile: true,
+      createdAt: true,
+      updatedAt: true,
+      isActive: true,
+      EmployerContractType: {
+        select: {
+          contractType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 
   res.respond(
     200,
     "Employers fetched successfully!",
-    associateSubAdmin.Employer
+    employers
   );
 });
 

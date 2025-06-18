@@ -615,6 +615,127 @@ const createCollateral = asyncHandler(async (req, res) => {
   return res.respond(201, "Collateral created successfully!", collateral);
 });
 
+// ##########----------Create Master Product Other Charges----------##########
+const createMasterProductOtherCharges = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const {
+    masterProductId,
+    chequeBounceCharge,
+    dublicateNocCharge,
+    furnishingCharge,
+    chequeSwapCharge,
+    revocation,
+    documentCopyCharge,
+    stampDutyCharge,
+    nocCharge,
+    incidentalCharge,
+  } = req.body;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(
+      403,
+      "Only Product Managers can create variant products."
+    );
+  }
+
+  const exists = await prisma.masterProduct.findUnique({
+    where: { id: masterProductId },
+  });
+
+  if (!exists) {
+    return res.respond(404, "Master Product not found.");
+  }
+
+  const existingCharges = await prisma.masterProductOtherCharges.findUnique({
+    where: { masterProductId },
+  });
+
+  if (existingCharges) {
+    return res.respond(400, "Charges already exists for this master product.");
+  }
+
+  const charges = await prisma.masterProductOtherCharges.create({
+    data: {
+      variantProductId,
+      chequeBounceCharge,
+      dublicateNocCharge,
+      furnishingCharge,
+      chequeSwapCharge,
+      revocation,
+      documentCopyCharge,
+      stampDutyCharge,
+      nocCharge,
+      incidentalCharge,
+    },
+  });
+
+  return res.respond(201, "Other Charges created!", charges);
+});
+
+// ##########----------Create Master Product Repayment----------##########
+const createMasterProductRepayment = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const {
+    masterProductId,
+    penalInterestApplicable,
+    incentiveType,
+    incentiveValue,
+    payoutMode,
+    incentiveReversalConditions,
+  } = req.body;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(
+      403,
+      "Only Product Managers can create variant products."
+    );
+  }
+
+  const exists = await prisma.masterProduct.findUnique({
+    where: { id: masterProductId },
+  });
+
+  if (!exists) {
+    return res.respond(404, "Master Product not found.");
+  }
+
+  const existingRepayment = await prisma.masterProductRepayment.findUnique({
+    where: { masterProductId },
+  });
+
+  if (existingRepayment) {
+    return res.respond(400, "Repayment already exists for this master product.");
+  }
+
+  const repayment = await prisma.variantProductRepayment.create({
+    data: {
+      variantProductId,
+      penalInterestApplicable,
+      incentiveType,
+      incentiveValue,
+      payoutMode,
+      incentiveReversalConditions,
+    },
+  });
+
+  return res.respond(201, "Repayment details created!", repayment);
+});
+
 // ##########----------Master Product Update Request----------##########
 const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -774,6 +895,17 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
             })()
           }
         },
+        masterProductOtherChargesUpdate: otherChargesUpdate
+          ? {
+            create: otherChargesUpdate,
+          }
+          : undefined,
+
+        masterProductRepaymentUpdate: repaymentUpdate
+          ? {
+            create: repaymentUpdate,
+          }
+          : undefined,
 
         MasterProductPurposeUpdate: purposeIds
           ? {
@@ -868,6 +1000,8 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
       },
       MasterProductPurposeUpdate: true,
       MasterProductSegmentUpdate: true,
+      masterProductOtherChargesUpdate: true,
+      masterProductRepaymentUpdate: true,
     },
   });
 
@@ -923,6 +1057,8 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
           collateralDocs: true,
         },
       },
+      masterProductOtherChargesUpdate: true,
+      masterProductRepaymentUpdate: true,
     },
   });
 
@@ -945,6 +1081,8 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
       CollateralUpdate: sanitizeUpdateData(updateRequest.CollateralUpdate),
       MasterProductPurposeUpdate: sanitizeUpdateData(updateRequest.MasterProductPurposeUpdate),
       MasterProductSegmentUpdate: sanitizeUpdateData(updateRequest.MasterProductSegmentUpdate),
+      masterProductOtherChargesUpdate: sanitizeUpdateData(updateRequest.masterProductOtherChargesUpdate),
+      masterProductRepaymentUpdate: sanitizeUpdateData(updateRequest.masterProductRepaymentUpdate),
     };
 
     function parseSafeDate(dateValue) {
@@ -1138,6 +1276,19 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
                 })),
               },
             }
+          }
+        },
+        masterProductOtherCharges: sanitizedUpdate.masterProductOtherChargesUpdate && {
+          upsert: {
+            update: sanitizedUpdate.masterProductOtherChargesUpdate,
+            create: sanitizedUpdate.masterProductOtherChargesUpdate,
+          }
+        },
+
+        masterProductRepayment: sanitizedUpdate.masterProductRepaymentUpdate && {
+          upsert: {
+            update: sanitizedUpdate.masterProductRepaymentUpdate,
+            create: sanitizedUpdate.masterProductRepaymentUpdate,
           }
         },
       },
@@ -1365,12 +1516,12 @@ const getAllMasterProducts = asyncHandler(async (req, res) => {
   });
 
   const formattedProducts = masterProducts.map((product) => {
-  const { _count, ...rest } = product;
-  return {
-    ...rest,
-    VariantProduct: _count?.VariantProduct || 0,
-  };
-});
+    const { _count, ...rest } = product;
+    return {
+      ...rest,
+      VariantProduct: _count?.VariantProduct || 0,
+    };
+  });
 
   res.respond(200, "Master Products fetched successfully!", {
     totalItems: totalCount,
@@ -1558,6 +1709,30 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           guarantorVerificationStatus: true,
         },
       },
+      masterProductOtherCharges: {
+        select: {
+          id: true,
+          chequeBounceCharge: true,
+          dublicateNocCharge: true,
+          furnishingCharge: true,
+          chequeSwapCharge: true,
+          revocation: true,
+          documentCopyCharge: true,
+          stampDutyCharge: true,
+          nocCharge: true,
+          incidentalCharge: true,
+        },
+      },
+      masterProductRepayment: {
+        select: {
+          id: true,
+          penalInterestApplicable: true,
+          incentiveType: true,
+          incentiveValue: true,
+          payoutMode: true,
+          incentiveReversalConditions: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -1652,6 +1827,8 @@ module.exports = {
   createBehavioralData,
   createRiskScoring,
   createCollateral,
+  createMasterProductOtherCharges,
+  createMasterProductRepayment,
   submitMasterProductUpdateRequest,
   getAllMasterProductUpdateRequests,
   approveMasterProductUpdateRequest,

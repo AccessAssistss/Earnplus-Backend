@@ -15,12 +15,16 @@ mkdir -p "$BACKUP_DIR"
 export PGPASSWORD="$PGPASSWORD"
 
 # === Perform the backup ===
-pg_dump -U "$PGUSER" "$PGDATABASE" > "$FULL_PATH"
+pg_dump -U "$PGUSER" -F c -f "$FULL_PATH" "$PGDATABASE"
 
-# === Optional: Compress the backup ===
-# gzip "$FULL_PATH"
-
-echo "Backup completed: $FULL_PATH"
+# === Check success ===
+if [ $? -eq 0 ]; then
+  echo "[✔] Backup completed: $FULL_PATH"
+else
+  echo "[✖] Backup failed for: $FULL_PATH" >&2
+  rm -f "$FULL_PATH"  # Remove empty/invalid file
+  exit 1
+fi
 
 # === Run cleanup script (optional) ===
 /root/Earnplus-Backend/dbScripts/cleanupOldBackups.sh

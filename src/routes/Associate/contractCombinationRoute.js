@@ -5,6 +5,7 @@ const {
   createContractRuleBook,
   getContractCombinations,
   getContractRuleBooks,
+  getSingleContractCombination
 } = require("../../controllers/Associate/contractCombinationController");
 
 const router = express.Router();
@@ -15,7 +16,8 @@ router.post(
   createContractCombination
 );
 router.post("/createContractRuleBook", validateToken, createContractRuleBook);
-router.get("/getContractCombinations", validateToken, getContractCombinations);
+router.get("/getContractCombinations/:employerId", validateToken, getContractCombinations);
+router.get("/getSingleContractCombination/:combinationId", validateToken, getSingleContractCombination);
 router.get("/getContractRuleBooks", validateToken, getContractRuleBooks);
 
 module.exports = router;

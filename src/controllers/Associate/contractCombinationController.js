@@ -35,8 +35,8 @@ const createContractCombination = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!ERM || ERM.role.roleName !== "ERM") {
-    return res.respond(403, "Only ERMs can create contract combinations!");
+  if (!ERM) {
+    return res.respond(403, "associate subadmin not found!");
   }
 
   const employer = await prisma.employer.findFirst({
@@ -73,10 +73,10 @@ const createContractCombination = asyncHandler(async (req, res) => {
 // ##########----------Get Contract Combinations----------##########
 const getContractCombinations = asyncHandler(async (req, res) => {
   const userId = req.user;
-  const { employerId, contractTypeId } = req.query;
+  const { employerId } = req.params;
 
-  if (!employerId || !contractTypeId) {
-    return res.respond(400, "employerId and contractTypeId are required!");
+  if (!employerId) {
+    return res.respond(400, "employerId is required!");
   }
 
   const ERM = await prisma.associateSubAdmin.findFirst({
@@ -85,8 +85,8 @@ const getContractCombinations = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!ERM || ERM.role.roleName !== "ERM") {
-    return res.respond(403, "Only ERMs can create contract combinations!");
+  if (!ERM) {
+    return res.respond(403, "associate subadmin not found!");
   }
 
   const employer = await prisma.employer.findFirst({
@@ -96,18 +96,73 @@ const getContractCombinations = asyncHandler(async (req, res) => {
     return res.respond(404, "Employer not found!");
   }
 
-  const employerContractType = await prisma.employerContractType.findFirst({
-    where: { id: contractTypeId, isDeleted: false },
-  });
-  if (!employerContractType) {
-    return res.respond(404, "Employer Contract Type not found!");
-  }
-
   const combinations = await prisma.employerContractTypeCombination.findMany({
     where: {
       isDeleted: false,
       employerId,
-      contractTypeId,
+    },
+    include: {
+      contractType: {
+        include: {
+          contractType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+        },
+      },
+      _count: {
+        select: {
+          ContractCombinationRuleBook: {
+            where: { isDeleted: false },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  const formatted = combinations.map((item) => ({
+    id: item.id,
+    uniqueId: item.uniqueId,
+    triggerNextMonth: item.triggerNextMonth,
+    accuralStartAt: item.accuralStartAt,
+    accuralEndAt: item.accuralEndAt,
+    payoutDate: item.payoutDate,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+    contractType: item.contractType?.contractType || null,
+    noOfRules: item._count.ContractCombinationRuleBook,
+  }));
+
+  res.respond(200, "Contract Combinations fetched successfully!", formatted);
+});
+
+// ##########----------Get Single Contract Combination----------##########
+const getSingleContractCombination = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { combinationId } = req.params;
+
+  if (!combinationId) {
+    return res.respond(400, "combinationId is required!");
+  }
+
+  const ERM = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+  if (!ERM) {
+    return res.respond(403, "associate subadmin not found!");
+  }
+
+  const combination = await prisma.employerContractTypeCombination.findFirst({
+    where: {
+      id: combinationId,
+      isDeleted: false,
     },
     select: {
       id: true,
@@ -118,11 +173,30 @@ const getContractCombinations = asyncHandler(async (req, res) => {
       payoutDate: true,
       createdAt: true,
       updatedAt: true,
+      ContractCombinationRuleBook: {
+        select: {
+          id: true,
+          workingPeriod: true,
+          workLocation: {
+            select: {
+              id: true,
+              workspaceName: true,
+              noOfEmployees: true,
+              address: true,
+            },
+          },
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
     },
-    orderBy: { createdAt: "desc" },
   });
 
-  res.respond(200, "Contract Combinations fetched successfully!", combinations);
+  if (!combination) {
+    return res.respond(404, "Contract Combination not found!");
+  }
+
+  res.respond(200, "Contract Combination fetched successfully!", combination);
 });
 
 // ##########----------Create Contract Rule Book----------##########
@@ -144,8 +218,8 @@ const createContractRuleBook = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!ERM || ERM.role.roleName !== "ERM") {
-    return res.respond(403, "Only ERMs can create contract combinations!");
+  if (!ERM) {
+    return res.respond(403, "associate subadmin not found!");
   }
 
   const contractCombination =
@@ -192,8 +266,8 @@ const getContractRuleBooks = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!ERM || ERM.role.roleName !== "ERM") {
-    return res.respond(403, "Only ERMs can create contract combinations!");
+  if (!ERM) {
+    return res.respond(403, "associate subadmin not found!");
   }
 
   const ruleBooks = await prisma.contractCombinationRuleBook.findMany({
@@ -201,7 +275,7 @@ const getContractRuleBooks = asyncHandler(async (req, res) => {
       isDeleted: false,
       contractCombinationId,
     },
-   select: {
+    select: {
       id: true,
       workingPeriod: true,
       workLoacationId: true,
@@ -218,6 +292,7 @@ const getContractRuleBooks = asyncHandler(async (req, res) => {
 module.exports = {
   createContractCombination,
   getContractCombinations,
+  getSingleContractCombination,
   createContractRuleBook,
   getContractRuleBooks,
 };

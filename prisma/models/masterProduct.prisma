@@ -82,13 +82,15 @@ model MasterProduct {
     loanType        LoanType?          @relation(fields: [loanTypeId], references: [id], onDelete: Cascade)
     productPartner  ProductPartner?    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
 
-    financialTerms      FinancialTerms?
-    eligibilityCriteria EligibilityCriteria?
-    creditBureauConfig  CreditBureauConfig?
-    financialStatements FinancialStatements?
-    behavioralData      BehavioralData?
-    riskScoring         RiskScoring?
-    Collateral          Collateral?
+    financialTerms            FinancialTerms?
+    eligibilityCriteria       EligibilityCriteria?
+    creditBureauConfig        CreditBureauConfig?
+    financialStatements       FinancialStatements?
+    behavioralData            BehavioralData?
+    riskScoring               RiskScoring?
+    Collateral                Collateral?
+    masterProductOtherCharges MasterProductOtherCharges?
+    masterProductRepayment    MasterProductRepayment?
 
     MasterProductPurpose       MasterProductPurpose[]
     VariantProduct             VariantProduct[]
@@ -398,6 +400,42 @@ model CollateralDocument {
 
     Collateral        Collateral        @relation(fields: [collateralId], references: [id], onDelete: Cascade)
     OwnershipDocument OwnershipDocument @relation(fields: [docId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Other Charges Model----------##########
+model MasterProductOtherCharges {
+    id                 String   @id @default(uuid())
+    masterProductId    String   @unique
+    chequeBounceCharge Int?
+    dublicateNocCharge Int?
+    furnishingCharge   Int?
+    chequeSwapCharge   Int?
+    revocation         Int?
+    documentCopyCharge Int?
+    stampDutyCharge    Int?
+    nocCharge          Int?
+    incidentalCharge   Int?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+    isDeleted          Boolean  @default(false)
+
+    masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Master Product Repayment Model----------##########
+model MasterProductRepayment {
+    id                          String   @id @default(uuid())
+    masterProductId             String   @unique
+    penalInterestApplicable     Boolean
+    incentiveType               String?
+    incentiveValue              Int?
+    payoutMode                  String?
+    incentiveReversalConditions String?
+    createdAt                   DateTime @default(now())
+    updatedAt                   DateTime @updatedAt
+    isDeleted                   Boolean  @default(false)
+
+    masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Version Model----------##########

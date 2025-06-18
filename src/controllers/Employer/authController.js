@@ -1088,6 +1088,15 @@ const getEmployerContractTypes = asyncHandler(async (req, res) => {
       isDeleted: false,
       employerId: employer.id,
     },
+    include: {
+      contractType: {
+        select: {
+          id: true,
+          name: true,
+          description: true,
+        },
+      },
+    },
     orderBy: { createdAt: "desc" },
   });
 
