@@ -289,10 +289,48 @@ const getContractRuleBooks = asyncHandler(async (req, res) => {
   res.respond(200, "Contract Rule Books fetched successfully!", ruleBooks);
 });
 
+// ##########----------Get Employer Work Locations----------##########
+const getWorkLocationsByEmployerId = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { employerId } = req.query;
+
+  if (!employerId) {
+    return res.respond(400, "employerId is required!");
+  }
+
+  const ERM = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+  if (!ERM) {
+    return res.respond(403, "associate subadmin not found!");
+  }
+  const workLocations = await prisma.employerLocationDetails.findMany({
+    where: {
+      isDeleted: false,
+      employerId: employerId,
+    },
+    select: {
+      id: true,
+      workspaceName: true,
+      noOfEmployees: true,
+      address: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.respond(200, "Employer Work Locations fetched successfully!", workLocations);
+});
+
 module.exports = {
   createContractCombination,
   getContractCombinations,
   getSingleContractCombination,
   createContractRuleBook,
   getContractRuleBooks,
+  getWorkLocationsByEmployerId
 };
