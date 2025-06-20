@@ -719,6 +719,12 @@ const getAssignedVariantProducts = asyncHandler(async (req, res) => {
 
   const assignments = await prisma.assignVariantProductToEmployer.findMany({
     include: {
+      variantProduct: {
+        select: {
+          id: true,
+          variantName: true,
+        },
+      },
       employer: {
         select: {
           id: true,

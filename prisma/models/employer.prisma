@@ -208,6 +208,7 @@ model EmployerContractTypeCombination {
 model ContractCombinationRuleBook {
     id                    String   @id @default(uuid())
     contractCombinationId String?
+    ruleBookId            String?
     workLoacationId       String?
     workingPeriod         Int?
     createdAt             DateTime @default(now())

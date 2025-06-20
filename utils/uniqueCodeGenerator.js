@@ -85,10 +85,20 @@ const generateUniqueContractCombinationId = async (employerId) => {
   return `PAY-${employerId}-${sequence}`;
 };
 
+const generateUniqueRuleBookId = async (prisma, contractCombinationId) => {
+  const count = await prisma.contractCombinationRuleBook.count({
+    where: { contractCombinationId },
+  });
+
+  const sequence = String(count + 1).padStart(3, "0");
+  return `RULE-${contractCombinationId}-${sequence}`;
+};
+
 module.exports = {
   generateProductCode,
   generateVariantProductCode,
   generateUniqueEmployeeId,
   generateUniqueEmployerId,
-  generateUniqueContractCombinationId
+  generateUniqueContractCombinationId,
+  generateUniqueRuleBookId
 };

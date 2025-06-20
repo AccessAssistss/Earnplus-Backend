@@ -1,6 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const { asyncHandler } = require("../../../utils/asyncHandler");
-const { generateUniqueContractCombinationId } = require("../../../utils/uniqueCodeGenerator");
+const { generateUniqueContractCombinationId, generateUniqueRuleBookId } = require("../../../utils/uniqueCodeGenerator");
 
 const prisma = new PrismaClient();
 
@@ -53,7 +53,7 @@ const createContractCombination = asyncHandler(async (req, res) => {
     return res.respond(404, "Employer Contract Type not found!");
   }
 
-  const uniqueId = await generateUniqueContractCombinationId(employerId);
+  const uniqueId = await generateUniqueContractCombinationId(employer.employerId);
 
   const combination = await prisma.employerContractTypeCombination.create({
     data: {
@@ -138,6 +138,43 @@ const getContractCombinations = asyncHandler(async (req, res) => {
   }));
 
   res.respond(200, "Contract Combinations fetched successfully!", formatted);
+});
+
+// ##########----------Get Contract Combinations By Employer Contract Type----------##########
+const getContractCombinationsByContractType = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { contractTypeId } = req.params;
+
+  if (!contractTypeId) {
+    return res.respond(400, "contractTypeId is required!");
+  }
+
+  const ERM = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+  if (!ERM) {
+    return res.respond(403, "associate subadmin not found!");
+  }
+
+  const contractType = await prisma.employerContractType.findFirst({
+    where: { id: contractTypeId, isDeleted: false },
+  });
+  if (!contractType) {
+    return res.respond(404, "contractType not found!");
+  }
+
+  const combinations = await prisma.employerContractTypeCombination.findMany({
+    where: {
+      isDeleted: false,
+      contractTypeId,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.respond(200, "Contract Combinations fetched successfully!", combinations);
 });
 
 // ##########----------Get Single Contract Combination----------##########
@@ -237,8 +274,11 @@ const createContractRuleBook = asyncHandler(async (req, res) => {
     return res.respond(404, "Work location not found!");
   }
 
+  const ruleBookId = await generateUniqueRuleBookId(prisma, contractCombination.uniqueId);
+
   const ruleBook = await prisma.contractCombinationRuleBook.create({
     data: {
+      ruleBookId,
       contractCombinationId,
       workLoacationId,
       workingPeriod,
@@ -277,6 +317,7 @@ const getContractRuleBooks = asyncHandler(async (req, res) => {
     },
     select: {
       id: true,
+      ruleBookId: true,
       workingPeriod: true,
       workLoacationId: true,
       createdAt: true,
@@ -329,6 +370,7 @@ const getWorkLocationsByEmployerId = asyncHandler(async (req, res) => {
 module.exports = {
   createContractCombination,
   getContractCombinations,
+  getContractCombinationsByContractType,
   getSingleContractCombination,
   createContractRuleBook,
   getContractRuleBooks,
