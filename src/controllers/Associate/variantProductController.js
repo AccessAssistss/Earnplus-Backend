@@ -281,6 +281,7 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
     parameterUpdate,
     otherChargesUpdate,
     repaymentUpdate,
+    rejectionReason
   } = req.body;
 
   if (!variantProductId) {
@@ -316,6 +317,7 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
       variantType,
       partnerId,
       remark,
+      rejectionReason,
 
       VariantProductParameterUpdate: parameterUpdate
         ? {
