@@ -722,9 +722,9 @@ const createMasterProductRepayment = asyncHandler(async (req, res) => {
     return res.respond(400, "Repayment already exists for this master product.");
   }
 
-  const repayment = await prisma.variantProductRepayment.create({
+  const repayment = await prisma.masterProductRepayment.create({
     data: {
-      variantProductId,
+      masterProductId,
       penalInterestApplicable,
       incentiveType,
       incentiveValue,
@@ -754,6 +754,8 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
     behavioralDataUpdate,
     riskScoringUpdate,
     collateralUpdate,
+    otherChargesUpdate,
+    repaymentUpdate,
     purposeIds,
     segmentIds
   } = req.body;

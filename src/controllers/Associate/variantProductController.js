@@ -612,7 +612,6 @@ const getVariantProductDetail = asyncHandler(async (req, res) => {
     include: {
       masterProduct: true,
       productManager: { select: { id: true, userId: true } },
-
       VariantProductParameter: true,
       VariantProductOtherCharges: true,
       VariantProductRepayment: true,
