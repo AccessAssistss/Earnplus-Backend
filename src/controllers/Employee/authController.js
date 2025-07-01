@@ -181,6 +181,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
     panCheck,
     videoCheck,
     selfieCheck,
+    isEmployerLinked: employee.isEmployerLinked,
     accessToken,
     refreshToken,
   });

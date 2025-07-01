@@ -664,7 +664,7 @@ const createMasterProductOtherCharges = asyncHandler(async (req, res) => {
 
   const charges = await prisma.masterProductOtherCharges.create({
     data: {
-      variantProductId,
+      masterProductId,
       chequeBounceCharge,
       dublicateNocCharge,
       furnishingCharge,
@@ -1394,17 +1394,21 @@ const createMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   return res.respond(200, "Delete request submitted successfully!", deleteRequest);
 });
 
-// ##########----------Approve Master Product Delete Request----------##########
-const approveMasterProductDeleteRequest = asyncHandler(async (req, res) => {
+// ##########----------Handle Master Product Delete Request----------##########
+const handleMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
-  const { requestId } = req.body;
+  const { requestId, action, reason } = req.body;
+
+  if (!["APPROVED", "REJECTED"].includes(action)) {
+    return res.respond(400, "Invalid action. Must be APPROVED or REJECTED.");
+  }
 
   const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
   });
 
   if (!associate) {
-    return res.respond(403, "associate not found!");
+    return res.respond(404, "Associate not found!");
   }
 
   const request = await prisma.masterProductDeleteRequest.findUnique({
@@ -1412,56 +1416,73 @@ const approveMasterProductDeleteRequest = asyncHandler(async (req, res) => {
     include: { masterProduct: true },
   });
 
-  if (!request || request.status !== 'PENDING') {
-    return res.status(404).json({ message: 'Valid pending delete request not found' });
+  if (!request || request.status !== "PENDING") {
+    return res.respond(404, "Valid pending delete request not found.");
   }
 
-  await prisma.$transaction([
-    prisma.masterProduct.update({
-      where: { id: request.masterProductId },
-      data: { isDeleted: true },
-    }),
+  const actions = [];
+
+  if (action === "APPROVED") {
+    actions.push(
+      prisma.masterProduct.update({
+        where: { id: request.masterProductId },
+        data: { isDeleted: true },
+      })
+    );
+  }
+
+  actions.push(
     prisma.masterProductDeleteRequest.update({
       where: { id: requestId },
       data: {
-        status: 'APPROVED',
+        status: action,
+        reason: reason || request.reason,
       },
-    }),
-  ]);
+    })
+  );
 
-  return res.respond(200, "MasterProduct deleted (soft) successfully!");
+  await prisma.$transaction(actions);
+
+  return res.respond(200, `Delete request ${action.toLowerCase()} successfully!`);
 });
 
-// ##########----------Reject Master Product Delete Request----------##########
-const rejectMasterProductDeleteRequest = asyncHandler(async (req, res) => {
+// ##########----------Get Master Product Delete Requests----------##########
+const getMasterProductDeleteRequests = asyncHandler(async (req, res) => {
   const userId = req.user;
-  const { requestId } = req.body;
+  const { status } = req.query;
 
   const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
   });
 
   if (!associate) {
-    return res.respond(403, "associate not found!");
+    return res.respond(404, "Associate not found!");
   }
 
-  const request = await prisma.masterProductDeleteRequest.findUnique({
-    where: { id: requestId },
-  });
+  const whereClause = {
+    isDeleted: false,
+    ...(status && { status }),
+  };
 
-  if (!request || request.status !== 'PENDING') {
-    return res.status(404).json({ message: 'Valid pending delete request not found' });
-  }
-
-  await prisma.masterProductDeleteRequest.update({
-    where: { id: requestId },
-    data: {
-      status: 'REJECTED',
-      reason: reason || request.reason,
+  const requests = await prisma.masterProductDeleteRequest.findMany({
+    where: whereClause,
+    include: {
+      masterProduct: true,
+      requestedBy: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          }
+        },
+      },
     },
+    orderBy: { createdAt: 'desc' },
   });
 
-  return res.respond(200, "Delete request rejected successfully!");
+  return res.respond(200, "Delete requests fetched successfully!", requests);
 });
 
 // ##########----------Get All Master Products----------##########
@@ -1836,8 +1857,8 @@ module.exports = {
   approveMasterProductUpdateRequest,
   rejectMasterProductUpdateRequest,
   createMasterProductDeleteRequest,
-  approveMasterProductDeleteRequest,
-  rejectMasterProductDeleteRequest,
+  handleMasterProductDeleteRequest,
+  getMasterProductDeleteRequests,
   getAllMasterProducts,
   getMasterProductDetails,
   getMasterProductVersions,

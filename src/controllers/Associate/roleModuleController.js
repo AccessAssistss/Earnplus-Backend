@@ -128,7 +128,12 @@ const softDeleteRole = asyncHandler(async (req, res) => {
 // ##########----------Create Module----------##########
 const createModule = asyncHandler(async (req, res) => {
   const associateId = req.user;
-  const { moduleName, roleId } = req.body;
+  const { moduleName, path, roleId } = req.body;
+
+  const iconFile = req.files?.icon?.[0];
+  const iconUrl = iconFile
+    ? `/uploads/module/icon/${iconFile.filename}`
+    : null;
 
   if (!moduleName || !roleId) {
     return res.respond(400, "Module name And Role ID are required!");
@@ -159,7 +164,13 @@ const createModule = asyncHandler(async (req, res) => {
   }
 
   const module = await prisma.module.create({
-    data: { moduleName, roleId, associateId: associate.id },
+    data: {
+      moduleName,
+      path,
+      icon: iconUrl,
+      roleId,
+      associateId: associate.id
+    },
   });
 
   res.respond(200, "Module Created Successfully!", module);
@@ -169,7 +180,12 @@ const createModule = asyncHandler(async (req, res) => {
 const updateModule = asyncHandler(async (req, res) => {
   const associateId = req.user;
   const { moduleName, roleId } = req.body;
-  const { moduleId } = req.params;
+  const { moduleId, path } = req.params;
+
+  const iconFile = req.files?.icon?.[0];
+  const iconUrl = iconFile
+    ? `/uploads/module/icon/${iconFile.filename}`
+    : null;
 
   if (!moduleName) {
     return res.respond(400, "Module name is required!");
@@ -204,7 +220,11 @@ const updateModule = asyncHandler(async (req, res) => {
 
   const updatedModule = await prisma.module.update({
     where: { id: moduleId },
-    data: { moduleName },
+    data: {
+      moduleName,
+      path,
+      icon: iconUrl
+    },
   });
 
   res.respond(200, "Module Updated Successfully!", updatedModule);

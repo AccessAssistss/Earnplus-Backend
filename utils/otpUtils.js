@@ -33,7 +33,7 @@ axiosRetry(axios, {
 
 // ###############---------------Send OTP via SMS---------------###############
 const sendOTP = async (mobile, otp) => {
-  const url = "http://enterprise.smsgupshup.com/GatewayAPI/rest";
+  const url = "https://enterprise.smsgupshup.com/GatewayAPI/rest";
 
   const params = {
     method: "SendMessage",
@@ -54,6 +54,7 @@ const sendOTP = async (mobile, otp) => {
     otpLogger.debug(`SMS Gateway Response: ${response.data}`);
     return true;
   } catch (error) {
+    console.log(error)
     if (error.response) {
       otpLogger.error(
         `HTTP Error: ${error.response.status}, ${error.response.data}`

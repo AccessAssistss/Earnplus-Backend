@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post("/createKYCRequest", validateToken, createKYCRequest);
 router.get("/getKYCRequest", validateToken, getKYCRequest);
-router.get("/getKYCDetails", validateToken, getKYCDetails);
+router.get("/getKYCDetails/:kycId", validateToken, getKYCDetails);
 router.patch("/updateKYCStatus", validateToken, updateKYCStatus);
 
 module.exports = router;

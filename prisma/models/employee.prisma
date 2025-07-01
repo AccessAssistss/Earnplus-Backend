@@ -1,37 +1,41 @@
 // ##########----------Employee Profile Model----------##########
 model Employee {
-    id                String         @id @default(uuid())
-    userId            String?        @unique
-    employerId        String?
-    customEmployeeId  String?
-    employeeId        String?
-    kycStatus         KycStatus      @default(Pending)
-    employeeName      String?        @db.VarChar(100)
-    email             String?        @db.VarChar(100)
-    mobile            String         @db.VarChar(10)
-    alternativeMobile String?        @db.VarChar(10)
-    gender            Gender?
-    fcmToken          String?        @db.VarChar(100)
-    dob               DateTime?
-    designation       String?        @db.VarChar(100)
-    nationality       String?        @db.VarChar(100)
-    panNo             String?        @db.VarChar(100)
-    aadharNo          String?        @db.VarChar(100)
-    maritalStatus     MaritalStatus?
-    hireDate          DateTime?
-    salaryDate        DateTime?
-    address           String?
-    countryId         String?
-    city              String?        @db.VarChar(100)
-    stateId           String?
-    pincode           String?        @db.VarChar(100)
-    otpExpiration     DateTime       @default(now())
-    otp               String?        @db.VarChar(100)
-    createdAt         DateTime       @default(now())
-    updatedAt         DateTime       @updatedAt
-    isDeleted         Boolean        @default(false)
-    isKycVerified     Boolean        @default(false)
-    isEmployerScreen  Boolean        @default(false)
+    id                    String         @id @default(uuid())
+    userId                String?        @unique
+    employerId            String?
+    customEmployeeId      String?
+    employeeId            String?
+    kycStatus             KycStatus      @default(Pending)
+    employeeName          String?        @db.VarChar(100)
+    email                 String?        @db.VarChar(100)
+    mobile                String         @db.VarChar(10)
+    alternativeMobile     String?        @db.VarChar(10)
+    gender                Gender?
+    fcmToken              String?        @db.VarChar(100)
+    dob                   DateTime?
+    designation           String?        @db.VarChar(100)
+    nationality           String?        @db.VarChar(100)
+    panNo                 String?        @db.VarChar(100)
+    aadharNo              String?        @db.VarChar(100)
+    maritalStatus         MaritalStatus?
+    hireDate              DateTime?
+    salaryDate            DateTime?
+    address               String?
+    countryId             String?
+    city                  String?        @db.VarChar(100)
+    stateId               String?
+    pincode               String?        @db.VarChar(100)
+    otpExpiration         DateTime       @default(now())
+    otp                   String?        @db.VarChar(100)
+    createdAt             DateTime       @default(now())
+    updatedAt             DateTime       @updatedAt
+    isDeleted             Boolean        @default(false)
+    isEmployerLinked      Boolean        @default(false)
+    isKycVerified         Boolean        @default(false)
+    isEmployerScreen      Boolean        @default(false)
+    agreedProductInsight  Boolean        @default(false)
+    agreedToMessageViaApp Boolean        @default(false)
+    agreedPolicyInsight   Boolean        @default(false)
 
     employer Employer?   @relation(fields: [employerId], references: [id], onDelete: Cascade)
     user     CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -109,6 +113,6 @@ model KYCRequest {
     createdAt           DateTime @default(now())
     updatedAt           DateTime @updatedAt
 
-    employee          Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    employee          Employee?          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
     associateSubAdmin AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
 }

@@ -3,12 +3,14 @@ const { PrismaClient } = require("@prisma/client");
 
 const prisma = new PrismaClient();
 
+// ###############---------------Generate Product Code---------------###############
 const generateProductCode = (name) => {
   const slug = slugify(name, { lower: true, strict: true });
   const upperSlug = slug.toUpperCase();
   return `PROD-${upperSlug}`;
 };
 
+// ###############---------------Generate Variant Product Code---------------###############
 const generateVariantProductCode = (productCode, variantName, count) => {
   const sanitizedName = variantName
     .toLowerCase()
@@ -19,6 +21,7 @@ const generateVariantProductCode = (productCode, variantName, count) => {
   return code.toUpperCase();
 };
 
+// ###############---------------Generate Unique Employee ID---------------###############
 const generateUniqueEmployeeId = async (
   prisma,
   employerId,
@@ -49,6 +52,7 @@ const generateUniqueEmployeeId = async (
   return newEmployeeId;
 };
 
+// ###############---------------Generate Unique Employer ID---------------###############
 const generateUniqueEmployerId = async () => {
   const latestEmployer = await prisma.employer.findFirst({
     orderBy: {
@@ -74,6 +78,7 @@ const generateUniqueEmployerId = async () => {
   return newEmployerId;
 };
 
+// ###############---------------Generate Unique Contract Combination ID---------------###############
 const generateUniqueContractCombinationId = async (employerId) => {
   if (!employerId) throw new Error("Employer ID is required");
 
@@ -85,6 +90,7 @@ const generateUniqueContractCombinationId = async (employerId) => {
   return `PAY-${employerId}-${sequence}`;
 };
 
+// ###############---------------Generate Unique Rule Book ID---------------###############
 const generateUniqueRuleBookId = async (prisma, contractCombinationId) => {
   const count = await prisma.contractCombinationRuleBook.count({
     where: { contractCombinationId },

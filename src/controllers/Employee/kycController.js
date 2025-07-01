@@ -55,61 +55,69 @@ const getKYCRequest = asyncHandler(async (req, res) => {
         return res.respond(404, "Associate SubAdmin not found");
     }
 
-    const kycRequest = await prisma.kYCRequest.findUnique({
-        where: { associateSubAdminId: associateSubAdmin.id },
+    const kycRequests = await prisma.kYCRequest.findMany({
+        include: {
+            employee: {
+                select: {
+                    id: true,
+                    employeeName: true,
+                    customEmployeeId: true,
+                    mobile: true,
+                    employer: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    }
+                }
+            }
+        }
     });
 
-    if (!kycRequest) {
+    if (!kycRequests) {
         return res.respond(404, "KYC request not found");
     }
 
-    return res.respond(200, "KYC request fetched successfully", kycRequest);
+    return res.respond(200, "KYC request fetched successfully", kycRequests);
 });
 
 const getKYCDetails = asyncHandler(async (req, res) => {
-  const userId = req.user;
+    const userId = req.user;
+    const { kycId } = req.params
 
-  const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
-    where: { userId },
-  });
+    const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
+        where: { userId },
+    });
 
-  if (!associateSubAdmin) {
-    return res.respond(404, "Associate SubAdmin not found");
-  }
+    if (!associateSubAdmin) {
+        return res.respond(404, "Associate SubAdmin not found");
+    }
 
-  const kycRequest = await prisma.kYCRequest.findFirst({
-    where: { associateSubAdminId: associateSubAdmin.id },
-    include: {
-      employee: {
+    const kycRequest = await prisma.kYCRequest.findFirst({
+        where: { id: kycId },
         include: {
-          EmployeeVerification: true,
-          EmployeeBankDetails: true,
-          EmploymentDetails: {
-            include: {
-              employerLocationDetails: true,
-              employerContractType: true,
-              employerContractTypeCombination: true,
-            },
-          },
-          employer: true,
-          country: true,
-          state: true,
-          user: true,
-        },
-      },
-    },
-  });
+            employee: {
+                select: {
+                    id: true,
+                    employeeName: true,
+                    customEmployeeId: true,
+                    mobile: true,
+                    employer: {
+                        select: {
+                            id: true,
+                            name: true
+                        }
+                    }
+                }
+            }
+        }
+    });
 
-  if (!kycRequest || !kycRequest.employee) {
-    return res.respond(404, "KYC request or employee not found");
-  }
+    if (!kycRequest || !kycRequest.employee) {
+        return res.respond(404, "KYC request or employee not found");
+    }
 
-  return res.respond(200, "KYC details fetched successfully", {
-    kycRequestId: kycRequest.id,
-    kycStatus: kycRequest.kycStatus,
-    assignedSubAdmin: associateSubAdmin,
-    employeeProfile: kycRequest.employee,
-  });
+    return res.respond(200, "KYC details fetched successfully", kycRequest);
 });
 
 const updateKYCStatus = asyncHandler(async (req, res) => {

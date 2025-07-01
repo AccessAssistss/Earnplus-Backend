@@ -37,6 +37,8 @@ model Module {
   associateId String?
   roleId      String?
   moduleName  String?
+  path        String?
+  icon        String?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
   isDeleted   Boolean    @default(false)

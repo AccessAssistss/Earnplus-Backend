@@ -170,7 +170,9 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
           module: {
             select: {
               id: true,
-              moduleName: true
+              moduleName: true,
+              path: true,
+              icon: true
             }
           }
         },
@@ -202,6 +204,8 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
   const modules = existingSubAdmin.AssociateSubAdminModule.map((item) => ({
     id: item.module?.id,
     moduleName: item.module?.moduleName,
+    path: item.module?.path,
+    icon: item.module?.icon,
   }));
 
   const user = {

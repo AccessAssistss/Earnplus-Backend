@@ -130,7 +130,6 @@ model EmployerLocationDetails {
     state    State?    @relation(fields: [stateId], references: [id])
     district District? @relation(fields: [districtId], references: [id])
 
-    AllocateProductToEmployer   AllocateProductToEmployer[]
     EmploymentDetails           EmploymentDetails[]
     ContractCombinationRuleBook ContractCombinationRuleBook[]
 }
@@ -181,6 +180,7 @@ model EmployerContractType {
 
     EmployerContractTypeCombination EmployerContractTypeCombination[]
     EmploymentDetails               EmploymentDetails[]
+    AllocateProductToEmployer AllocateProductToEmployer[]
 }
 
 // ##########----------Employer Contract Type Combination Model----------##########
@@ -202,6 +202,7 @@ model EmployerContractTypeCombination {
 
     ContractCombinationRuleBook ContractCombinationRuleBook[]
     EmploymentDetails           EmploymentDetails[]
+    AllocateProductToEmployer AllocateProductToEmployer[]
 }
 
 // ##########----------Payout Dates Model----------##########
@@ -223,22 +224,23 @@ model ContractCombinationRuleBook {
 
 // ##########----------Allocate Product To Employer Model----------##########
 model AllocateProductToEmployer {
-    id               String   @id @default(uuid())
-    employerId       String?
-    ruleBookId       String?
-    emplyerManagerId String?
-    productVariantId String?
-    workLocationId   String?
-    note             String?
-    createdAt        DateTime @default(now())
-    updatedAt        DateTime @updatedAt
-    isDeleted        Boolean  @default(false)
+    id                    String   @id @default(uuid())
+    emplyerManagerId      String?
+    employerId            String?
+    contractTypeId        String?
+    contractCombinationId String?
+    ruleBookId            String?
+    productVariantId      String?
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+    isDeleted             Boolean  @default(false)
 
-    employer        Employer?                    @relation(fields: [employerId], references: [id], onDelete: Cascade)
-    ruleBook        ContractCombinationRuleBook? @relation(fields: [ruleBookId], references: [id], onDelete: Cascade)
-    employerManager AssociateSubAdmin?           @relation(fields: [emplyerManagerId], references: [id], onDelete: Cascade)
-    productVariant  VariantProduct?              @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
-    workLocation    EmployerLocationDetails?     @relation(fields: [workLocationId], references: [id], onDelete: Cascade)
+    employerManager     AssociateSubAdmin?               @relation(fields: [emplyerManagerId], references: [id], onDelete: Cascade)
+    employer            Employer?                        @relation(fields: [employerId], references: [id], onDelete: Cascade)
+    contractType        EmployerContractType?            @relation(fields: [contractTypeId], references: [id], onDelete: Cascade)
+    contractCombination EmployerContractTypeCombination? @relation(fields: [contractCombinationId], references: [id], onDelete: Cascade)
+    ruleBook            ContractCombinationRuleBook?     @relation(fields: [ruleBookId], references: [id], onDelete: Cascade)
+    productVariant      VariantProduct?                  @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Employer Activity Logs----------##########

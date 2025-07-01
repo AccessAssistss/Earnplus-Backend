@@ -8,27 +8,27 @@ const allocateProductToEmployer = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
     employerId,
+    contractTypeId,
+    contractCombinationId,
     ruleBookId,
-    workLocationId,
     productVariantId,
-    employerManagerId,
-    note,
   } = req.body;
 
-  if (!employerId || !ruleBookId || !productVariantId || !workLocationId) {
-    return res.respond(
-      400,
-      "employerId, ruleBookId and productVariantId are required!"
-    );
+  if (
+    !employerId ||
+    !ruleBookId ||
+    !contractTypeId ||
+    !contractCombinationId ||
+    !productVariantId
+  ) {
+    return res.respond(400, "All fields are required!");
   }
 
   const ERM = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
-    include: { role: true },
   });
-
-  if (!ERM || ERM.role.roleName !== "ERM") {
-    return res.respond(403, "Only ERMs can create contract combinations!");
+  if (!ERM) {
+    return res.respond(403, "Associate Subadmin not found!");
   }
 
   const employer = await prisma.employer.findFirst({
@@ -52,21 +52,28 @@ const allocateProductToEmployer = asyncHandler(async (req, res) => {
     return res.respond(404, "Variant Product not found!");
   }
 
-  const workLocationExists = await prisma.employerLocationDetails.findFirst({
-    where: { id: workLocationId, isDeleted: false },
+  const contractTypeExists = await prisma.employerContractType.findFirst({
+    where: { id: contractTypeId },
   });
-  if (!workLocationExists) {
-    return res.respond(404, "Work Location not found!");
+  if (!contractTypeExists) {
+    return res.respond(404, "Contract Type not found!");
+  }
+
+  const contractCombinationExists = await prisma.employerContractTypeCombination.findFirst({
+    where: { id: contractCombinationId },
+  });
+  if (!contractCombinationExists) {
+    return res.respond(404, "Contract Combination not found!");
   }
 
   const allocatedProduct = await prisma.allocateProductToEmployer.create({
     data: {
+      emplyerManagerId: ERM.id,
       employerId,
+      contractTypeId,
+      contractCombinationId,
       ruleBookId,
-      emplyerManagerId: employerManagerId || ERM.id,
       productVariantId,
-      workLocationId,
-      note: note || null,
     },
   });
 
@@ -83,11 +90,9 @@ const getAllocatedProductsToEmployers = asyncHandler(async (req, res) => {
 
   const ERM = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
-    include: { role: true },
   });
-
-  if (!ERM || ERM.role.roleName !== "ERM") {
-    return res.respond(403, "Only ERMs can create contract combinations!");
+  if (!ERM) {
+    return res.respond(403, "Associate Subadmin not found!");
   }
 
   const allocatedProducts = await prisma.allocateProductToEmployer.findMany({
@@ -95,25 +100,38 @@ const getAllocatedProductsToEmployers = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
     include: {
-      workLocation: {
-        select: {
-          id: true,
-          workspaceName: true,
-          noOfEmployees: true,
-        },
-      },
       employer: {
         select: {
           id: true,
-          employerName: true,
+          name: true,
+        },
+      },
+      contractType: {
+        select: {
+          id: true,
+          contractType: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+        },
+      },
+      contractCombination: {
+        select: {
+          id: true,
+          uniqueId: true,
+          triggerNextMonth: true,
+          accuralStartAt: true,
+          accuralEndAt: true,
+          payoutDate: true,
         },
       },
       ruleBook: {
         select: {
           id: true,
-          name: true,
-          tenureRule: true,
-          salaryBand: true,
+          workingPeriod: true,
           createdAt: true,
           updatedAt: true,
         },

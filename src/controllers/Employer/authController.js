@@ -714,6 +714,7 @@ const addEmployeeByEmployer = asyncHandler(async (req, res) => {
         city,
         pincode,
         employeeId,
+        isEmployerLinked: true,
         customEmployeeId: newEmployeeId,
         country: {
           connect: { id: country },

@@ -6,6 +6,12 @@ const EMPLOYER_FILE_FIELDS = {
   additionalDoc: "additional_doc",
 };
 
+const MODULE_FILE_FIELDS = {
+  icon: "icon",
+};
+
+
 module.exports = {
   EMPLOYER_FILE_FIELDS,
+  MODULE_FILE_FIELDS
 };

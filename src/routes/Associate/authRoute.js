@@ -16,7 +16,6 @@ const { EMPLOYER_FILE_FIELDS } = require("../../../utils/fileFieldMapper")
 
 const router = express.Router();
 
-
 const uploadEmployerFiles = createUploadMiddleware("employer", EMPLOYER_FILE_FIELDS);
 
 router.post("/registerAssociate", registerAssociate);
