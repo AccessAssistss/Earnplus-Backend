@@ -67,7 +67,7 @@ enum DeliveryChannel {
 enum ProductStatus {
   Draft
   Active
-  ArchivedFeeType
+  Archived
 }
 
 enum InterestType {

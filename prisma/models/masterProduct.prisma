@@ -57,6 +57,7 @@ model ProductPartner {
     MasterProduct              MasterProduct[]
     MasterProductUpdateRequest MasterProductUpdateRequest[]
     VariantProduct             VariantProduct[]
+    VariantProductUpdateRequest VariantProductUpdateRequest[]
 }
 
 // ##########----------Master Product Model----------##########

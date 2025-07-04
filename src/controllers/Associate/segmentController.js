@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // ##########----------Create Product Segment----------##########
 const createProductSegment = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Product Segment name is required!");
   }
@@ -17,7 +16,6 @@ const createProductSegment = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingSegment) {
     return res.respond(400, "Product Segment with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createProductSegment = asyncHandler(async (req, res) => {
 const updateProductSegment = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { segmentId } = req.params;
-
   if (!name) {
     return res.respond(400, "Product Segment name is required!");
   }
@@ -45,7 +42,6 @@ const updateProductSegment = asyncHandler(async (req, res) => {
       NOT: { id: segmentId },
     },
   });
-
   if (existingSegment) {
     return res.respond(400, "Product Segment with this name already exists!");
   }

@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // Create Employment Type
 const createEmploymentType = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Employment Type name is required!");
   }
@@ -17,7 +16,6 @@ const createEmploymentType = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingType) {
     return res.respond(400, "Employment Type with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createEmploymentType = asyncHandler(async (req, res) => {
 const updateEmploymentType = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { employmentTypeId } = req.params;
-
   if (!name) {
     return res.respond(400, "Employment Type name is required!");
   }
@@ -45,7 +42,6 @@ const updateEmploymentType = asyncHandler(async (req, res) => {
       NOT: { id: employmentTypeId },
     },
   });
-
   if (existingType) {
     return res.respond(400, "Employment Type with this name already exists!");
   }

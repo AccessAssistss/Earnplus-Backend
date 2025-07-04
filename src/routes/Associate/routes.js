@@ -19,8 +19,6 @@ router.use("/document", require("./documentRoute"));
 router.use("/scoreVariable", require("./scoreVariableRoute"));
 router.use("/externalScore", require("./externalScoreRoute"));
 router.use("/ownership", require("./ownershipDocumentRoute"));
-router.use("/commonUseCase", require("./commonUseCaseRoute"));
-router.use("/customerType", require("./customerTypeRoute"));
 router.use("/masterProduct", require("./masterProductRoute"));
 router.use("/variantProduct", require("./variantProductRoute"));
 router.use("/contractCombination", require("./contractCombinationRoute"));

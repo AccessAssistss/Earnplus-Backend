@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 // ##########----------Create Industry Type----------##########
 const createIndustryType = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Industry name is required!");
   }
@@ -17,7 +16,6 @@ const createIndustryType = asyncHandler(async (req, res) => {
       name: { equals: name, mode: "insensitive" },
     },
   });
-
   if (existingIndustryType) {
     return res.respond(400, "Industry Type with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createIndustryType = asyncHandler(async (req, res) => {
 const updateIndustryType = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { industryId } = req.params;
-
   if (!name) {
     return res.respond(400, "Industry name is required!");
   }
@@ -46,7 +43,6 @@ const updateIndustryType = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (existingIndustryType) {
     return res.respond(400, "Industry Type with this name already exists!");
   }

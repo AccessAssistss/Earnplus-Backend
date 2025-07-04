@@ -5,9 +5,7 @@ const {
   generateAccessToken,
   generateRefreshToken,
   verifyPassword,
-  generateRandomPassword,
 } = require("../../../utils/authUtils");
-const { generateUniqueEmployerId } = require("../../../utils/uniqueCodeGenerator");
 
 const prisma = new PrismaClient();
 
@@ -15,7 +13,6 @@ const prisma = new PrismaClient();
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await prisma.customUser.findUnique({ where: { id: userId } });
-
     if (!user) {
       throw new Error("User not found");
     }
@@ -101,7 +98,6 @@ const registerAssociate = asyncHandler(async (req, res) => {
 // ##########----------Associate Login----------##########
 const loginAssociate = asyncHandler(async (req, res) => {
   const { userType = "ASSOCIATE", email, password } = req.body;
-
   if (!email || !password) {
     return res.respond(400, "All fields required!");
   }
@@ -109,7 +105,6 @@ const loginAssociate = asyncHandler(async (req, res) => {
   const existingUser = await prisma.customUser.findFirst({
     where: { email, userType },
   });
-
   if (!existingUser) {
     return res.respond(400, "User not found!");
   }
@@ -117,13 +112,11 @@ const loginAssociate = asyncHandler(async (req, res) => {
   const existingAssociate = await prisma.associate.findFirst({
     where: { email },
   });
-
   if (!existingAssociate) {
     return res.respond(400, "Associate not found!");
   }
 
   const isMatch = await verifyPassword(password, existingAssociate.password);
-
   if (!isMatch) {
     return res.respond(401, "Invalid Credentials!");
   }
@@ -151,7 +144,6 @@ const loginAssociate = asyncHandler(async (req, res) => {
 const changeAssociatePassword = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { currentPassword, newPassword } = req.body;
-
   if (!currentPassword || !newPassword) {
     return res.respond(400, "Both current and new passwords are required!");
   }
@@ -159,13 +151,11 @@ const changeAssociatePassword = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId },
   });
-
   if (!associate) {
     return res.respond(404, "Associate not found!");
   }
 
   const isMatch = await verifyPassword(currentPassword, associate.password);
-
   if (!isMatch) {
     return res.respond(401, "Current password is incorrect!");
   }
@@ -182,109 +172,10 @@ const changeAssociatePassword = asyncHandler(async (req, res) => {
   res.respond(200, "Password changed successfully!");
 });
 
-// ##########----------Add Employer By Associate----------##########
-const addEmployerByAssociate = asyncHandler(async (req, res) => {
-  const user = req.user;
-
-  const { userType = "EMPLOYER", email, name, mobile, gst, pan, approvalEmail } = req.body;
-
-  if (!email || !mobile || !name || !gst || !pan) {
-    return res.respond(400, "All fields required!");
-  }
-
-  const existingAssociate = await prisma.associate.findFirst({
-    where: {
-      userId: user,
-    },
-  });
-
-  if (!existingAssociate) {
-    return res.status(400).json({ error: "Associate not found!" });
-  }
-
-  const existingUser = await prisma.customUser.findFirst({
-    where: {
-      OR: [
-        { email, userType },
-        { mobile, userType },
-      ],
-    },
-  });
-
-  if (existingUser) {
-    return res.respond(
-      400,
-      "User with this mobile number or Email already exists!"
-    );
-  }
-
-  const newUser = await prisma.customUser.create({
-    data: {
-      email,
-      mobile,
-      name,
-      userType,
-    },
-  });
-
-  // ######-----Generate Unique employerId-----#####
-  const newEmployerId = await generateUniqueEmployerId()
-
-  const password = generateRandomPassword(8);
-
-  const hashed = await hashPassword(password);
-
-  const signedMasterAgreementFile = req.files?.signedMasterAgreement?.[0];
-  const kycDocumentsFile = req.files?.kycDocuments?.[0];
-
-  const signedMasterAgreementUrl = signedMasterAgreementFile
-    ? `/uploads/employer/master_agreement/${signedMasterAgreementFile.filename}`
-    : null;
-
-  const kycDocumentsUrl = kycDocumentsFile
-    ? `/uploads/employer/kyc_documents/${kycDocumentsFile.filename}`
-    : null;
-    
-  const employer = await prisma.employer.create({
-    data: {
-      user: {
-        connect: { id: newUser.id },
-      },
-      associate: {
-        connect: { id: existingAssociate.id },
-      },
-      email,
-      mobile,
-      name,
-      password: hashed,
-      gst,
-      pan,
-      employerId: newEmployerId,
-      signedMasterAgreement: signedMasterAgreementUrl,
-      kycDocuments: kycDocumentsUrl,
-      approvalEmail
-    },
-  });
-
-  let registeredEmployer = {
-    id: employer.id,
-    associateId: employer.associateId,
-    employerId: employer.employerId,
-    name: employer.name,
-    email: employer.email,
-    mobile: employer.mobile,
-    createdAt: employer.createdAt,
-    updatedAt: employer.updatedAt,
-  };
-
-  res.respond(201, "Employer Created Successfully!", registeredEmployer);
-});
-
 // ##########----------Verify gst and pan of Employer----------##########
 const verifyGSTAndPAN = asyncHandler(async (req, res) => {
   const user = req.user;
   const { filterType, gst, businessName, pan } = req.body;
-
   if (!filterType) {
     return res.respond(400, "Filter type is required!");
   }
@@ -296,7 +187,6 @@ const verifyGSTAndPAN = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId: user },
   });
-
   if (!associate) {
     return res.respond(400, "Associate not found!");
   }
@@ -340,32 +230,31 @@ const verifyGSTAndPAN = asyncHandler(async (req, res) => {
   }
 });
 
-// ##########----------Get Employer By Associate----------##########
+// ##########----------Get Employers By Associate----------##########
 const getEmployersByAssociate = asyncHandler(async (req, res) => {
   const userId = req.user;
 
   const associate = await prisma.associate.findFirst({
     where: { userId },
-    include: {
-      employers: {
-        select: {
-          id: true,
-          employerId: true,
-          name: true,
-          email: true,
-          mobile: true,
-          createdAt: true,
-          updatedAt: true,
-        },
-      },
-    },
   });
-
   if (!associate) {
     return res.respond(404, "Associate not found!");
   }
 
-  res.respond(200, "Employers fetched successfully!", associate.employers);
+  const employers = await prisma.employer.findMany({
+    select: {
+      id: true,
+      employerId: true,
+      name: true,
+      email: true,
+      mobile: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  res.respond(200, "Employers fetched successfully!", employers);
 });
 
 // ##########----------Employer Details----------##########
@@ -376,7 +265,6 @@ const getEmployerDetails = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId },
   });
-
   if (!associate) {
     return res.respond(404, "Associate not found!");
   }
@@ -495,7 +383,6 @@ const deleteAssociate = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId },
   });
-
   if (!associate) {
     return res.respond(404, "Associate not found!");
   }
@@ -512,7 +399,6 @@ module.exports = {
   registerAssociate,
   loginAssociate,
   changeAssociatePassword,
-  addEmployerByAssociate,
   verifyGSTAndPAN,
   getEmployersByAssociate,
   getEmployerDetails,

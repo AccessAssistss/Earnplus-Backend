@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // ##########----------Create Product Partner----------##########
 const createProductPartner = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Product Partner name is required!");
   }
@@ -17,7 +16,6 @@ const createProductPartner = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingPartner) {
     return res.respond(400, "Product Partner with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createProductPartner = asyncHandler(async (req, res) => {
 const updateProductPartner = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { partnerId } = req.params;
-
   if (!name) {
     return res.respond(400, "Product Partner name is required!");
   }
@@ -45,7 +42,6 @@ const updateProductPartner = asyncHandler(async (req, res) => {
       NOT: { id: partnerId },
     },
   });
-
   if (existingPartner) {
     return res.respond(400, "Product Partner with this name already exists!");
   }

@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // Create Score Variable
 const createScoreVariable = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Score Variable name is required!");
   }
@@ -17,7 +16,6 @@ const createScoreVariable = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingVariable) {
     return res.respond(400, "Score Variable with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createScoreVariable = asyncHandler(async (req, res) => {
 const updateScoreVariable = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { scoreVariableId } = req.params;
-
   if (!name) {
     return res.respond(400, "Score Variable name is required!");
   }
@@ -45,7 +42,6 @@ const updateScoreVariable = asyncHandler(async (req, res) => {
       NOT: { id: scoreVariableId },
     },
   });
-
   if (existingVariable) {
     return res.respond(400, "Score Variable with this name already exists!");
   }

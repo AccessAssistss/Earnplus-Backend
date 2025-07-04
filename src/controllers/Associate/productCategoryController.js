@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 // ##########----------Create Product Category----------##########
 const createProductCategory = asyncHandler(async (req, res) => {
   const { categoryName } = req.body;
-
   if (!categoryName) {
     return res.respond(400, "Product Category name is required!");
   }
@@ -18,7 +17,6 @@ const createProductCategory = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingProductCategory) {
     return res.respond(400, "ProductCategory with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createProductCategory = asyncHandler(async (req, res) => {
 // ##########----------Update Product Category----------##########
 const updateProductCategory = asyncHandler(async (req, res) => {
   const { categoryName } = req.body;
-
   if (!categoryName) {
     return res.respond(400, "Product Category name is required!");
   }
@@ -105,7 +102,6 @@ const softDeleteProductCategory = asyncHandler(async (req, res) => {
 // ##########----------Create Product Purpose----------##########
 const createProductPurpose = asyncHandler(async (req, res) => {
   const { purpose } = req.body;
-
   if ((!purpose)) {
     return res.respond(
       400,
@@ -119,7 +115,6 @@ const createProductPurpose = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingProductPurpose) {
     return res.respond(
       400,
@@ -137,7 +132,6 @@ const createProductPurpose = asyncHandler(async (req, res) => {
 // ##########----------Update Product Purpose----------##########
 const updateProductPurpose = asyncHandler(async (req, res) => {
   const { purpose } = req.body;
-
   if (!purpose) {
     return res.respond(400, "Product Purpose name is required!");
   }

@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // Create External Score
 const createExternalScore = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "External Score name is required!");
   }
@@ -17,7 +16,6 @@ const createExternalScore = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingScore) {
     return res.respond(400, "External Score with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createExternalScore = asyncHandler(async (req, res) => {
 const updateExternalScore = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { externalScoreId } = req.params;
-
   if (!name) {
     return res.respond(400, "External Score name is required!");
   }
@@ -45,7 +42,6 @@ const updateExternalScore = asyncHandler(async (req, res) => {
       NOT: { id: externalScoreId },
     },
   });
-
   if (existingScore) {
     return res.respond(400, "External Score with this name already exists!");
   }

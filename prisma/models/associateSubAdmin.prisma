@@ -27,6 +27,7 @@ model AssociateSubAdmin {
     KYCRequest                  KYCRequest[]
     MasterProductDeleteRequest  MasterProductDeleteRequest[]
     VariantProductDeleteRequest VariantProductDeleteRequest[]
+    VariantProductUpdateRequest VariantProductUpdateRequest[]
 }
 
 // ##########----------Sub-Admin Modules Model----------##########

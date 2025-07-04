@@ -16,6 +16,8 @@ model VariantProductUpdateRequest {
     isDeleted        Boolean     @default(false)
 
     variantProduct VariantProduct @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+    productPartner ProductPartner?    @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+    productManager AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
 
     VariantProductParameterUpdate    VariantProductParameterUpdate?
     VariantProductOtherChargesUpdate VariantProductOtherChargesUpdate?

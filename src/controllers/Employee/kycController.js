@@ -9,7 +9,6 @@ const createKYCRequest = asyncHandler(async (req, res) => {
     const employee = await prisma.employee.findFirst({
         where: { userId },
     });
-
     if (!employee) {
         return res.respond(404, "Employee not found");
     }
@@ -19,13 +18,11 @@ const createKYCRequest = asyncHandler(async (req, res) => {
             employeeId: employee.id,
         },
     });
-
     if (existingRequest) {
         return res.respond(409, "KYC request already exists");
     }
 
     const subAdmins = await prisma.associateSubAdmin.findMany();
-
     if (subAdmins.length === 0) {
         return res.respond(404, "No Associate Sub-Admins found to assign KYC request");
     }
@@ -50,7 +47,6 @@ const getKYCRequest = asyncHandler(async (req, res) => {
     const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
         where: { userId },
     });
-
     if (!associateSubAdmin) {
         return res.respond(404, "Associate SubAdmin not found");
     }
@@ -73,7 +69,6 @@ const getKYCRequest = asyncHandler(async (req, res) => {
             }
         }
     });
-
     if (!kycRequests) {
         return res.respond(404, "KYC request not found");
     }
@@ -88,7 +83,6 @@ const getKYCDetails = asyncHandler(async (req, res) => {
     const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
         where: { userId },
     });
-
     if (!associateSubAdmin) {
         return res.respond(404, "Associate SubAdmin not found");
     }
@@ -112,7 +106,6 @@ const getKYCDetails = asyncHandler(async (req, res) => {
             }
         }
     });
-
     if (!kycRequest || !kycRequest.employee) {
         return res.respond(404, "KYC request or employee not found");
     }
@@ -131,7 +124,6 @@ const updateKYCStatus = asyncHandler(async (req, res) => {
     const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
         where: { userId },
     });
-
     if (!associateSubAdmin) {
         return res.respond(404, "Associate SubAdmin not found!");
     }
@@ -139,7 +131,6 @@ const updateKYCStatus = asyncHandler(async (req, res) => {
     const existingRequest = await prisma.kYCRequest.findUnique({
         where: { associateSubAdminId: associateSubAdmin.id },
     });
-
     if (!existingRequest) {
         return res.respond(404, "KYC request not found!");
     }

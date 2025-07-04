@@ -8,7 +8,6 @@ const prisma = new PrismaClient();
 const createRole = asyncHandler(async (req, res) => {
   const associateId = req.user;
   const { roleName } = req.body;
-
   if (!roleName) {
     return res.respond(400, "Role name is required!");
   }
@@ -16,7 +15,6 @@ const createRole = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId: associateId, isDeleted: false },
   });
-
   if (!associate) {
     return res.respond(404, "Associated profile not found!");
   }
@@ -28,7 +26,6 @@ const createRole = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingRole) {
     return res.respond(
       400,
@@ -48,7 +45,6 @@ const updateRole = asyncHandler(async (req, res) => {
   const associateId = req.user;
   const { roleName } = req.body;
   const { roleId } = req.params;
-
   if (!roleName) {
     return res.respond(400, "Role name is required!");
   }
@@ -56,7 +52,6 @@ const updateRole = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId: associateId, isDeleted: false },
   });
-
   if (!associate) {
     return res.respond(404, "Associated profile not found!");
   }
@@ -71,7 +66,6 @@ const updateRole = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (existingRole) {
     return res.respond(
       400,
@@ -94,7 +88,6 @@ const getAllRoles = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId: associateId, isDeleted: false },
   });
-
   if (!associate) {
     return res.respond(404, "Associated profile not found!");
   }
@@ -142,7 +135,6 @@ const createModule = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId: associateId, isDeleted: false },
   });
-
   if (!associate) {
     return res.respond(404, "Associated profile not found!");
   }
@@ -155,7 +147,6 @@ const createModule = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingModule) {
     return res.respond(
       400,
@@ -194,7 +185,6 @@ const updateModule = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId: associateId, isDeleted: false },
   });
-
   if (!associate) {
     return res.respond(404, "Associated profile not found!");
   }
@@ -210,7 +200,6 @@ const updateModule = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (existingModule) {
     return res.respond(
       400,

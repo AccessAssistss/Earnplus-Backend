@@ -1,4 +1,5 @@
 const constants = require("../httpStatusCodes");
+const { handlePrismaError } = require("./prismaErrorHandler");
 
 const errorHandler = (err, req, res, next) => {
   const statusCode = res.statusCode !== 200 ? res.statusCode : 500;
@@ -10,6 +11,12 @@ const errorHandler = (err, req, res, next) => {
     title: "",
     message: err.message,
   };
+
+  const prismaHandled = handlePrismaError(err);
+  if (prismaHandled) {
+    response.title = prismaHandled.title;
+    response.message = prismaHandled.message;
+  }
 
   switch (statusCode) {
     case constants.NOT_FOUND:

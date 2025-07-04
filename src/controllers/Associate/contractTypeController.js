@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 // ##########----------Create Contract Type----------##########
 const createContractType = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
-
   if (!name || !description) {
     return res.respond(400, "Name and Description are required!");
   }
@@ -17,7 +16,6 @@ const createContractType = asyncHandler(async (req, res) => {
       name: { equals: name, mode: "insensitive" },
     },
   });
-
   if (existingContractType) {
     return res.respond(400, "Contract Type with this name already exists!");
   }
@@ -42,7 +40,6 @@ const updateContractType = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (existingContractType) {
     return res.respond(400, "Contract Type with this name already exists!");
   }

@@ -36,70 +36,9 @@ const generateAccessAndRefreshTokens = async (userId) => {
 };
 
 // ####################--------------------AUTH--------------------####################
-// ##########----------Employer Registration----------##########
-const registerEmployer = asyncHandler(async (req, res) => {
-  const { userType = "EMPLOYER", email, mobile, password, name } = req.body;
-
-  if (!email || !mobile || !password || !name) {
-    return res.respond(400, "All fields required!");
-  }
-
-  if (!mobile.match(/^[6789]\d{9}$/)) {
-    return res.respond(400, "Invalid mobile number!");
-  }
-
-  const existingUser = await prisma.customUser.findFirst({
-    where: {
-      OR: [{ email }, { mobile }],
-    },
-  });
-
-  if (existingUser) {
-    return res.respond(
-      400,
-      "User with this mobile number or Email already exists!"
-    );
-  }
-
-  const hashed = await hashPassword(password);
-
-  const createCustomUser = await prisma.customUser.create({
-    data: {
-      email,
-      mobile,
-      name,
-      userType,
-    },
-  });
-
-  let registeredEmployer = await prisma.employer.create({
-    data: {
-      user: {
-        connect: { id: createCustomUser.id },
-      },
-      email,
-      mobile,
-      name,
-      password: hashed,
-    },
-  });
-
-  registeredEmployer = {
-    id: registeredEmployer.id,
-    name: registeredEmployer.name,
-    email: registeredEmployer.email,
-    mobile: registeredEmployer.mobile,
-    createdAt: registeredEmployer.createdAt,
-    updatedAt: registeredEmployer.updatedAt,
-  };
-
-  res.respond(201, "Employer registered successfully!", registeredEmployer);
-});
-
 // ##########----------Employer Login----------##########
 const loginEmployer = asyncHandler(async (req, res) => {
   const { userType = "EMPLOYER", email, password } = req.body;
-
   if (!email || !password) {
     return res.respond(400, "All fields required!");
   }
@@ -107,7 +46,6 @@ const loginEmployer = asyncHandler(async (req, res) => {
   const existingUser = await prisma.customUser.findFirst({
     where: { email, userType },
   });
-
   if (!existingUser) {
     return res.respond(400, "User not found!");
   }
@@ -115,13 +53,11 @@ const loginEmployer = asyncHandler(async (req, res) => {
   const existingEmployer = await prisma.employer.findFirst({
     where: { email },
   });
-
   if (!existingEmployer) {
     return res.respond(400, "Employer not found!");
   }
 
   const isMatch = await verifyPassword(password, existingEmployer.password);
-
   if (isMatch) {
     return res.respond(400, "Invalid Credentials!");
   }
@@ -182,7 +118,6 @@ const EmployerProfileCompletion = asyncHandler(async (req, res) => {
   const employer = await prisma.employer.findUnique({
     where: { userId },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
@@ -190,7 +125,6 @@ const EmployerProfileCompletion = asyncHandler(async (req, res) => {
   const existingBusinessDetails = await prisma.employerBusinessDetails.findUnique({
     where: { employerId: employer.id },
   });
-
   if (existingBusinessDetails) {
     return res.respond(400, "Employer business details already exist!");
   }
@@ -224,7 +158,6 @@ const addEmployerWorkLocation = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { workspaceName, noOfEmployees, address, country, state, district } =
     req.body;
-
   if (!workspaceName || !address || !country || !state || !district) {
     return res.respond(
       400,
@@ -299,7 +232,6 @@ const addEmployerCompanyPolicy = asyncHandler(async (req, res) => {
   const employer = await prisma.employer.findUnique({
     where: { userId },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
@@ -307,7 +239,6 @@ const addEmployerCompanyPolicy = asyncHandler(async (req, res) => {
   const existingCompanyPolicy = await prisma.employerCompanyPolicies.findUnique({
     where: { employerId: employer.id },
   });
-
   if (existingCompanyPolicy) {
     return res.respond(400, "Employer company policy already exist!");
   }
@@ -350,7 +281,6 @@ const addEmployerContractType = asyncHandler(async (req, res) => {
   const employer = await prisma.employer.findUnique({
     where: { userId },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
@@ -391,11 +321,9 @@ const addEmployerContractType = asyncHandler(async (req, res) => {
 const handleEmployerActivationStatus = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { employerId, isActive } = req.body;
-
   if (!employerId) {
     return res.respond(400, "employerId is required!");
   }
-
   if (isActive === undefined || isActive === null || isActive === "") {
     return res.respond(400, "isActive field is required!");
   }
@@ -403,7 +331,6 @@ const handleEmployerActivationStatus = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findUnique({
     where: { userId },
   });
-
   if (!associate) {
     return res.respond(404, "Associate not found!");
   }
@@ -411,7 +338,6 @@ const handleEmployerActivationStatus = asyncHandler(async (req, res) => {
   const employer = await prisma.employer.findUnique({
     where: { id: employerId },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
@@ -436,7 +362,6 @@ const getAllEmployers = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findFirst({
     where: { userId },
   });
-
   if (!employee) {
     return res.respond(404, "Employee not found");
   }
@@ -1029,7 +954,6 @@ const getEmployeeProfile = asyncHandler(async (req, res) => {
   const employer = await prisma.employer.findFirst({
     where: { userId },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
@@ -1244,7 +1168,6 @@ const getEmployerActivityLogs = asyncHandler(async (req, res) => {
     where: { userId },
     select: { id: true },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
@@ -1304,13 +1227,11 @@ const createEmployerTicket = asyncHandler(async (req, res) => {
     where: { userId },
     select: { id: true },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
 
   const { title, description } = req.body;
-
   if (!title || !description) {
     return res.respond(400, "Title and description are required!");
   }
@@ -1334,7 +1255,6 @@ const getTicketsByEmployer = asyncHandler(async (req, res) => {
     where: { userId },
     select: { id: true },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
@@ -1355,7 +1275,6 @@ const getEmployerTickets = asyncHandler(async (req, res) => {
     where: { userId },
     select: { id: true },
   });
-
   if (!associateSubAdmin) {
     return res.respond(404, "Associate SubAdmin not found!");
   }
@@ -1416,8 +1335,6 @@ const updateEmployerTicketStatus = asyncHandler(async (req, res) => {
 
 // ##########----------Get Employers----------##########
 const getEmployers = asyncHandler(async (req, res) => {
-  const userId = req.user;
-
   const employers = await prisma.employer.findMany({
     where: {
       isDeleted: false,
@@ -1441,7 +1358,6 @@ const getEmployers = asyncHandler(async (req, res) => {
 });
 
 module.exports = {
-  registerEmployer,
   loginEmployer,
   EmployerProfileCompletion,
   addEmployerWorkLocation,

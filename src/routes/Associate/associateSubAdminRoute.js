@@ -15,7 +15,6 @@ const {
 const validateToken = require("../../../middleware/validateJwtToken");
 const multerErrorHandler = require("../../../middleware/multerErrorHandler");
 const createUploadMiddleware = require("../../../middleware/upload");
-
 const { EMPLOYER_FILE_FIELDS } = require("../../../utils/fileFieldMapper")
 
 const router = express.Router();

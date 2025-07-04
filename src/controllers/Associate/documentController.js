@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // Create Document
 const createDocument = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Document name is required!");
   }
@@ -17,7 +16,6 @@ const createDocument = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingDocument) {
     return res.respond(400, "Document with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createDocument = asyncHandler(async (req, res) => {
 const updateDocument = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { documentId } = req.params;
-
   if (!name) {
     return res.respond(400, "Document name is required!");
   }
@@ -45,7 +42,6 @@ const updateDocument = asyncHandler(async (req, res) => {
       NOT: { id: documentId },
     },
   });
-
   if (existingDocument) {
     return res.respond(400, "Document with this name already exists!");
   }

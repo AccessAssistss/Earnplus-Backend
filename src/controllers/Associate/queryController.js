@@ -15,7 +15,6 @@ const createQuery = asyncHandler(async (req, res) => {
     urgency,
     description,
   } = req.body;
-
   if (!categoryId || !subCategoryId || !description || !urgency) {
     return res.respond(
       400,
@@ -75,7 +74,6 @@ const getAllQueries = asyncHandler(async (req, res) => {
   const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
   });
-
   if (!associateSubAdmin) {
     return res.respond(403, "SubAdmin not found!");
   }
@@ -134,7 +132,6 @@ const updateQueryStatus = asyncHandler(async (req, res) => {
   const subAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
   });
-
   if (!subAdmin) {
     return res.respond(403, "SubAdmin not found!");
   }
@@ -142,7 +139,6 @@ const updateQueryStatus = asyncHandler(async (req, res) => {
   const query = await prisma.raiseQuery.findFirst({
     where: { id: queryId, isDeleted: false },
   });
-
   if (!query) {
     return res.respond(404, "Query not found!");
   }

@@ -9,7 +9,6 @@ const prisma = new PrismaClient();
 const createEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { customEmployeeId, income, date } = req.body;
-
   if (!customEmployeeId || !income || !date) {
     return res.respond(
       400,
@@ -22,7 +21,6 @@ const createEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
       id: userId
     },
   });
-
   if (!existingUser) {
     return res.status(400).json({
       error: "User not found!",
@@ -40,7 +38,6 @@ const createEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
     const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
       where: { userId },
     });
-
     if (!employerSubAdmin) {
       return res.respond(404, "Employer Sub Admin not found!");
     }
@@ -53,7 +50,6 @@ const createEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findFirst({
     where: { customEmployeeId: customEmployeeId },
   });
-
   if (!employee) {
     return res.respond(404, "Employee not found!");
   }
@@ -64,7 +60,6 @@ const createEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
       date,
     },
   });
-
   if (existingPayroll) {
     return res.respond(409, "Payroll already exists for this date.");
   }
@@ -99,7 +94,6 @@ const bulkUploadEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
   const existingUser = await prisma.customUser.findUnique({
     where: { id: userId },
   });
-
   if (!existingUser) {
     return res.respond(404, "User not found!");
   }
@@ -115,7 +109,6 @@ const bulkUploadEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
     const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
       where: { userId },
     });
-
     if (!employerSubAdmin) {
       return res.respond(404, "Employer Sub Admin not found!");
     }
@@ -128,7 +121,6 @@ const bulkUploadEmployeeCurrentPayroll = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findFirst({
     where: { customEmployeeId: customEmployeeId },
   });
-
   if (!employee) {
     return res.respond(404, "Employee not found!");
   }
@@ -197,7 +189,6 @@ const getCurrentPayrolls = asyncHandler(async (req, res) => {
   const existingUser = await prisma.customUser.findUnique({
     where: { id: userId },
   });
-
   if (!existingUser) {
     return res.respond(404, "User not found!");
   }
@@ -322,7 +313,6 @@ const createEmployeeBasePayroll = asyncHandler(async (req, res) => {
     const employerSubAdmin = await prisma.employerSubAdmin.findFirst({
       where: { userId },
     });
-
     if (!employerSubAdmin) {
       return res.respond(404, "Employer Sub Admin not found!");
     }
@@ -335,7 +325,6 @@ const createEmployeeBasePayroll = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findFirst({
     where: { customEmployeeId: customEmployeeId },
   });
-
   if (!employee) {
     return res.respond(404, "Employee not found!");
   }
@@ -346,7 +335,6 @@ const createEmployeeBasePayroll = asyncHandler(async (req, res) => {
       date,
     },
   });
-
   if (existingPayroll) {
     return res.respond(409, "Payroll already exists for this date.");
   }

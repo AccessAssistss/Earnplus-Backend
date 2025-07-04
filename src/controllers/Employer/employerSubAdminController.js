@@ -15,7 +15,6 @@ const prisma = new PrismaClient();
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await prisma.customUser.findUnique({ where: { id: userId } });
-
     if (!user) {
       throw new Error("User not found!");
     }
@@ -62,7 +61,6 @@ const createEmployerSubAdmin = asyncHandler(async (req, res) => {
       ],
     },
   });
-
   if (existingUser) {
     return res.status(400).json({
       error: "User with this mobile number or Email already exists!",
@@ -72,7 +70,6 @@ const createEmployerSubAdmin = asyncHandler(async (req, res) => {
   const existingEmployer = await prisma.employer.findFirst({
     where: { userId },
   });
-
   if (!existingEmployer) {
     return res.status(400).json({
       error: "Employer not found!",

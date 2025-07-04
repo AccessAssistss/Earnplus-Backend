@@ -7,7 +7,6 @@ const {
   verifyPassword,
   generateRandomPassword,
 } = require("../../../utils/authUtils");
-
 const { UserType } = require("@prisma/client");
 const { verifyGST, verifyPAN } = require("../../../utils/verificationUtils");
 const { generateUniqueEmployerId } = require("../../../utils/uniqueCodeGenerator");
@@ -18,7 +17,6 @@ const prisma = new PrismaClient();
 const generateAccessAndRefreshTokens = async (userId) => {
   try {
     const user = await prisma.customUser.findUnique({ where: { id: userId } });
-
     if (!user) {
       throw new Error("User not found");
     }
@@ -65,7 +63,6 @@ const createAssociateSubAdmin = asyncHandler(async (req, res) => {
       ],
     },
   });
-
   if (existingUser) {
     return res.status(400).json({
       error: "User with this mobile number or Email already exists!",
@@ -75,7 +72,6 @@ const createAssociateSubAdmin = asyncHandler(async (req, res) => {
   const existingAssociate = await prisma.associate.findFirst({
     where: { userId },
   });
-
   if (!existingAssociate) {
     return res.status(400).json({
       error: "Associate not found!",
@@ -85,7 +81,6 @@ const createAssociateSubAdmin = asyncHandler(async (req, res) => {
   const existingRole = await prisma.role.findFirst({
     where: { id: role },
   });
-
   if (!existingRole) {
     return res.status(404).json({
       error: "Role not found!",
@@ -94,61 +89,67 @@ const createAssociateSubAdmin = asyncHandler(async (req, res) => {
 
   const hashed = await hashPassword(password);
 
-  const createCustomUser = await prisma.customUser.create({
-    data: {
-      email,
-      mobile,
-      name,
-      userType,
-    },
+  const result = await prisma.$transaction(async (tx) => {
+    const customUser = await tx.customUser.create({
+      data: {
+        email,
+        mobile,
+        name,
+        userType,
+      },
+    });
+
+    const associateSubAdmin = await tx.associateSubAdmin.create({
+      data: {
+        user: {
+          connect: { id: customUser.id },
+        },
+        associate: {
+          connect: { id: existingAssociate.id },
+        },
+        name,
+        email,
+        mobile,
+        password: hashed,
+        role: {
+          connect: { id: existingRole.id },
+        },
+      },
+      include: {
+        role: true,
+      },
+    });
+
+    await tx.associateSubAdminModule.createMany({
+      data: modules.map((mod) => ({
+        moduleId: mod,
+        associateSubAdminId: associateSubAdmin.id,
+      })),
+    });
+
+    return associateSubAdmin;
   });
 
-  let registeredAssociateSubAdmin = await prisma.associateSubAdmin.create({
-    data: {
-      user: {
-        connect: { id: createCustomUser.id },
-      },
-      associate: {
-        connect: { id: existingAssociate.id },
-      },
-      name,
-      email,
-      mobile,
-      password: hashed,
-      role: {
-        connect: { id: existingRole.id },
-      },
-    },
-  });
-
-  await prisma.associateSubAdminModule.createMany({
-    data: modules.map((mod) => ({
-      moduleId: mod,
-      associateSubAdminId: registeredAssociateSubAdmin.id,
-    })),
-  });
-
-  registeredAssociateSubAdmin = {
-    id: registeredAssociateSubAdmin.id,
-    name: registeredAssociateSubAdmin.name,
-    email: registeredAssociateSubAdmin.email,
-    mobile: registeredAssociateSubAdmin.mobile,
-    role: registeredAssociateSubAdmin.role,
-    createdAt: registeredAssociateSubAdmin.createdAt,
-    updatedAt: registeredAssociateSubAdmin.updatedAt,
+  const responseData = {
+    id: result.id,
+    name: result.name,
+    email: result.email,
+    mobile: result.mobile,
+    role: result.role,
+    createdAt: result.createdAt,
+    updatedAt: result.updatedAt,
   };
 
   res.respond(
     201,
     "Associate SubAdmin created successfully!",
-    registeredAssociateSubAdmin
+    responseData
   );
 });
 
 // ##########----------Associate SubAdmin Login----------##########
 const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
   const { userType = "ASSOCIATESUBADMIN", email, password } = req.body;
-
   if (!email || !password) {
     return res.respond(400, "All fields required!");
   }
@@ -156,7 +157,6 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
   const existingUser = await prisma.customUser.findFirst({
     where: { email, userType },
   });
-
   if (!existingUser) {
     return res.respond(400, "User not found!");
   }
@@ -179,7 +179,6 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (!existingSubAdmin) {
     return res.respond(400, "SubAdmin not found!");
   }
@@ -192,7 +191,6 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
   }
 
   const isMatch = await verifyPassword(password, existingSubAdmin.password);
-
   if (!isMatch) {
     return res.respond(401, "Invalid Credentials!");
   }
@@ -234,7 +232,6 @@ const updateAssociateSubAdmin = asyncHandler(async (req, res) => {
     where: { id: subAdminId },
     include: { user: true },
   });
-
   if (!associateSubAdmin) {
     return res.respond(404, "Associate SubAdmin not found.");
   }
@@ -242,7 +239,6 @@ const updateAssociateSubAdmin = asyncHandler(async (req, res) => {
   const existingAssociate = await prisma.associate.findFirst({
     where: { userId },
   });
-
   if (!existingAssociate) {
     return res.respond(400, "Associate not found.");
   }
@@ -267,7 +263,6 @@ const updateAssociateSubAdmin = asyncHandler(async (req, res) => {
     const existingRole = await prisma.role.findUnique({
       where: { id: role },
     });
-
     if (!existingRole) {
       return res.respond(404, "Role not found.");
     }
@@ -275,34 +270,36 @@ const updateAssociateSubAdmin = asyncHandler(async (req, res) => {
     subAdminUpdateData.role = { connect: { id: existingRole.id } };
   }
 
-  if (Object.keys(userUpdateData).length > 0) {
-    await prisma.customUser.update({
-      where: { id: associateSubAdmin.userId },
-      data: userUpdateData,
-    });
-  }
-
-  if (Object.keys(subAdminUpdateData).length > 0) {
-    await prisma.associateSubAdmin.update({
-      where: { id: subAdminId },
-      data: subAdminUpdateData,
-    });
-  }
-
-  if (Array.isArray(modules)) {
-    await prisma.associateSubAdminModule.deleteMany({
-      where: { associateSubAdminId: subAdminId },
-    });
-
-    if (modules.length > 0) {
-      await prisma.associateSubAdminModule.createMany({
-        data: modules.map((mod) => ({
-          moduleId: mod,
-          associateSubAdminId: subAdminId,
-        })),
+  await prisma.$transaction(async (tx) => {
+    if (Object.keys(userUpdateData).length > 0) {
+      await tx.customUser.update({
+        where: { id: associateSubAdmin.userId },
+        data: userUpdateData,
       });
     }
-  }
+
+    if (Object.keys(subAdminUpdateData).length > 0) {
+      await tx.associateSubAdmin.update({
+        where: { id: subAdminId },
+        data: subAdminUpdateData,
+      });
+    }
+
+    if (Array.isArray(modules)) {
+      await tx.associateSubAdminModule.deleteMany({
+        where: { associateSubAdminId: subAdminId },
+      });
+
+      if (modules.length > 0) {
+        await tx.associateSubAdminModule.createMany({
+          data: modules.map((mod) => ({
+            moduleId: mod,
+            associateSubAdminId: subAdminId,
+          })),
+        });
+      }
+    }
+  });
 
   res.respond(200, "Associate SubAdmin updated successfully.");
 });
@@ -316,7 +313,6 @@ const deactivateAssociateSubAdmin = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId },
   });
-
   if (!associate) {
     return res.respond(404, "Associate not found!");
   }
@@ -324,7 +320,6 @@ const deactivateAssociateSubAdmin = asyncHandler(async (req, res) => {
   const subAdmin = await prisma.associateSubAdmin.findUnique({
     where: { id: subAdminId },
   });
-
   if (!subAdmin) {
     return res.respond(404, "Associate SubAdmin not found!");
   }
@@ -353,7 +348,6 @@ const getAssociateSubAdmins = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId },
   });
-
   if (!associate) {
     return res.respond(404, "Associate not found!");
   }
@@ -379,6 +373,12 @@ const getAssociateSubAdmins = asyncHandler(async (req, res) => {
         name: true,
         email: true,
         mobile: true,
+        role: {
+          select: {
+            id: true,
+            roleName: true,
+          }
+        },
         isActive: true,
         isDeleted: true,
         createdAt: true,
@@ -412,7 +412,6 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
     cin,
     legalIdentity,
   } = req.body;
-
   if (!email || !mobile || !name || !gst || !pan || !legalIdentity) {
     return res.respond(400, "All fields required!");
   }
@@ -430,14 +429,9 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (!existingSubAdmin) {
     return res.respond(400, "SubAdmin not found!");
   }
-
-  // if (existingSubAdmin.role.roleName !== "ERM") {
-  //   return res.respond(400, "You don't have access to Add Employer!");
-  // }
 
   const existingUser = await prisma.customUser.findFirst({
     where: {
@@ -447,7 +441,6 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
       ],
     },
   });
-
   if (existingUser) {
     return res.respond(
       400,
@@ -455,20 +448,9 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
     );
   }
 
-  const newUser = await prisma.customUser.create({
-    data: {
-      email,
-      mobile,
-      name,
-      userType,
-    },
-  });
-
   // ######-----Generate Unique employerId-----#####
   const newEmployerId = await generateUniqueEmployerId()
-
   const password = generateRandomPassword(8);
-
   const hashed = await hashPassword(password);
 
   const signedMasterAgreementFile = req.files?.signedMasterAgreement?.[0];
@@ -497,32 +479,42 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
     ? `/uploads/employer/additional_doc/${additionalDocFile.filename}`
     : null;
 
-  const employer = await prisma.employer.create({
-    data: {
-      user: {
-        connect: { id: newUser.id },
+  const [newUser, employer] = await prisma.$transaction([
+    prisma.customUser.create({
+      data: {
+        email,
+        mobile,
+        name,
+        userType,
       },
-      associateSubAdmin: {
-        connect: { id: existingSubAdmin.id },
+    }),
+    prisma.employer.create({
+      data: {
+        email,
+        mobile,
+        name,
+        password: hashed,
+        gst,
+        pan,
+        cin,
+        legalIdentity,
+        altMobile,
+        portal,
+        employerId: newEmployerId,
+        signedMasterAgreement: signedMasterAgreementUrl,
+        kycDocuments: kycDocumentsUrl,
+        boardResolution: boardResolutionUrl,
+        onboardingSOP: onboardingSOPUrl,
+        additionalDoc: additionalDocUrl,
+        user: {
+          connect: { email },
+        },
+        associateSubAdmin: {
+          connect: { id: existingSubAdmin.id },
+        },
       },
-      email,
-      mobile,
-      name,
-      password: hashed,
-      gst,
-      pan,
-      cin,
-      legalIdentity,
-      altMobile,
-      portal,
-      employerId: newEmployerId,
-      signedMasterAgreement: signedMasterAgreementUrl,
-      kycDocuments: kycDocumentsUrl,
-      boardResolution: boardResolutionUrl,
-      onboardingSOP: onboardingSOPUrl,
-      additionalDoc: additionalDocUrl,
-    },
-  });
+    }),
+  ]);
 
   let registeredEmployer = {
     id: employer.id,
@@ -543,7 +535,6 @@ const addEmployerByAssociateSubAdmin = asyncHandler(async (req, res) => {
 const verifyGSTAndPAN = asyncHandler(async (req, res) => {
   const user = req.user;
   const { filterType, gst, businessName, pan } = req.body;
-
   if (!filterType) {
     return res.respond(400, "Filter type is required!");
   }
@@ -555,7 +546,6 @@ const verifyGSTAndPAN = asyncHandler(async (req, res) => {
   const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId: user },
   });
-
   if (!associateSubAdmin) {
     return res.respond(400, "SubAdmin not found!");
   }
@@ -606,7 +596,6 @@ const getEmployersByAssociateSubAdmin = asyncHandler(async (req, res) => {
   const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId },
   });
-
   if (!associateSubAdmin) {
     return res.respond(400, "SubAdmin not found!");
   }
@@ -656,7 +645,6 @@ const getEmployerDetails = asyncHandler(async (req, res) => {
   const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId },
   });
-
   if (!associateSubAdmin) {
     return res.respond(404, "SubAdmin not found!");
   }
@@ -760,7 +748,6 @@ const getEmployerDetails = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (!employer) {
     return res.respond(404, "Employer not found!");
   }
@@ -775,7 +762,6 @@ const deleteAssociateSubAdmin = asyncHandler(async (req, res) => {
   const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId },
   });
-
   if (!associateSubAdmin) {
     return res.respond(404, "SubAdmin not found!");
   }

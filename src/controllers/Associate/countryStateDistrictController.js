@@ -7,7 +7,6 @@ const prisma = new PrismaClient();
 // ##########----------Create Country----------##########
 const createCountry = asyncHandler(async (req, res) => {
   const { countryName } = req.body;
-
   if (!countryName) {
     return res.respond(400, "Country name is required!");
   }
@@ -18,7 +17,6 @@ const createCountry = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingCountry) {
     return res.respond(400, "Country with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createCountry = asyncHandler(async (req, res) => {
 // ##########----------Update Country----------##########
 const updateCountry = asyncHandler(async (req, res) => {
   const { countryName } = req.body;
-
   if (!countryName) {
     return res.respond(400, "Country name is required!");
   }
@@ -47,7 +44,6 @@ const updateCountry = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (existingCountry) {
     return res.respond(400, "Country with this name already exists!");
   }
@@ -107,7 +103,6 @@ const softDeleteCountry = asyncHandler(async (req, res) => {
 // ##########----------Create State----------##########
 const createState = asyncHandler(async (req, res) => {
   const { stateName, countryId } = req.body;
-
   if ((!stateName, !countryId)) {
     return res.respond(400, "State name And Country ID are required!");
   }
@@ -119,7 +114,6 @@ const createState = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingState) {
     return res.respond(
       400,
@@ -137,10 +131,10 @@ const createState = asyncHandler(async (req, res) => {
 // ##########----------Update State----------##########
 const updateState = asyncHandler(async (req, res) => {
   const { stateName } = req.body;
-
   if (!stateName) {
     return res.respond(400, "State name is required!");
   }
+
   const existingState = await prisma.state.findFirst({
     where: {
       stateName: { equals: stateName, mode: "insensitive" },
@@ -151,7 +145,6 @@ const updateState = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (existingState) {
     return res.respond(
       400,
@@ -201,7 +194,6 @@ const softDeleteState = asyncHandler(async (req, res) => {
 // ##########----------Create District----------##########
 const createDistrict = asyncHandler(async (req, res) => {
   const { districtName, stateId } = req.body;
-
   if ((!districtName, !stateId)) {
     return res.respond(400, "District name And State ID are required!");
   }
@@ -213,7 +205,6 @@ const createDistrict = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingDistrict) {
     return res.respond(
       400,
@@ -231,7 +222,6 @@ const createDistrict = asyncHandler(async (req, res) => {
 // ##########----------Update District----------##########
 const updateDistrict = asyncHandler(async (req, res) => {
   const { districtName } = req.body;
-
   if (!districtName) {
     return res.respond(400, "District name is required!");
   }
@@ -246,7 +236,6 @@ const updateDistrict = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (existingDistrict) {
     return res.respond(
       400,

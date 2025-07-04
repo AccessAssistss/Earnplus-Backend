@@ -25,7 +25,6 @@ const createVariantProduct = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(
       403,
@@ -37,7 +36,6 @@ const createVariantProduct = asyncHandler(async (req, res) => {
     where: { id: masterProductId, isDeleted: false },
     select: { id: true, productCode: true },
   });
-
   if (!masterProduct) {
     return res.respond(404, "Master Product not found.");
   }
@@ -112,7 +110,6 @@ const createVariantProductParameter = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(
       403,
@@ -123,7 +120,6 @@ const createVariantProductParameter = asyncHandler(async (req, res) => {
   const exists = await prisma.variantProduct.findUnique({
     where: { id: variantProductId },
   });
-
   if (!exists) {
     return res.respond(404, "Variant Product not found.");
   }
@@ -158,7 +154,6 @@ const createVariantProductParameter = asyncHandler(async (req, res) => {
 // ##########----------Create Variant Product Other Charges----------##########
 const createVariantProductOtherCharges = asyncHandler(async (req, res) => {
   const userId = req.user;
-
   const {
     variantProductId,
     chequeBounceCharge,
@@ -178,7 +173,6 @@ const createVariantProductOtherCharges = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(
       403,
@@ -189,7 +183,6 @@ const createVariantProductOtherCharges = asyncHandler(async (req, res) => {
   const exists = await prisma.variantProduct.findUnique({
     where: { id: variantProductId },
   });
-
   if (!exists) {
     return res.respond(404, "Variant Product not found.");
   }
@@ -230,7 +223,6 @@ const createVariantProductRepayment = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(
       403,
@@ -241,7 +233,6 @@ const createVariantProductRepayment = asyncHandler(async (req, res) => {
   const exists = await prisma.variantProduct.findUnique({
     where: { id: variantProductId },
   });
-
   if (!exists) {
     return res.respond(404, "Variant Product not found.");
   }
@@ -249,7 +240,6 @@ const createVariantProductRepayment = asyncHandler(async (req, res) => {
   const existingRepayment = await prisma.variantProductRepayment.findUnique({
     where: { variantProductId },
   });
-
   if (existingRepayment) {
     return res.respond(400, "Repayment already exists for this variant product.");
   }
@@ -268,6 +258,92 @@ const createVariantProductRepayment = asyncHandler(async (req, res) => {
   return res.respond(201, "Repayment details created!", repayment);
 });
 
+// ##########----------Get All Variant Products By Product----------##########
+const getAllVariantProductsByProduct = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { productId } = req.params;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can access this data.");
+  }
+
+  const variants = await prisma.variantProduct.findMany({
+    where: {
+      masterProductId: productId,
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      variantName: true,
+      variantType: true,
+      variantId: true,
+      variantCode: true,
+      productType: true,
+      versionId: true,
+      partnerId: true,
+      createdAt: true,
+      updatedAt: true,
+      productManager: {
+        select: {
+          id: true,
+          name: true,
+        }
+      }
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return res.respond(200, "Variant products fetched successfully.", variants);
+});
+
+// ##########----------Get Variant Product Details----------##########
+const getVariantProductDetail = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { variantProductId } = req.params;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can access this data.");
+  }
+
+  const variant = await prisma.variantProduct.findFirst({
+    where: {
+      id: variantProductId,
+      isDeleted: false,
+    },
+    include: {
+      masterProduct: true,
+      productManager: { select: { id: true, userId: true } },
+      VariantProductParameter: true,
+      VariantProductOtherCharges: true,
+      VariantProductRepayment: true,
+    },
+  });
+  if (!variant) {
+    return res.respond(404, "Variant product not found.");
+  }
+
+  return res.respond(
+    200,
+    "Variant product details fetched successfully!",
+    variant
+  );
+});
+
+// ####################--------------------Variant Product EDIT And DELETE Requests Handeling--------------------####################
 // ##########----------Submit Variant Product Update Request----------##########
 const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -292,7 +368,6 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(
       403,
@@ -303,7 +378,6 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const variantProduct = await prisma.variantProduct.findUnique({
     where: { id: variantProductId },
   });
-
   if (!variantProduct) {
     return res.respond(404, "Variant Product not found.");
   }
@@ -351,6 +425,76 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   );
 });
 
+// ##########----------Get Variant Product Update Requests----------##########
+const getAllVariantProductUpdateRequests = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId, isDeleted: false },
+  });
+  if (!associate) {
+    return res.respond(403, "Associate not found.");
+  }
+
+  const updateRequests = await prisma.variantProductUpdateRequest.findMany({
+    include: {
+      variantProduct: {
+        select: {
+          id: true,
+          variantCode: true,
+          variantId: true,
+        },
+      },
+      productManager: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+
+  res.respond(200, "Fetched all update requests successfully.", updateRequests);
+});
+
+// ##########----------Get Variant Product Update Request Details----------##########
+const getVariantProductUpdateRequestDetail = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { updateProductId } = req.params;
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId, isDeleted: false },
+  });
+  if (!associate) {
+    return res.respond(403, "Associate not found.");
+  }
+
+  const variantProductUpdate = await prisma.variantProductUpdateRequest.findFirst({
+    where: {
+      id: updateProductId,
+    },
+    select: {
+      id: true,
+      productType: true,
+      variantName: true,
+      variantType: true,
+      remark: true,
+      VariantProductParameter: true,
+      VariantProductOtherCharges: true,
+      VariantProductRepayment: true,
+    }
+  });
+  if (!variantProductUpdate) {
+    return res.respond(404, "Variant product update request not found.");
+  }
+
+  return res.respond(
+    200,
+    "product details fetched successfully!",
+    variantProductUpdate
+  );
+});
+
 // ##########----------Approve Variant Product Update Request----------##########
 const approveVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -359,7 +503,6 @@ const approveVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
   });
-
   if (!associate) {
     return res.respond(403, "Associate not found.");
   }
@@ -373,8 +516,7 @@ const approveVariantProductUpdateRequest = asyncHandler(async (req, res) => {
       VariantProductRepaymentUpdate: true,
     },
   });
-
-  if (!request || request.isDeleted) {
+  if (!request) {
     return res.respond(404, "Update request not found!");
   }
 
@@ -450,7 +592,6 @@ const rejectVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   const updateRequest = await prisma.variantProductUpdateRequest.findUnique({
     where: { id: requestId },
   });
-
   if (!updateRequest) {
     return res.respond(404, "Update Request not found!");
   }
@@ -458,7 +599,7 @@ const rejectVariantProductUpdateRequest = asyncHandler(async (req, res) => {
   await prisma.variantProductUpdateRequest.update({
     where: { id: requestId },
     data: {
-      isRejected: true,
+      isrejected: true,
       rejectionReason: reason,
     },
   });
@@ -474,7 +615,6 @@ const createVariantProductDeleteRequest = asyncHandler(async (req, res) => {
   const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
   });
-
   if (!associateSubAdmin) {
     return res.respond(403, "associate subadmin not found!");
   }
@@ -485,7 +625,6 @@ const createVariantProductDeleteRequest = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (!product) {
     return res.respond(404, "Variant Product not found or already deleted!");
   }
@@ -496,7 +635,6 @@ const createVariantProductDeleteRequest = asyncHandler(async (req, res) => {
       status: 'PENDING',
     },
   });
-
   if (existingRequest) {
     return res.respond(400, "A delete request is already pending for this product!");
   }
@@ -512,125 +650,89 @@ const createVariantProductDeleteRequest = asyncHandler(async (req, res) => {
   return res.respond(200, "Delete request submitted successfully!", deleteRequest);
 });
 
-// ##########----------Approve Variant Product Delete Request----------##########
-const approveVariantProductDeleteRequest = asyncHandler(async (req, res) => {
+// ##########----------Get Variant Product Delete Requests----------##########
+const getVariantProductDeleteRequests = asyncHandler(async (req, res) => {
   const userId = req.user;
-  const { requestId } = req.body;
 
   const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
   });
-
   if (!associate) {
-    return res.respond(403, "associate not found!");
+    return res.respond(404, "Associate not found!");
+  }
+
+  const whereClause = {
+    isDeleted: false,
+  };
+
+  const requests = await prisma.variantProductDeleteRequest.findMany({
+    where: whereClause,
+    include: {
+      variantProduct: true,
+      requestedBy: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return res.respond(200, "Delete requests fetched successfully!", requests);
+});
+
+// ##########----------Handle Variant Product Delete Request----------##########
+const handleVariantProductDeleteRequest = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { requestId, action, reason } = req.body;
+
+  if (!["APPROVED", "REJECTED"].includes(action)) {
+    return res.respond(400, "Invalid action. Must be APPROVED or REJECTED.");
+  }
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId, isDeleted: false },
+  });
+  if (!associate) {
+    return res.respond(404, "Associate not found!");
   }
 
   const request = await prisma.variantProductDeleteRequest.findUnique({
     where: { id: requestId },
     include: { variantProduct: true },
   });
-
-  if (!request || request.status !== 'PENDING') {
-    return res.status(404).json({ message: 'Valid pending delete request not found' });
+  if (!request || request.status !== "PENDING") {
+    return res.respond(404, "Valid pending delete request not found.");
   }
 
-  await prisma.$transaction([
-    prisma.variantProduct.update({
-      where: { id: request.variantProductId },
-      data: { isDeleted: true },
-    }),
+  const actions = [];
+
+  if (action === "APPROVED") {
+    actions.push(
+      prisma.variantProduct.update({
+        where: { id: request.variantProductId },
+        data: { isDeleted: true },
+      })
+    );
+  }
+
+  actions.push(
     prisma.variantProductDeleteRequest.update({
       where: { id: requestId },
       data: {
-        status: 'APPROVED',
+        status: action,
+        reason: reason || request.reason,
       },
-    }),
-  ]);
-
-  return res.respond(200, "Variant Product deleted (soft) successfully!");
-});
-
-// ##########----------Get All Variant Products By Product----------##########
-const getAllVariantProductsByProduct = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const { productId } = req.params;
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: {
-      role: true,
-    },
-  });
-
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can access this data.");
-  }
-
-  const variants = await prisma.variantProduct.findMany({
-    where: {
-      masterProductId: productId,
-      isDeleted: false,
-    },
-    select: {
-      id: true,
-      variantName: true,
-      variantType: true,
-      variantCode: true,
-      productType: true,
-      versionId: true,
-      partnerId: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  return res.respond(200, "Variant products fetched successfully.", variants);
-});
-
-// ##########----------Get Variant Product Details----------##########
-const getVariantProductDetail = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const { variantProductId } = req.params;
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: {
-      role: true,
-    },
-  });
-
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can access this data.");
-  }
-
-  const variant = await prisma.variantProduct.findFirst({
-    where: {
-      id: variantProductId,
-      isDeleted: false,
-    },
-    include: {
-      masterProduct: true,
-      productManager: { select: { id: true, userId: true } },
-      VariantProductParameter: true,
-      VariantProductOtherCharges: true,
-      VariantProductRepayment: true,
-    },
-  });
-
-  if (!variant) {
-    return res.respond(404, "Variant product not found.");
-  }
-
-  return res.respond(
-    200,
-    "Variant product details fetched successfully!",
-    variant
+    })
   );
+
+  await prisma.$transaction(actions);
+
+  return res.respond(200, `Delete request ${action.toLowerCase()} successfully!`);
 });
 
+// ####################--------------------Variant Product Assigning To Employer--------------------####################
 // ##########----------Assign Variant product to Employer----------##########
 const assignVariantProductToEmployer = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -780,6 +882,7 @@ const getAssignedEmployers = asyncHandler(async (req, res) => {
   );
 });
 
+// ####################--------------------Variant Product Version Handeling--------------------####################
 // ##########----------Variant product Versions----------##########
 const getVariantProductVersions = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -808,7 +911,7 @@ const getVariantProductVersions = asyncHandler(async (req, res) => {
   });
 
   return res.respond(
-    201,
+    200,
     "Variant product version history fetched successfully!",
     versions
   );
@@ -823,7 +926,6 @@ const getVariantProductVersionById = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
@@ -831,7 +933,6 @@ const getVariantProductVersionById = asyncHandler(async (req, res) => {
   const version = await prisma.variantProductVersion.findUnique({
     where: { id: versionId },
   });
-
   if (!version) {
     return res.respond(404, "Variant product version not found.");
   }
@@ -848,13 +949,16 @@ module.exports = {
   createVariantProductParameter,
   createVariantProductOtherCharges,
   createVariantProductRepayment,
+  getAllVariantProductsByProduct,
+  getVariantProductDetail,
   submitVariantProductUpdateRequest,
+  getAllVariantProductUpdateRequests,
+  getVariantProductUpdateRequestDetail,
   approveVariantProductUpdateRequest,
   rejectVariantProductUpdateRequest,
   createVariantProductDeleteRequest,
-  approveVariantProductDeleteRequest,
-  getAllVariantProductsByProduct,
-  getVariantProductDetail,
+  getVariantProductDeleteRequests,
+  handleVariantProductDeleteRequest,
   assignVariantProductToEmployer,
   getAssignedVariantProducts,
   getAssignedEmployers,

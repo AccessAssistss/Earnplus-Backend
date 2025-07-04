@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // Create Ownership Document
 const createOwnershipDocument = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Ownership Document name is required!");
   }
@@ -17,7 +16,6 @@ const createOwnershipDocument = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingDocument) {
     return res.respond(400, "Ownership Document with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createOwnershipDocument = asyncHandler(async (req, res) => {
 const updateOwnershipDocument = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { ownershipDocumentId } = req.params;
-
   if (!name) {
     return res.respond(400, "Ownership Document name is required!");
   }
@@ -45,7 +42,6 @@ const updateOwnershipDocument = asyncHandler(async (req, res) => {
       NOT: { id: ownershipDocumentId },
     },
   });
-
   if (existingDocument) {
     return res.respond(400, "Ownership Document with this name already exists!");
   }

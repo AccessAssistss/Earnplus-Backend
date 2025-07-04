@@ -74,7 +74,6 @@ const createContractCombination = asyncHandler(async (req, res) => {
 const getContractCombinations = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { employerId } = req.params;
-
   if (!employerId) {
     return res.respond(400, "employerId is required!");
   }
@@ -144,7 +143,6 @@ const getContractCombinations = asyncHandler(async (req, res) => {
 const getContractCombinationsByContractType = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { contractTypeId } = req.params;
-
   if (!contractTypeId) {
     return res.respond(400, "contractTypeId is required!");
   }
@@ -181,7 +179,6 @@ const getContractCombinationsByContractType = asyncHandler(async (req, res) => {
 const getSingleContractCombination = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { combinationId } = req.params;
-
   if (!combinationId) {
     return res.respond(400, "combinationId is required!");
   }
@@ -228,7 +225,6 @@ const getSingleContractCombination = asyncHandler(async (req, res) => {
       },
     },
   });
-
   if (!combination) {
     return res.respond(404, "Contract Combination not found!");
   }
@@ -244,7 +240,6 @@ const createContractRuleBook = asyncHandler(async (req, res) => {
     workLoacationId,
     workingPeriod,
   } = req.body;
-
   if (!contractCombinationId || !workLoacationId || !workingPeriod) {
     return res.respond(400, "All fields are required!");
   }
@@ -292,6 +287,7 @@ const createContractRuleBook = asyncHandler(async (req, res) => {
   );
 });
 
+// ##########----------Get Contract Rule Books----------##########
 const getContractRuleBooks = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { contractCombinationId } = req.query;
@@ -348,6 +344,7 @@ const getWorkLocationsByEmployerId = asyncHandler(async (req, res) => {
   if (!ERM) {
     return res.respond(403, "associate subadmin not found!");
   }
+  
   const workLocations = await prisma.employerLocationDetails.findMany({
     where: {
       isDeleted: false,

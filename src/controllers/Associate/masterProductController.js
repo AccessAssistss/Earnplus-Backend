@@ -29,7 +29,7 @@ const createMasterProduct = asyncHandler(async (req, res) => {
     !partnerId ||
     purposeIds.length === 0
   ) {
-    return res.respond(400, "All fields are required, including associations.");
+    return res.respond(400, "All fields are required!.");
   }
 
   const productManager = await prisma.associateSubAdmin.findFirst({
@@ -83,7 +83,6 @@ const createMasterProduct = asyncHandler(async (req, res) => {
         partnerId,
         status,
         versionId: newVersionId,
-
         MasterProductPurpose: {
           create: purposeIds?.map((purposeId) => ({
             purposeId,
@@ -154,7 +153,6 @@ const createFinancialTerms = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create Financial Terms.");
   }
@@ -162,7 +160,6 @@ const createFinancialTerms = asyncHandler(async (req, res) => {
   const existingTerms = await prisma.financialTerms.findUnique({
     where: { masterProductId },
   });
-
   if (existingTerms) {
     return res.respond(409, "Financial terms already exist for this Master Product.");
   }
@@ -240,7 +237,6 @@ const createEligibilityCriteria = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create Eligibility Criteria.");
   }
@@ -248,7 +244,6 @@ const createEligibilityCriteria = asyncHandler(async (req, res) => {
   const existingCriteria = await prisma.eligibilityCriteria.findUnique({
     where: { masterProductId },
   });
-
   if (existingCriteria) {
     return res.respond(409, "Eligibility criteria already exist for this Master Product.");
   }
@@ -319,7 +314,6 @@ const createCreditBureauConfig = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create Credit Bureau Config.");
   }
@@ -327,7 +321,6 @@ const createCreditBureauConfig = asyncHandler(async (req, res) => {
   const existingConfig = await prisma.creditBureauConfig.findUnique({
     where: { masterProductId },
   });
-
   if (existingConfig) {
     return res.respond(409, "Credit Bureau Config already exists for this Master Product.");
   }
@@ -383,7 +376,6 @@ const createFinancialStatements = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create Financial Statements.");
   }
@@ -391,7 +383,6 @@ const createFinancialStatements = asyncHandler(async (req, res) => {
   const existingStatement = await prisma.financialStatements.findUnique({
     where: { masterProductId },
   });
-
   if (existingStatement) {
     return res.respond(409, "Financial Statements already exist for this Master Product.");
   }
@@ -445,7 +436,6 @@ const createBehavioralData = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create Behavioral Data.");
   }
@@ -453,7 +443,6 @@ const createBehavioralData = asyncHandler(async (req, res) => {
   const existingData = await prisma.behavioralData.findUnique({
     where: { masterProductId },
   });
-
   if (existingData) {
     return res.respond(409, "Behavioral Data already exists for this Master Product.");
   }
@@ -503,7 +492,6 @@ const createRiskScoring = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create Risk Scoring.");
   }
@@ -511,7 +499,6 @@ const createRiskScoring = asyncHandler(async (req, res) => {
   const existing = await prisma.riskScoring.findUnique({
     where: { masterProductId },
   });
-
   if (existing) {
     return res.respond(409, "Risk Scoring already exists for this Master Product.");
   }
@@ -638,7 +625,6 @@ const createMasterProductOtherCharges = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(
       403,
@@ -649,7 +635,6 @@ const createMasterProductOtherCharges = asyncHandler(async (req, res) => {
   const exists = await prisma.masterProduct.findUnique({
     where: { id: masterProductId },
   });
-
   if (!exists) {
     return res.respond(404, "Master Product not found.");
   }
@@ -657,7 +642,6 @@ const createMasterProductOtherCharges = asyncHandler(async (req, res) => {
   const existingCharges = await prisma.masterProductOtherCharges.findUnique({
     where: { masterProductId },
   });
-
   if (existingCharges) {
     return res.respond(400, "Charges already exists for this master product.");
   }
@@ -698,7 +682,6 @@ const createMasterProductRepayment = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(
       403,
@@ -709,7 +692,6 @@ const createMasterProductRepayment = asyncHandler(async (req, res) => {
   const exists = await prisma.masterProduct.findUnique({
     where: { id: masterProductId },
   });
-
   if (!exists) {
     return res.respond(404, "Master Product not found.");
   }
@@ -717,7 +699,6 @@ const createMasterProductRepayment = asyncHandler(async (req, res) => {
   const existingRepayment = await prisma.masterProductRepayment.findUnique({
     where: { masterProductId },
   });
-
   if (existingRepayment) {
     return res.respond(400, "Repayment already exists for this master product.");
   }
@@ -736,6 +717,290 @@ const createMasterProductRepayment = asyncHandler(async (req, res) => {
   return res.respond(201, "Repayment details created!", repayment);
 });
 
+// ##########----------Get All Master Products----------##########
+const getAllMasterProducts = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can get products.");
+  }
+
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const totalCount = await prisma.masterProduct.count({
+    where: {
+      isDeleted: false,
+    },
+  });
+
+  const masterProducts = await prisma.masterProduct.findMany({
+    where: {
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      productName: true,
+      productCode: true,
+      productId: true,
+      productDescription: true,
+      deliveryChannel: true,
+      versionId: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: {
+        select: {
+          VariantProduct: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip,
+    take: limit,
+  });
+
+  const formattedProducts = masterProducts.map((product) => {
+    const { _count, ...rest } = product;
+    return {
+      ...rest,
+      VariantProduct: _count?.VariantProduct || 0,
+    };
+  });
+
+  res.respond(200, "Master Products fetched successfully!", {
+    totalItems: totalCount,
+    currentPage: page,
+    totalPages: Math.ceil(totalCount / limit),
+    pageSize: limit,
+    data: formattedProducts,
+  });
+});
+
+// ##########----------Get Master Product Details----------##########
+const getMasterProductDetails = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { productId } = req.params;
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can create products.");
+  }
+
+  const masterProduct = await prisma.masterProduct.findMany({
+    where: {
+      id: productId,
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      productName: true,
+      productCode: true,
+      productId: true,
+      productDescription: true,
+      deliveryChannel: true,
+      versionId: true,
+      status: true,
+      createdAt: true,
+      updatedAt: true,
+      productCategory: {
+        select: {
+          id: true,
+          categoryName: true,
+        },
+      },
+      loanType: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      productPartner: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      MasterProductPurpose: {
+        select: {
+          id: true,
+          productPurpose: {
+            select: {
+              id: true,
+              purpose: true,
+            },
+          },
+        },
+      },
+      MasterProductSegment: {
+        select: {
+          id: true,
+          productSegment: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      financialTerms: {
+        select: {
+          id: true,
+          minLoanAmount: true,
+          maxLoanAmount: true,
+          maxLoanAmount: true,
+          minTenureMonths: true,
+          maxTenureMonths: true,
+          interestRateType: true,
+          interestRateMin: true,
+          interestRateMax: true,
+          processingFeeType: true,
+          processingFeeValue: true,
+          latePaymentFeeType: true,
+          latePaymentFeeValue: true,
+          prepaymentAllowed: true,
+          prepaymentFeeType: true,
+          prepaymentFeeValue: true,
+          emiFrequency: true,
+        },
+      },
+      eligibilityCriteria: {
+        select: {
+          id: true,
+          minAge: true,
+          maxAge: true,
+          minMonthlyIncome: true,
+          minBusinessVintage: true,
+          minBureauScore: true,
+          blacklistFlags: true,
+          minDocumentsRequired: true,
+          documentSubmissionModes: true,
+          documentVerificationModes: true,
+          employmentTypesAllowed: true,
+        },
+      },
+      creditBureauConfig: {
+        select: {
+          id: true,
+          creditBureauSources: true,
+          minScoreRequired: true,
+          maxActiveLoans: true,
+          maxCreditUtilization: true,
+          enquiriesLast6Months: true,
+          loanDelinquencyAllowed: true,
+          bureauDataFreshnessDays: true,
+          customBureauFlags: true,
+          scoreDecayTolerance: true,
+        },
+      },
+      financialStatements: {
+        select: {
+          id: true,
+          minMonthlyCredit: true,
+          minAverageBalance: true,
+          bouncesLast3Months: true,
+          netIncomeRecognition: true,
+          cashDepositsCapPercent: true,
+          statementSources: true,
+          accountTypes: true,
+          pdfParsingRequired: true,
+        },
+      },
+      behavioralData: {
+        select: {
+          id: true,
+          salaryRegularityThreshold: true,
+          spendingConsistencyPercent: true,
+          upiSpendToIncomeRatio: true,
+          billPaymentHistory: true,
+          digitalFootprintRequired: true,
+          locationConsistencyKm: true,
+          repeatBorrowerBehavior: true,
+        },
+      },
+      riskScoring: {
+        select: {
+          id: true,
+          internalScoreVars: true,
+          externalScoreInputs: true,
+          riskCategoryMapping: true,
+          maxDTI: true,
+          maxLTV: true,
+          coBorrowerRequired: true,
+        },
+      },
+      Collateral: {
+        select: {
+          id: true,
+          collateralType: true,
+          collateralValue: true,
+          collateralValuationDate: true,
+          collateralDocs: true,
+          collateralOwnerName: true,
+          guarantorRequired: true,
+          guarantorName: true,
+          guarantorRelationship: true,
+          guarantorPAN: true,
+          guarantorCreditBureau: true,
+          guarantorCreditScore: true,
+          guarantorMonthlyIncome: true,
+          guarantorIncomeProofTypes: true,
+          guarantorVerificationStatus: true,
+        },
+      },
+      masterProductOtherCharges: {
+        select: {
+          id: true,
+          chequeBounceCharge: true,
+          dublicateNocCharge: true,
+          furnishingCharge: true,
+          chequeSwapCharge: true,
+          revocation: true,
+          documentCopyCharge: true,
+          stampDutyCharge: true,
+          nocCharge: true,
+          incidentalCharge: true,
+        },
+      },
+      masterProductRepayment: {
+        select: {
+          id: true,
+          penalInterestApplicable: true,
+          incentiveType: true,
+          incentiveValue: true,
+          payoutMode: true,
+          incentiveReversalConditions: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (!masterProduct) {
+    return res.respond(404, "Product not found or access denied.");
+  }
+
+  res.respond(200, "Master Products fetched successfully!", masterProduct);
+});
+
+// ####################--------------------Mater Product EDIT And DELETE Requests Handeling--------------------####################
 // ##########----------Master Product Update Request----------##########
 const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -766,7 +1031,6 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can create products.");
   }
@@ -935,26 +1199,264 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
 const getAllMasterProductUpdateRequests = asyncHandler(async (req, res) => {
   const userId = req.user;
 
-  const productManager = await prisma.associateSubAdmin.findFirst({
+  const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
-    include: {
-      role: true,
-    },
   });
-
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can view update requests.");
+  if (!associate) {
+    return res.respond(403, "Associate not found.");
   }
 
   const updateRequests = await prisma.masterProductUpdateRequest.findMany({
-    where: {
-      isDeleted: false,
-      isApproved: false,
-      isRejected: false,
+    include: {
+      masterProduct: {
+        select: {
+          id: true,
+          productCode: true,
+          productId: true,
+        },
+      },
+      productManager: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
   });
 
   res.respond(200, "Fetched all update requests successfully.", updateRequests);
+});
+
+// ##########----------Get Master Product Update Request Details----------##########
+const getMasterProductUpdateRequestDetails = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { updateProductId } = req.params;
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId, isDeleted: false },
+  });
+
+  if (!associate) {
+    return res.respond(403, "Associate not found.");
+  }
+
+  const masterProductUpdate = await prisma.masterProductUpdateRequest.findMany({
+    where: {
+      id: updateProductId,
+    },
+    select: {
+      id: true,
+      productName: true,
+      productDescription: true,
+      deliveryChannel: true,
+      createdAt: true,
+      updatedAt: true,
+      productCategory: {
+        select: {
+          id: true,
+          categoryName: true,
+        },
+      },
+      loanType: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      productPartner: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+      MasterProductPurposeUpdate: {
+        select: {
+          id: true,
+          productPurpose: {
+            select: {
+              id: true,
+              purpose: true,
+            },
+          },
+        },
+      },
+      MasterProductSegmentUpdate: {
+        select: {
+          id: true,
+          productSegment: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      financialTermsUpdate: {
+        select: {
+          id: true,
+          minLoanAmount: true,
+          maxLoanAmount: true,
+          maxLoanAmount: true,
+          minTenureMonths: true,
+          maxTenureMonths: true,
+          interestRateType: true,
+          interestRateMin: true,
+          interestRateMax: true,
+          processingFeeType: true,
+          processingFeeValue: true,
+          latePaymentFeeType: true,
+          latePaymentFeeValue: true,
+          prepaymentAllowed: true,
+          prepaymentFeeType: true,
+          prepaymentFeeValue: true,
+          emiFrequency: true,
+        },
+      },
+      eligibilityCriteriaUpdate: {
+        select: {
+          id: true,
+          minAge: true,
+          maxAge: true,
+          minMonthlyIncome: true,
+          minBusinessVintage: true,
+          minBureauScore: true,
+          blacklistFlags: true,
+          minDocumentsRequired: true,
+          documentSubmissionModes: true,
+          documentVerificationModes: true,
+          employmentTypesAllowed: {
+            select: {
+              EmploymentType: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
+        },
+      },
+      creditBureauConfigUpdate: {
+        select: {
+          id: true,
+          creditBureauSources: true,
+          minScoreRequired: true,
+          maxActiveLoans: true,
+          maxCreditUtilization: true,
+          enquiriesLast6Months: true,
+          loanDelinquencyAllowed: true,
+          bureauDataFreshnessDays: true,
+          customBureauFlags: true,
+          scoreDecayTolerance: true,
+        },
+      },
+      financialStatementsUpdate: {
+        select: {
+          id: true,
+          minMonthlyCredit: true,
+          minAverageBalance: true,
+          bouncesLast3Months: true,
+          netIncomeRecognition: true,
+          cashDepositsCapPercent: true,
+          statementSources: true,
+          accountTypes: true,
+          pdfParsingRequired: true,
+        },
+      },
+      behavioralDataUpdate: {
+        select: {
+          id: true,
+          salaryRegularityThreshold: true,
+          spendingConsistencyPercent: true,
+          upiSpendToIncomeRatio: true,
+          billPaymentHistory: true,
+          digitalFootprintRequired: true,
+          locationConsistencyKm: true,
+          repeatBorrowerBehavior: true,
+        },
+      },
+      riskScoringUpdate: {
+        select: {
+          id: true,
+          internalScoreVars: {
+            select: {
+              ScoreVariable: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
+          externalScoreInputs: {
+            select: {
+              ExternalScore: {
+                select: {
+                  id: true,
+                  name: true
+                }
+              }
+            }
+          },
+          riskCategoryMapping: true,
+          maxDTI: true,
+          maxLTV: true,
+          coBorrowerRequired: true,
+        },
+      },
+      CollateralUpdate: {
+        select: {
+          id: true,
+          collateralType: true,
+          collateralValue: true,
+          collateralValuationDate: true,
+          collateralDocs: true,
+          collateralOwnerName: true,
+          guarantorRequired: true,
+          guarantorName: true,
+          guarantorRelationship: true,
+          guarantorPAN: true,
+          guarantorCreditBureau: true,
+          guarantorCreditScore: true,
+          guarantorMonthlyIncome: true,
+          guarantorIncomeProofTypes: true,
+          guarantorVerificationStatus: true,
+        },
+      },
+      masterProductOtherChargesUpdate: {
+        select: {
+          id: true,
+          chequeBounceCharge: true,
+          dublicateNocCharge: true,
+          furnishingCharge: true,
+          chequeSwapCharge: true,
+          revocation: true,
+          documentCopyCharge: true,
+          stampDutyCharge: true,
+          nocCharge: true,
+          incidentalCharge: true,
+        },
+      },
+      masterProductRepaymentUpdate: {
+        select: {
+          id: true,
+          penalInterestApplicable: true,
+          incentiveType: true,
+          incentiveValue: true,
+          payoutMode: true,
+          incentiveReversalConditions: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+  if (!masterProductUpdate) {
+    return res.respond(404, "Product not found or access denied.");
+  }
+
+  res.respond(200, "Master Product update request Details fetched successfully!", masterProductUpdate);
 });
 
 // ##########----------Approve Master Product Update Request----------##########
@@ -965,7 +1467,6 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
   });
-
   if (!associate) {
     return res.respond(403, "Only associates can approve update requests.");
   }
@@ -1028,43 +1529,43 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
   const currentProduct = updateRequest.masterProduct;
   const newVersionId = currentProduct.versionId + 1;
 
-  const oldProductSnapshot = await tx.masterProduct.findUnique({
-    where: { id: currentProduct.id },
-    include: {
-      MasterProductPurpose: true,
-      MasterProductSegment: true,
-      financialTerms: {
-        include: {
-          FinancialDisbursementMode: true,
-          FinancialRepaymentMode: true,
-        },
-      },
-      eligibilityCriteria: {
-        include: {
-          minDocumentsRequired: true,
-          employmentTypesAllowed: true,
-        },
-      },
-      creditBureauConfig: true,
-      financialStatements: true,
-      behavioralData: true,
-      riskScoring: {
-        include: {
-          internalScoreVars: true,
-          externalScoreInputs: true,
-        },
-      },
-      Collateral: {
-        include: {
-          collateralDocs: true,
-        },
-      },
-      masterProductOtherChargesUpdate: true,
-      masterProductRepaymentUpdate: true,
-    },
-  });
-
   const updatedMasterProduct = await prisma.$transaction(async (tx) => {
+    const oldProductSnapshot = await tx.masterProduct.findUnique({
+      where: { id: currentProduct.id },
+      include: {
+        MasterProductPurpose: true,
+        MasterProductSegment: true,
+        financialTerms: {
+          include: {
+            FinancialDisbursementMode: true,
+            FinancialRepaymentMode: true,
+          },
+        },
+        eligibilityCriteria: {
+          include: {
+            minDocumentsRequired: true,
+            employmentTypesAllowed: true,
+          },
+        },
+        creditBureauConfig: true,
+        financialStatements: true,
+        behavioralData: true,
+        riskScoring: {
+          include: {
+            internalScoreVars: true,
+            externalScoreInputs: true,
+          },
+        },
+        Collateral: {
+          include: {
+            collateralDocs: true,
+          },
+        },
+        masterProductOtherCharges: true,
+        masterProductRepayment: true,
+      },
+    });
+
     await tx.masterProductVersion.create({
       data: {
         masterProductId: currentProduct.id,
@@ -1356,7 +1857,6 @@ const createMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
   });
-
   if (!associateSubAdmin) {
     return res.respond(403, "associate subadmin not found!");
   }
@@ -1367,7 +1867,6 @@ const createMasterProductDeleteRequest = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (!product) {
     return res.respond(404, "MasterProduct not found or already deleted!");
   }
@@ -1378,7 +1877,6 @@ const createMasterProductDeleteRequest = asyncHandler(async (req, res) => {
       status: 'PENDING',
     },
   });
-
   if (existingRequest) {
     return res.respond(400, "A delete request is already pending for this product!");
   }
@@ -1394,6 +1892,38 @@ const createMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   return res.respond(200, "Delete request submitted successfully!", deleteRequest);
 });
 
+// ##########----------Get Master Product Delete Requests----------##########
+const getMasterProductDeleteRequests = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const associate = await prisma.associate.findFirst({
+    where: { userId, isDeleted: false },
+  });
+  if (!associate) {
+    return res.respond(404, "Associate not found!");
+  }
+
+  const whereClause = {
+    isDeleted: false,
+  };
+
+  const requests = await prisma.masterProductDeleteRequest.findMany({
+    where: whereClause,
+    include: {
+      masterProduct: true,
+      requestedBy: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return res.respond(200, "Delete requests fetched successfully!", requests);
+});
+
 // ##########----------Handle Master Product Delete Request----------##########
 const handleMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -1406,7 +1936,6 @@ const handleMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   const associate = await prisma.associate.findFirst({
     where: { userId, isDeleted: false },
   });
-
   if (!associate) {
     return res.respond(404, "Associate not found!");
   }
@@ -1415,7 +1944,6 @@ const handleMasterProductDeleteRequest = asyncHandler(async (req, res) => {
     where: { id: requestId },
     include: { masterProduct: true },
   });
-
   if (!request || request.status !== "PENDING") {
     return res.respond(404, "Valid pending delete request not found.");
   }
@@ -1446,329 +1974,7 @@ const handleMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   return res.respond(200, `Delete request ${action.toLowerCase()} successfully!`);
 });
 
-// ##########----------Get Master Product Delete Requests----------##########
-const getMasterProductDeleteRequests = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const { status } = req.query;
-
-  const associate = await prisma.associate.findFirst({
-    where: { userId, isDeleted: false },
-  });
-
-  if (!associate) {
-    return res.respond(404, "Associate not found!");
-  }
-
-  const whereClause = {
-    isDeleted: false,
-    ...(status && { status }),
-  };
-
-  const requests = await prisma.masterProductDeleteRequest.findMany({
-    where: whereClause,
-    include: {
-      masterProduct: true,
-      requestedBy: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-            },
-          }
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return res.respond(200, "Delete requests fetched successfully!", requests);
-});
-
-// ##########----------Get All Master Products----------##########
-const getAllMasterProducts = asyncHandler(async (req, res) => {
-  const userId = req.user;
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: {
-      role: true,
-    },
-  });
-
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can get products.");
-  }
-
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 10;
-  const skip = (page - 1) * limit;
-
-  const totalCount = await prisma.masterProduct.count({
-    where: {
-      isDeleted: false,
-    },
-  });
-
-  const masterProducts = await prisma.masterProduct.findMany({
-    where: {
-      isDeleted: false,
-    },
-    select: {
-      id: true,
-      productName: true,
-      productCode: true,
-      productId: true,
-      productDescription: true,
-      deliveryChannel: true,
-      versionId: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      _count: {
-        select: {
-          VariantProduct: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    skip,
-    take: limit,
-  });
-
-  const formattedProducts = masterProducts.map((product) => {
-    const { _count, ...rest } = product;
-    return {
-      ...rest,
-      VariantProduct: _count?.VariantProduct || 0,
-    };
-  });
-
-  res.respond(200, "Master Products fetched successfully!", {
-    totalItems: totalCount,
-    currentPage: page,
-    totalPages: Math.ceil(totalCount / limit),
-    pageSize: limit,
-    data: formattedProducts,
-  });
-});
-
-// ##########----------Get Master Product Details----------##########
-const getMasterProductDetails = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const { productId } = req.params;
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: {
-      role: true,
-    },
-  });
-
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can create products.");
-  }
-
-  const masterProduct = await prisma.masterProduct.findMany({
-    where: {
-      id: productId,
-      isDeleted: false,
-    },
-    select: {
-      id: true,
-      productName: true,
-      productCode: true,
-      productId: true,
-      productDescription: true,
-      deliveryChannel: true,
-      versionId: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-      productCategory: {
-        select: {
-          id: true,
-          categoryName: true,
-        },
-      },
-      loanType: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      productPartner: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-      MasterProductPurpose: {
-        select: {
-          id: true,
-          productPurpose: {
-            select: {
-              id: true,
-              purpose: true,
-            },
-          },
-        },
-      },
-      MasterProductSegment: {
-        select: {
-          id: true,
-          productSegment: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-        },
-      },
-      financialTerms: {
-        select: {
-          id: true,
-          minLoanAmount: true,
-          maxLoanAmount: true,
-          maxLoanAmount: true,
-          minTenureMonths: true,
-          maxTenureMonths: true,
-          interestRateType: true,
-          interestRateMin: true,
-          interestRateMax: true,
-          processingFeeType: true,
-          processingFeeValue: true,
-          latePaymentFeeType: true,
-          latePaymentFeeValue: true,
-          prepaymentAllowed: true,
-          prepaymentFeeType: true,
-          prepaymentFeeValue: true,
-          emiFrequency: true,
-        },
-      },
-      eligibilityCriteria: {
-        select: {
-          id: true,
-          minAge: true,
-          maxAge: true,
-          minMonthlyIncome: true,
-          minBusinessVintage: true,
-          minBureauScore: true,
-          blacklistFlags: true,
-          minDocumentsRequired: true,
-          documentSubmissionModes: true,
-          documentVerificationModes: true,
-          employmentTypesAllowed: true,
-        },
-      },
-      creditBureauConfig: {
-        select: {
-          id: true,
-          creditBureauSources: true,
-          minScoreRequired: true,
-          maxActiveLoans: true,
-          maxCreditUtilization: true,
-          enquiriesLast6Months: true,
-          loanDelinquencyAllowed: true,
-          bureauDataFreshnessDays: true,
-          customBureauFlags: true,
-          scoreDecayTolerance: true,
-        },
-      },
-      financialStatements: {
-        select: {
-          id: true,
-          minMonthlyCredit: true,
-          minAverageBalance: true,
-          bouncesLast3Months: true,
-          netIncomeRecognition: true,
-          cashDepositsCapPercent: true,
-          statementSources: true,
-          accountTypes: true,
-          pdfParsingRequired: true,
-        },
-      },
-      behavioralData: {
-        select: {
-          id: true,
-          salaryRegularityThreshold: true,
-          spendingConsistencyPercent: true,
-          upiSpendToIncomeRatio: true,
-          billPaymentHistory: true,
-          digitalFootprintRequired: true,
-          locationConsistencyKm: true,
-          repeatBorrowerBehavior: true,
-        },
-      },
-      riskScoring: {
-        select: {
-          id: true,
-          internalScoreVars: true,
-          externalScoreInputs: true,
-          riskCategoryMapping: true,
-          maxDTI: true,
-          maxLTV: true,
-          coBorrowerRequired: true,
-        },
-      },
-      Collateral: {
-        select: {
-          id: true,
-          collateralType: true,
-          collateralValue: true,
-          collateralValuationDate: true,
-          collateralDocs: true,
-          collateralOwnerName: true,
-          guarantorRequired: true,
-          guarantorName: true,
-          guarantorRelationship: true,
-          guarantorPAN: true,
-          guarantorCreditBureau: true,
-          guarantorCreditScore: true,
-          guarantorMonthlyIncome: true,
-          guarantorIncomeProofTypes: true,
-          guarantorVerificationStatus: true,
-        },
-      },
-      masterProductOtherCharges: {
-        select: {
-          id: true,
-          chequeBounceCharge: true,
-          dublicateNocCharge: true,
-          furnishingCharge: true,
-          chequeSwapCharge: true,
-          revocation: true,
-          documentCopyCharge: true,
-          stampDutyCharge: true,
-          nocCharge: true,
-          incidentalCharge: true,
-        },
-      },
-      masterProductRepayment: {
-        select: {
-          id: true,
-          penalInterestApplicable: true,
-          incentiveType: true,
-          incentiveValue: true,
-          payoutMode: true,
-          incentiveReversalConditions: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  if (!masterProduct) {
-    return res.respond(404, "Product not found or access denied.");
-  }
-
-  res.respond(200, "Master Products fetched successfully!", masterProduct);
-});
-
+// ####################--------------------Mater Product Version Handeling--------------------####################
 // ##########----------Master Product Versions----------##########
 const getMasterProductVersions = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -1778,7 +1984,6 @@ const getMasterProductVersions = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-
   if (!productManager || productManager.role.roleName !== "Product Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
@@ -1786,7 +1991,6 @@ const getMasterProductVersions = asyncHandler(async (req, res) => {
   const masterProduct = await prisma.masterProduct.findFirst({
     where: { id: masterProductId, isDeleted: false },
   });
-
   if (!masterProduct) {
     return res.respond(404, "Master product not found.");
   }
@@ -1852,15 +2056,16 @@ module.exports = {
   createCollateral,
   createMasterProductOtherCharges,
   createMasterProductRepayment,
+  getAllMasterProducts,
+  getMasterProductDetails,
   submitMasterProductUpdateRequest,
   getAllMasterProductUpdateRequests,
+  getMasterProductUpdateRequestDetails,
   approveMasterProductUpdateRequest,
   rejectMasterProductUpdateRequest,
   createMasterProductDeleteRequest,
-  handleMasterProductDeleteRequest,
   getMasterProductDeleteRequests,
-  getAllMasterProducts,
-  getMasterProductDetails,
+  handleMasterProductDeleteRequest,
   getMasterProductVersions,
   getMasterProductVersionById,
 };

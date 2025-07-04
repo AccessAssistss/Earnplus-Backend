@@ -7,13 +7,11 @@ const prisma = new PrismaClient();
 // ##########----------Create Query Category----------##########
 const createQueryCategory = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) return res.respond(400, "Query Category name is required!");
 
   const exists = await prisma.queryCategory.findFirst({
     where: { name: { equals: name, mode: "insensitive" }, isDeleted: false },
   });
-
   if (exists)
     return res.respond(400, "Query Category with this name already exists!");
 
@@ -26,7 +24,6 @@ const createQueryCategory = asyncHandler(async (req, res) => {
 const updateQueryCategory = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { categoryId } = req.params;
-
   if (!name) return res.respond(400, "Query Category name is required!");
 
   const exists = await prisma.queryCategory.findFirst({
@@ -36,7 +33,6 @@ const updateQueryCategory = asyncHandler(async (req, res) => {
       NOT: { id: categoryId },
     },
   });
-
   if (exists)
     return res.respond(400, "Query Category with this name already exists!");
 
@@ -84,7 +80,6 @@ const softDeleteQueryCategory = asyncHandler(async (req, res) => {
 // ##########----------Create Query SubCategory----------##########
 const createQuerySubCategory = asyncHandler(async (req, res) => {
   const { name, description, queryCategoryId } = req.body;
-
   if (!name || !queryCategoryId) {
     return res.respond(
       400,
@@ -99,7 +94,6 @@ const createQuerySubCategory = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (exists)
     return res.respond(400, "SubCategory with this name already exists!");
 
@@ -114,7 +108,6 @@ const createQuerySubCategory = asyncHandler(async (req, res) => {
 const updateQuerySubCategory = asyncHandler(async (req, res) => {
   const { name, description } = req.body;
   const { subCategoryId } = req.params;
-
   if (!name) return res.respond(400, "SubCategory name is required!");
 
   const existing = await prisma.querySubCategory.findFirst({
@@ -124,7 +117,6 @@ const updateQuerySubCategory = asyncHandler(async (req, res) => {
       NOT: { id: subCategoryId },
     },
   });
-
   if (existing)
     return res.respond(400, "SubCategory with this name already exists!");
 

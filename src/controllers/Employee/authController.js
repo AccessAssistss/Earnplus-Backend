@@ -95,7 +95,6 @@ const sendUserOTP = asyncHandler(async (req, res) => {
 // ##########----------Verify Employee OTP----------##########
 const verifyOTP = asyncHandler(async (req, res) => {
   const { mobile, otp, userType = "EMPLOYEE" } = req.body;
-
   if (!mobile || !otp || !userType) {
     return res.respond(400, "Mobile, OTP, and userType required!");
   }
@@ -104,7 +103,6 @@ const verifyOTP = asyncHandler(async (req, res) => {
     let user = await prisma.customUser.findFirst({
       where: { mobile, userType },
     });
-
     if (!user) {
       user = await prisma.customUser.create({
         data: { mobile, userType },
@@ -134,7 +132,6 @@ const verifyOTP = asyncHandler(async (req, res) => {
       OR: [{ mobile }, { alternativeMobile: mobile }],
     },
   });
-
   if (!user) {
     return res.respond(400, "User not found!");
   }
@@ -190,7 +187,6 @@ const verifyOTP = asyncHandler(async (req, res) => {
 // ##########----------Verify Employee Partnership with Employer----------##########
 const verifyEmployeeEmployerLink = asyncHandler(async (req, res) => {
   const { employerId, employeeId, mobile } = req.body;
-
   if (!employerId || !employeeId) {
     return res.respond(400, "Employer ID and Employee ID is required!");
   }
@@ -198,7 +194,6 @@ const verifyEmployeeEmployerLink = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findFirst({
     where: { employeeId, employerId },
   });
-
   if (!employee) {
     return res.respond(
       400,
@@ -227,9 +222,8 @@ const verifyEmployeeEmployerLink = asyncHandler(async (req, res) => {
 
 // ##########----------Send aadhar OTP----------##########
 const handleSendAadhaarOtp = asyncHandler(async (req, res) => {
+  const user = req.user;                     
   const { aadhaarNumber } = req.body;
-  const user = req.user;
-
   if (!aadhaarNumber) {
     return res.respond(400, "Aadhaar number is required!");
   }
@@ -237,7 +231,6 @@ const handleSendAadhaarOtp = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findUnique({
     where: { userId: user },
   });
-
   if (!employee) {
     return res.respond(400, "Employee not found!");
   }
@@ -274,9 +267,8 @@ const handleSendAadhaarOtp = asyncHandler(async (req, res) => {
 
 // ##########----------Verify Aadhar OTP----------##########
 const handleVerifyAadhaarOtp = asyncHandler(async (req, res) => {
-  const { refId, otp } = req.body;
   const user = req.user;
-
+  const { refId, otp } = req.body;
   if (!refId || !otp) {
     return res.respond(400, "Reference ID and OTP are required!");
   }
@@ -284,7 +276,6 @@ const handleVerifyAadhaarOtp = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findUnique({
     where: { userId: user },
   });
-
   if (!employee) {
     return res.respond(404, "Employee not found!");
   }
@@ -292,7 +283,6 @@ const handleVerifyAadhaarOtp = asyncHandler(async (req, res) => {
   const verification = await prisma.employeeVerification.findFirst({
     where: { employeeId: employee.id },
   });
-
   if (!verification) {
     return res.respond(404, "Verification record not found!");
   }
@@ -322,7 +312,6 @@ const handleVerifyAadhaarOtp = asyncHandler(async (req, res) => {
 const verifyEmployeePan = asyncHandler(async (req, res) => {
   const user = req.user;
   const { name, pan } = req.body;
-
   if (!name || !pan) {
     return res.respond(400, "Name and PAN are required!");
   }
@@ -330,7 +319,6 @@ const verifyEmployeePan = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findFirst({
     where: { userId: user.id },
   });
-
   if (!employee) {
     return res.respond(404, "Employee not found");
   }
@@ -338,7 +326,6 @@ const verifyEmployeePan = asyncHandler(async (req, res) => {
   const verification = await prisma.employeeVerification.findFirst({
     where: { employeeId: employee.id },
   });
-
   if (!verification) {
     return res.respond(404, "Verification record not found");
   }
@@ -370,7 +357,6 @@ const verifyEmployeePan = asyncHandler(async (req, res) => {
 
 const checkEmployeePanStatus = asyncHandler(async (req, res) => {
   const user = req.user;
-
   const { referenceId } = req.body;
   if (!referenceId) {
     return res.respond(400, "Reference ID is required!");
@@ -379,7 +365,6 @@ const checkEmployeePanStatus = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findFirst({
     where: { userId: user.id },
   });
-
   if (!employee) {
     return res.respond(404, "Employee not found");
   }
@@ -387,7 +372,6 @@ const checkEmployeePanStatus = asyncHandler(async (req, res) => {
   const verification = await prisma.employeeVerification.findFirst({
     where: { employeeId: employee.id },
   });
-
   if (!verification) {
     return res.respond(404, "Verification record not found");
   }
@@ -428,7 +412,6 @@ const faceLiveliness = asyncHandler(async (req, res) => {
   const employee = await prisma.employee.findFirst({
     where: { userId: user.id },
   });
-
   if (!employee) {
     return res.respond(404, "Employee not found");
   }
@@ -436,7 +419,6 @@ const faceLiveliness = asyncHandler(async (req, res) => {
   const verification = await prisma.employeeVerification.findFirst({
     where: { employeeId: employee.id },
   });
-
   if (!verification) {
     return res.respond(404, "Verification record not found");
   }

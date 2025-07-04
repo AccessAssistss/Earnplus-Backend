@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // ##########----------Create Repayment Mode----------##########
 const createRepaymentMode = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Repayment Mode name is required!");
   }
@@ -17,7 +16,6 @@ const createRepaymentMode = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingMode) {
     return res.respond(400, "Repayment Mode with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createRepaymentMode = asyncHandler(async (req, res) => {
 const updateRepaymentMode = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { modeId } = req.params;
-
   if (!name) {
     return res.respond(400, "Repayment Mode name is required!");
   }
@@ -45,7 +42,6 @@ const updateRepaymentMode = asyncHandler(async (req, res) => {
       NOT: { id: modeId },
     },
   });
-
   if (existingMode) {
     return res.respond(400, "Repayment Mode with this name already exists!");
   }

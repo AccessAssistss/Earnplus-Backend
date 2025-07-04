@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 // ##########----------Create Disbursement Mode----------##########
 const createDisbursementMode = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   if (!name) {
     return res.respond(400, "Disbursement Mode name is required!");
   }
@@ -17,7 +16,6 @@ const createDisbursementMode = asyncHandler(async (req, res) => {
       isDeleted: false,
     },
   });
-
   if (existingMode) {
     return res.respond(400, "Disbursement Mode with this name already exists!");
   }
@@ -33,7 +31,6 @@ const createDisbursementMode = asyncHandler(async (req, res) => {
 const updateDisbursementMode = asyncHandler(async (req, res) => {
   const { name } = req.body;
   const { modeId } = req.params;
-
   if (!name) {
     return res.respond(400, "Disbursement Mode name is required!");
   }
@@ -45,7 +42,6 @@ const updateDisbursementMode = asyncHandler(async (req, res) => {
       NOT: { id: modeId },
     },
   });
-
   if (existingMode) {
     return res.respond(400, "Disbursement Mode with this name already exists!");
   }

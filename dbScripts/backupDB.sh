@@ -19,9 +19,9 @@ pg_dump -U "$PGUSER" -F c -f "$FULL_PATH" "$PGDATABASE"
 
 # === Check success ===
 if [ $? -eq 0 ]; then
-  echo "[✔] Backup completed: $FULL_PATH"
+  echo "Backup completed: $FULL_PATH"
 else
-  echo "[✖] Backup failed for: $FULL_PATH" >&2
+  echo "Backup failed for: $FULL_PATH" >&2
   rm -f "$FULL_PATH"  # Remove empty/invalid file
   exit 1
 fi

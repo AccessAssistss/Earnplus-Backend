@@ -1,6 +1,5 @@
 const express = require("express");
 const {
-  registerEmployer,
   loginEmployer,
   getEmployeesByEmployer,
   deleteEmployer,
@@ -33,7 +32,6 @@ const upload = multer({ dest: "uploads/" });
 
 const router = express.Router();
 
-router.post("/registerEmployer", registerEmployer);
 router.post("/loginEmployer", loginEmployer);
 router.patch(
   "/EmployerProfileCompletion",
