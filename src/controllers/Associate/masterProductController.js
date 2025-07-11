@@ -1199,13 +1199,6 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
 const getAllMasterProductUpdateRequests = asyncHandler(async (req, res) => {
   const userId = req.user;
 
-  const associate = await prisma.associate.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!associate) {
-    return res.respond(403, "Associate not found.");
-  }
-
   const updateRequests = await prisma.masterProductUpdateRequest.findMany({
     include: {
       masterProduct: {
@@ -1953,8 +1946,64 @@ const handleMasterProductDeleteRequest = asyncHandler(async (req, res) => {
   if (action === "APPROVED") {
     actions.push(
       prisma.masterProduct.update({
-        where: { id: request.masterProductId },
+        where: { id: masterProductId },
         data: { isDeleted: true },
+      })
+    );
+
+    const variantProducts = await prisma.variantProduct.findMany({
+      where: { masterProductId, isDeleted: false },
+      select: { id: true },
+    });
+
+    const variantProductIds = variantProducts.map((vp) => vp.id);
+
+    actions.push(
+      prisma.variantProduct.updateMany({
+        where: { id: { in: variantProductIds } },
+        data: { isDeleted: true },
+      })
+    );
+
+    actions.push(
+      prisma.assignVariantProductToEmployer.updateMany({
+        where: {
+          variantProductId: { in: variantProductIds },
+          isDeleted: false,
+        },
+        data: { isDeleted: true },
+      })
+    );
+
+    actions.push(
+      prisma.variantProductUpdateRequest.updateMany({
+        where: {
+          variantProductId: { in: variantProductIds },
+          isDeleted: false,
+        },
+        data: { isDeleted: true },
+      })
+    );
+
+    actions.push(
+      prisma.variantProductDeleteRequest.updateMany({
+        where: {
+          variantProductId: { in: variantProductIds },
+          isDeleted: false,
+        },
+        data: { isDeleted: true },
+      })
+    );
+
+    actions.push(
+      prisma.masterProductUpdateRequest.updateMany({
+        where: {
+          masterProductId,
+          isDeleted: false,
+        },
+        data: {
+          isDeleted: true,
+        },
       })
     );
   }
@@ -1965,6 +2014,7 @@ const handleMasterProductDeleteRequest = asyncHandler(async (req, res) => {
       data: {
         status: action,
         reason: reason || request.reason,
+        isDeleted: true,
       },
     })
   );

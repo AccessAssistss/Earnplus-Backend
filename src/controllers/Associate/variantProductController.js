@@ -715,6 +715,26 @@ const handleVariantProductDeleteRequest = asyncHandler(async (req, res) => {
         data: { isDeleted: true },
       })
     );
+
+    actions.push(
+      prisma.assignVariantProductToEmployer.updateMany({
+        where: {
+          variantProductId: request.variantProductId,
+          isDeleted: false,
+        },
+        data: { isDeleted: true },
+      })
+    );
+
+    actions.push(
+      prisma.variantProductUpdateRequest.updateMany({
+        where: {
+          variantProductId: request.variantProductId,
+          isDeleted: false,
+        },
+        data: { isDeleted: true },
+      })
+    );
   }
 
   actions.push(
@@ -807,10 +827,9 @@ const getAssignedVariantProducts = asyncHandler(async (req, res) => {
 
   const productManager = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
-    include: { role: true },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can access this data.");
+  if (!productManager) {
+    return res.respond(403, "Associate Subadmin not found.");
   }
 
   const employer = await prisma.employer.findFirst({
@@ -821,6 +840,7 @@ const getAssignedVariantProducts = asyncHandler(async (req, res) => {
   }
 
   const assignments = await prisma.assignVariantProductToEmployer.findMany({
+    where: { isDeleted: false },
     include: {
       variantProduct: {
         select: {
@@ -836,7 +856,7 @@ const getAssignedVariantProducts = asyncHandler(async (req, res) => {
         },
       },
     },
-    orderBy: { aasignmentDate: "desc" },
+    orderBy: { assignmentDate: "desc" },
   });
 
   return res.respond(

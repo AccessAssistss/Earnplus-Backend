@@ -78,26 +78,35 @@ const generateUniqueEmployerId = async () => {
   return newEmployerId;
 };
 
-// ###############---------------Generate Unique Contract Combination ID---------------###############
 const generateUniqueContractCombinationId = async (employerId) => {
   if (!employerId) throw new Error("Employer ID is required");
 
-  const count = await prisma.employerContractTypeCombination.count({
+  const latestCombination = await prisma.employerContractTypeCombination.findFirst({
     where: { employerId },
+    orderBy: {
+      createdAt: 'desc',
+    },
   });
 
-  const sequence = String(count + 1).padStart(3, "0");
-  return `PAY-${employerId}-${sequence}`;
+  let lastSequence = 0;
+  if (latestCombination && latestCombination.uniqueId) {
+    const parts = latestCombination.uniqueId.split("-");
+    const seqPart = parts[parts.length - 1];
+    lastSequence = parseInt(seqPart, 10) || 0;
+  }
+
+  const newSequence = String(lastSequence + 1).padStart(3, "0");
+  return `PAY-${employerId}-${newSequence}`;
 };
 
 // ###############---------------Generate Unique Rule Book ID---------------###############
-const generateUniqueRuleBookId = async (prisma, contractCombinationId) => {
+const generateUniqueRuleBookId = async (prisma, contractCombinationUUID, contractCombinationUniqueId) => {
   const count = await prisma.contractCombinationRuleBook.count({
-    where: { contractCombinationId },
+    where: { contractCombinationId: contractCombinationUUID },
   });
 
   const sequence = String(count + 1).padStart(3, "0");
-  return `RULE-${contractCombinationId}-${sequence}`;
+  return `RULE-${contractCombinationUniqueId}-${sequence}`;
 };
 
 module.exports = {

@@ -269,7 +269,11 @@ const createContractRuleBook = asyncHandler(async (req, res) => {
     return res.respond(404, "Work location not found!");
   }
 
-  const ruleBookId = await generateUniqueRuleBookId(prisma, contractCombination.uniqueId);
+  const ruleBookId = await generateUniqueRuleBookId(
+    prisma,
+    contractCombination.id,
+    contractCombination.uniqueId
+  );
 
   const ruleBook = await prisma.contractCombinationRuleBook.create({
     data: {
@@ -344,7 +348,7 @@ const getWorkLocationsByEmployerId = asyncHandler(async (req, res) => {
   if (!ERM) {
     return res.respond(403, "associate subadmin not found!");
   }
-  
+
   const workLocations = await prisma.employerLocationDetails.findMany({
     where: {
       isDeleted: false,

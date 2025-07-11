@@ -58,7 +58,7 @@ router.delete(
   deleteAssociateSubAdmin
 );
 router.delete(
-  "/deleteAssociateSubAdminByAssociate",
+  "/deleteAssociateSubAdminByAssociate/:userId",
   deleteAssociateSubAdminByAssociate
 );
 
