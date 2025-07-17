@@ -267,7 +267,7 @@ model CreditBureauConfig {
     customBureauFlags       BlacklistFlag[]
     scoreDecayTolerance     Int
 
-    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Financial Statement Model----------##########
@@ -284,7 +284,7 @@ model FinancialStatements {
     accountTypes           AccountType[]
     pdfParsingRequired     Boolean
 
-    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Performance Model----------##########
@@ -299,7 +299,7 @@ model BehavioralData {
     locationConsistencyKm      Int
     repeatBorrowerBehavior     BorrowerBehavior
 
-    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Score Variable Model----------##########
@@ -336,7 +336,7 @@ model RiskScoring {
     maxLTV              Int
     coBorrowerRequired  Boolean             @default(false)
 
-    MasterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+    MasterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Risk Score Variable Model----------##########
@@ -390,7 +390,7 @@ model Collateral {
     guarantorIncomeProofTypes   IncomeProofType[]
     guarantorVerificationStatus GuarantorVerificationStatus?
 
-    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Collateral Document Model----------##########

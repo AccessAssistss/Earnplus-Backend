@@ -382,6 +382,15 @@ const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
     return res.respond(404, "Variant Product not found.");
   }
 
+  if (partnerId) {
+    const partnerExists = await prisma.productPartner.findUnique({
+      where: { id: partnerId },
+    });
+    if (!partnerExists) {
+      return res.respond(400, "Invalid partnerId. Partner not found.");
+    }
+  }
+
   const updateRequest = await prisma.variantProductUpdateRequest.create({
     data: {
       variantProductId,

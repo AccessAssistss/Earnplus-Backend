@@ -49,6 +49,7 @@ model Employee {
     EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
     EmployeeBasePayroll       EmployeeBasePayroll[]
     EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
+    LoanApplication           LoanApplication[]
 }
 
 // ##########----------Employee Bank Detail Model----------##########

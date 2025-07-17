@@ -109,6 +109,39 @@ const generateUniqueRuleBookId = async (prisma, contractCombinationUUID, contrac
   return `RULE-${contractCombinationUniqueId}-${sequence}`;
 };
 
+// ###############---------------Generate Unique Loan ID---------------###############
+const generateLoanID = async (variantId) => {
+  const prefix = `LN-${variantId}`;
+
+  const latestLoan = await prisma.loanApplication.findFirst({
+    where: {
+      loanID: {
+        startsWith: `${prefix}-`
+      }
+    },
+    orderBy: {
+      createdAt: 'desc'
+    },
+    select: {
+      loanID: true
+    }
+  });
+
+  let nextNumber = 1;
+
+  if (latestLoan) {
+    const parts = latestLoan.loanID.split("-");
+    const currentNum = parseInt(parts[2]);
+    if (!isNaN(currentNum)) {
+      nextNumber = currentNum + 1;
+    }
+  }
+
+  const newLoanID = `${prefix}-${String(nextNumber).padStart(4, "0")}`;
+  return newLoanID;
+};
+
+
 module.exports = {
   generateProductCode,
   generateVariantProductCode,

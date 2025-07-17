@@ -26,6 +26,20 @@ enum MaritalStatus {
   Divorced
 }
 
+enum LoanStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DISBURSED
+  CLOSED
+}
+
+enum ApplicationKYCStatus {
+  Pending
+  Approved
+  Rejected
+}
+
 // ##########----------Employer Enums----------##########
 enum LegalIdentityType {
   Pvt_Ltd

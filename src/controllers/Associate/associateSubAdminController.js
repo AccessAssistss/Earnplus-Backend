@@ -353,6 +353,7 @@ const getAssociateSubAdmins = asyncHandler(async (req, res) => {
   }
 
   const where = {
+    isDeleted: false,
     OR: search
       ? [
         { name: { contains: search, mode: 'insensitive' } },
