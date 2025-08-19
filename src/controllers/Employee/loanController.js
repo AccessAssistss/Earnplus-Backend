@@ -364,7 +364,7 @@ const getCoApplicantsByLoan = asyncHandler(async (req, res) => {
         return res.respond(404, "Operational Manager not found!")
     }
 
-    const coApplicants = await prisma.CoApplicantDetails.findMany({
+    const coApplicants = await prisma.coApplicantDetails.findMany({
         where: {
             id: loanId,
             isDeleted: false,

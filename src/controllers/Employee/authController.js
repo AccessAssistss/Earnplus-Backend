@@ -56,30 +56,44 @@ const sendUserOTP = asyncHandler(async (req, res) => {
 
   const otp = mobile === TEST_MOBILE ? STATIC_OTP : await generateOTP();
 
-  const user = await prisma.customUser.findFirst({
+  let user = await prisma.customUser.findFirst({
     where: {
       userType,
       OR: [{ mobile }, { alternativeMobile: mobile }],
     },
   });
 
-  const employee = user
-    ? await prisma.employee.findFirst({
-      where: {
-        userId: user.id,
-        OR: [{ mobile }, { alternativeMobile: mobile }],
+  if (!user) {
+    user = await prisma.customUser.create({
+      data: {
+        mobile,
+        userType,
+        employees: {
+          create: {
+            mobile,
+            otp,
+            otpExpiration: new Date(),
+          },
+        },
       },
-    })
-    : null;
-
-  const isExistingUser = !!employee;
-
-  const sent = await sendOTP(mobile, otp);
-  if (!sent) {
-    return res.respond(500, "Failed to send OTP");
+      include: { employees: true },
+    });
   }
 
-  if (employee) {
+  let employee = await prisma.employee.findFirst({
+    where: { userId: user.id },
+  });
+
+  if (!employee) {
+    employee = await prisma.employee.create({
+      data: {
+        userId: user.id,
+        mobile,
+        otp,
+        otpExpiration: new Date(),
+      },
+    });
+  } else {
     await prisma.employee.update({
       where: { id: employee.id },
       data: {
@@ -89,6 +103,12 @@ const sendUserOTP = asyncHandler(async (req, res) => {
     });
   }
 
+  const isExistingUser = !!employee;
+
+  const sent = await sendOTP(mobile, otp);
+  if (!sent) {
+    return res.respond(500, "Failed to send OTP");
+  }
   res.respond(200, `OTP sent to ${mobile}!`, { otp, isExistingUser });
 });
 
@@ -132,8 +152,9 @@ const verifyOTP = asyncHandler(async (req, res) => {
       OR: [{ mobile }, { alternativeMobile: mobile }],
     },
   });
+
   if (!user) {
-    return res.respond(400, "User not found!");
+    return res.respond(404, "User not found!");
   }
 
   const employee = await prisma.employee.findFirst({
@@ -152,36 +173,218 @@ const verifyOTP = asyncHandler(async (req, res) => {
     return res.respond(404, "OTP has Expired!");
   }
 
-  const isExistingUser = !!employee;
-
-  const screenCheck = employee?.isEmployerScreen;
-  const isEmployerPart = !!employee?.employerId;
-
   const verification = await prisma.employeeVerification.findFirst({
-    where: { employeeId: employee?.id || "" },
+    where: { employeeId: employee.id },
   });
 
-  const adharCheck = verification?.isAadharVerified || false;
-  const panCheck = verification?.isPanVerified || false;
-  const videoCheck = employee?.isKycVerified || false;
-  const selfieCheck = verification?.isSelfieVerified || false;
+  const isPartnerUser = !!employee.employerId;
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-    user.id
-  );
+  if (!isPartnerUser) {
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
+      user.id
+    );
+
+    return res.respond(200, "OTP verified successfully!", {
+      isEmployerPart: false,
+      isEmployerScreen: employee.isEmployerScreen,
+      adharCheck: verification?.isAadharVerified || false,
+      panCheck: verification?.isPanVerified || false,
+      selfieCheck: verification?.isSelfieVerified || false,
+      isEmployerLinked: employee.isEmployerLinked,
+      isExistingUser: employee.isExistingUser,
+      accessToken,
+      refreshToken,
+    });
+  }
 
   res.respond(200, `OTP verified successfully!`, {
-    isExistingUser,
-    isEmployerScreen: screenCheck,
-    isEmployerPart,
-    adharCheck,
-    panCheck,
-    videoCheck,
-    selfieCheck,
+    isEmployerPart: true,
+    isEmployerScreen: employee.isEmployerScreen,
+    adharCheck: verification?.isAadharVerified || false,
+    panCheck: verification?.isPanVerified || false,
+    selfieCheck: verification?.isSelfieVerified || false,
     isEmployerLinked: employee.isEmployerLinked,
+    isExistingUser: employee.isExistingUser,
     accessToken,
     refreshToken,
   });
+});
+
+// ##########----------Register Employee----------##########
+const RegisterEmployee = asyncHandler(async (req, res) => {
+  const user = req.user;
+
+  const {
+    userType = "EMPLOYEE",
+    employeeName,
+    dob,
+    gender,
+    employmentType,
+    educationLevel,
+    maritalStatus,
+    email,
+    designation,
+    country,
+    state,
+    pincode,
+  } = req.body;
+
+  if (!employeeName ||
+    !dob ||
+    !gender ||
+    !employmentType ||
+    !maritalStatus ||
+    !email ||
+    !designation ||
+    !country ||
+    !state ||
+    !pincode) {
+    return res.respond(400, "All Fields required!");
+  }
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId: user },
+  });
+
+  if (!employee) {
+    return res.respond(404, "Employee not found!");
+  }
+
+  const updatedEmployee = await prisma.employee.update({
+    where: { id: employee.id },
+    data: {
+      employeeName,
+      dob: new Date(dob),
+      gender,
+      employmentType,
+      educationLevel,
+      maritalStatus,
+      email,
+      designation,
+      country: { connect: { id: country } },
+      state: { connect: { id: state } },
+      pincode,
+      isExistingUser: true,
+    },
+  });
+
+  res.respond(200, `Employee registered successfully!`, updatedEmployee);
+});
+
+// ##########----------Update Employee Profile----------##########
+const updateEmployeeProfile = asyncHandler(async(req, res) => {
+  const userId = req.user;
+  const { employeeName, dob, gender, employmentType, educationLevel, maritalStatus, email, designation } = req.body;
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId }
+  })
+  if(!employee) {
+    return res.respond(400, "Employee not found!")
+  }
+
+  const updatedEmployee = await prisma.employee.update({
+    where: { userId },
+    data: {
+      employeeName,
+      dob: new Date(dob),
+      gender,
+      employmentType,
+      educationLevel,
+      maritalStatus,
+      email,
+      designation
+    }
+  })
+
+  res.respond(200, "Employee Profile Updated successfully!", updatedEmployee)
+})
+
+// ##########----------Get Employee Profile----------##########
+const getEmployeeProfile = asyncHandler(async(req, res) => {
+  const userId = req.user;
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId },
+    select: {
+      id: true,
+      employeeName: true,
+      dob: true,
+      gender: true,
+      employmentType: true,
+      educationLevel: true,
+      maritalStatus: true,
+      email: true,
+      designation: true,
+      country: {
+        select: {
+          id: true,
+          countryName: true,
+        }
+      },
+      state: {
+        select: {
+          id: true,
+          stateName: true,
+        }
+      },
+      pincode: true
+    }
+  })
+
+  res.respond(200, `Employee's profile fetched successfully!`, employee);
+})
+
+// ##########----------Add Employee Bank Accounts----------##########
+const addEmployeeBank = asyncHandler(async (req, res) => {
+  const userId = req.user
+  const { accName, accNumber, bankName, ifsc } = req.body;
+
+  if (!accName || !accNumber || !bankName || !ifsc) {
+    return res.respond(400, "All fields required!")
+  }
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId }
+  })
+  if (!employee) {
+    return res.respond(404, "Employee not found!")
+  }
+
+  const bankDetails = await prisma.employeeBankDetails.create({
+    data: {
+      employee: { connect: { id: employee.id } },
+      accName,
+      accNumber,
+      bankName,
+      ifsc,
+    },
+  });
+
+  res.respond(201, "Bank account added successfully!", bankDetails);
+})
+
+// ##########----------Get Employee Bank Accounts----------##########
+const getEmployeeBanks = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId },
+  });
+
+  if (!employee) {
+    return res.respond(404, "Employee not found!");
+  }
+
+  const bankAccounts = await prisma.employeeBankDetails.findMany({
+    where: {
+      employeeId: employee.id,
+      isDeleted: false,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  res.respond(200, "Bank accounts fetched successfully!", bankAccounts);
 });
 
 // ##########----------Verify Employee Partnership with Employer----------##########
@@ -222,7 +425,7 @@ const verifyEmployeeEmployerLink = asyncHandler(async (req, res) => {
 
 // ##########----------Send aadhar OTP----------##########
 const handleSendAadhaarOtp = asyncHandler(async (req, res) => {
-  const user = req.user;                     
+  const user = req.user;
   const { aadhaarNumber } = req.body;
   if (!aadhaarNumber) {
     return res.respond(400, "Aadhaar number is required!");
@@ -453,6 +656,11 @@ const faceLiveliness = asyncHandler(async (req, res) => {
 module.exports = {
   sendUserOTP,
   verifyOTP,
+  RegisterEmployee,
+  updateEmployeeProfile,
+  getEmployeeProfile,
+  addEmployeeBank,
+  getEmployeeBanks,
   verifyEmployeeEmployerLink,
   handleSendAadhaarOtp,
   handleVerifyAadhaarOtp,

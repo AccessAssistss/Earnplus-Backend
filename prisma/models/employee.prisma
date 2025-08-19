@@ -14,6 +14,8 @@ model Employee {
     fcmToken              String?        @db.VarChar(100)
     dob                   DateTime?
     designation           String?        @db.VarChar(100)
+    employmentType        String?        @db.VarChar(100)
+    educationLevel        String?        @db.VarChar(100)
     nationality           String?        @db.VarChar(100)
     panNo                 String?        @db.VarChar(100)
     aadharNo              String?        @db.VarChar(100)
@@ -31,6 +33,7 @@ model Employee {
     updatedAt             DateTime       @updatedAt
     isDeleted             Boolean        @default(false)
     isEmployerLinked      Boolean        @default(false)
+    isExistingUser          Boolean        @default(false)
     isKycVerified         Boolean        @default(false)
     isEmployerScreen      Boolean        @default(false)
     agreedProductInsight  Boolean        @default(false)
@@ -43,9 +46,9 @@ model Employee {
     state    State?      @relation(fields: [stateId], references: [id])
 
     EmployeeVerification      EmployeeVerification?
-    EmployeeBankDetails       EmployeeBankDetails?
     EmploymentDetails         EmploymentDetails?
     KYCRequest                KYCRequest?
+    EmployeeBankDetails       EmployeeBankDetails[]
     EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
     EmployeeBasePayroll       EmployeeBasePayroll[]
     EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
@@ -76,7 +79,7 @@ model EmploymentDetails {
 // ##########----------Employee Bank Detail Model----------##########
 model EmployeeBankDetails {
     id         String   @id @default(uuid())
-    employeeId String?  @unique
+    employeeId String?
     accName    String?  @db.VarChar(100)
     accNumber  String?  @db.VarChar(100)
     bankName   String?  @db.VarChar(100)

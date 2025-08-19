@@ -6,5 +6,6 @@ router.use("/auth", require("./authRoute"));
 router.use("/payroll", require("./payrollRoute"));
 router.use("/kyc", require("./kycRoute"));
 router.use("/loan", require("./loanRoute"));
+router.use("/faq", require("./faqRoute"));
 
 module.exports = router;

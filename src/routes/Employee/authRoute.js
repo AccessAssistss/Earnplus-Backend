@@ -8,6 +8,11 @@ const {
   verifyEmployeePan,
   checkEmployeePanStatus,
   faceLiveliness,
+  RegisterEmployee,
+  addEmployeeBank,
+  getEmployeeBanks,
+  getEmployeeProfile,
+  updateEmployeeProfile,
 } = require("../../controllers/Employee/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -15,6 +20,11 @@ const router = express.Router();
 
 router.post("/sendUserOTP", sendUserOTP);
 router.post("/verifyOTP", verifyOTP);
+router.post("/RegisterEmployee", validateToken, RegisterEmployee);
+router.put("/updateEmployeeProfile", validateToken, updateEmployeeProfile);
+router.get("/getEmployeeProfile", validateToken, getEmployeeProfile);
+router.post("/addEmployeeBank", validateToken, addEmployeeBank);
+router.get("/getEmployeeBanks", validateToken, getEmployeeBanks);
 router.patch(
   "/verifyEmployeeEmployerLink",
   validateToken,

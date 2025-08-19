@@ -1,0 +1,10 @@
+// ####################--------------------FAQ Model--------------------####################
+model Faq {
+    id         String   @id @default(uuid())
+    screenName String   @db.VarChar(50)
+    question   String   @db.VarChar(100)
+    answer     String   @db.VarChar(500)
+    createdAt  DateTime @default(now())
+    updtedAt   DateTime @updatedAt
+    isDeleted  Boolean  @default(false)
+}
