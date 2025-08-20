@@ -272,36 +272,38 @@ const RegisterEmployee = asyncHandler(async (req, res) => {
 });
 
 // ##########----------Update Employee Profile----------##########
-const updateEmployeeProfile = asyncHandler(async(req, res) => {
+const updateEmployeeProfile = asyncHandler(async (req, res) => {
   const userId = req.user;
   const { employeeName, dob, gender, employmentType, educationLevel, maritalStatus, email, designation } = req.body;
 
   const employee = await prisma.employee.findFirst({
     where: { userId }
   })
-  if(!employee) {
+  if (!employee) {
     return res.respond(400, "Employee not found!")
   }
 
+   const updateData = {};
+
+  if (employeeName !== undefined) updateData.employeeName = employeeName;
+  if (dob !== undefined) updateData.dob = new Date(dob);
+  if (gender !== undefined) updateData.gender = gender;
+  if (employmentType !== undefined) updateData.employmentType = employmentType;
+  if (educationLevel !== undefined) updateData.educationLevel = educationLevel;
+  if (maritalStatus !== undefined) updateData.maritalStatus = maritalStatus;
+  if (email !== undefined) updateData.email = email;
+  if (designation !== undefined) updateData.designation = designation;
+
   const updatedEmployee = await prisma.employee.update({
-    where: { userId },
-    data: {
-      employeeName,
-      dob: new Date(dob),
-      gender,
-      employmentType,
-      educationLevel,
-      maritalStatus,
-      email,
-      designation
-    }
-  })
+    where: { id: employee.id },
+    data: updateData
+  });
 
   res.respond(200, "Employee Profile Updated successfully!", updatedEmployee)
 })
 
 // ##########----------Get Employee Profile----------##########
-const getEmployeeProfile = asyncHandler(async(req, res) => {
+const getEmployeeProfile = asyncHandler(async (req, res) => {
   const userId = req.user;
 
   const employee = await prisma.employee.findFirst({

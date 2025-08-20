@@ -4,10 +4,10 @@ const {
   createFinancialTerms,
   createEligibilityCriteria,
   createCreditBureauConfig,
-  createFinancialStatements,
-  createBehavioralData,
-  createRiskScoring,
-  createCollateral,
+  // createFinancialStatements,
+  // createBehavioralData,
+  // createRiskScoring,
+  // createCollateral,
   getAllMasterProducts,
   getMasterProductDetails,
   submitMasterProductUpdateRequest,
@@ -18,7 +18,7 @@ const {
   createMasterProductDeleteRequest,
   getAllMasterProductUpdateRequests,
   createMasterProductOtherCharges,
-  createMasterProductRepayment,
+  // createMasterProductRepayment,
   handleMasterProductDeleteRequest,
   getMasterProductDeleteRequests,
   getMasterProductUpdateRequestDetails,
@@ -31,12 +31,12 @@ router.post("/createMasterProduct", validateToken, createMasterProduct);
 router.post("/createFinancialTerms", validateToken, createFinancialTerms);
 router.post("/createEligibilityCriteria", validateToken, createEligibilityCriteria);
 router.post("/createCreditBureauConfig", validateToken, createCreditBureauConfig);
-router.post("/createFinancialStatements", validateToken, createFinancialStatements);
-router.post("/createBehavioralData", validateToken, createBehavioralData);
-router.post("/createRiskScoring", validateToken, createRiskScoring);
-router.post("/createCollateral", validateToken, createCollateral);
+// router.post("/createFinancialStatements", validateToken, createFinancialStatements);
+// router.post("/createBehavioralData", validateToken, createBehavioralData);
+// router.post("/createRiskScoring", validateToken, createRiskScoring);
+// router.post("/createCollateral", validateToken, createCollateral);
 router.post("/createMasterProductOtherCharges", validateToken, createMasterProductOtherCharges);
-router.post("/createMasterProductRepayment", validateToken, createMasterProductRepayment);
+// router.post("/createMasterProductRepayment", validateToken, createMasterProductRepayment);
 router.post("/submitMasterProductUpdateRequest", validateToken, submitMasterProductUpdateRequest);
 router.get("/getAllMasterProductUpdateRequests", validateToken, getAllMasterProductUpdateRequests);
 router.get("/getMasterProductUpdateRequestDetails/:updateProductId", validateToken, getMasterProductUpdateRequestDetails);

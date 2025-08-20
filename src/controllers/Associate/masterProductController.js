@@ -15,9 +15,10 @@ const createMasterProduct = asyncHandler(async (req, res) => {
     loanTypeId,
     deliveryChannel,
     partnerId,
-    status,
     purposeIds = [],
-    segments = []
+    segments = [],
+    disbursementModeIds = [],
+    repaymentModeIds = []
   } = req.body;
 
   if (
@@ -27,7 +28,9 @@ const createMasterProduct = asyncHandler(async (req, res) => {
     !loanTypeId ||
     !deliveryChannel ||
     !partnerId ||
-    purposeIds.length === 0
+    purposeIds.length === 0 ||
+    disbursementModeIds.length === 0 ||
+    repaymentModeIds.length === 0
   ) {
     return res.respond(400, "All fields are required!.");
   }
@@ -81,16 +84,29 @@ const createMasterProduct = asyncHandler(async (req, res) => {
         loanTypeId,
         deliveryChannel,
         partnerId,
-        status,
         versionId: newVersionId,
+
         MasterProductPurpose: {
           create: purposeIds?.map((purposeId) => ({
             purposeId,
           })),
         },
+
         MasterProductSegment: {
           create: segments?.map((segmentId) => ({
             segmentId,
+          })),
+        },
+
+        FinancialDisbursementMode: {
+          create: disbursementModeIds.map((disbursementId) => ({
+            disbursementId,
+          })),
+        },
+
+        FinancialRepaymentMode: {
+          create: repaymentModeIds.map((repaymentId) => ({
+            repaymentId,
           })),
         },
       },
@@ -121,9 +137,12 @@ const createFinancialTerms = asyncHandler(async (req, res) => {
     prepaymentAllowed,
     prepaymentFeeType,
     prepaymentFeeValue,
+    overallGst,
     emiFrequency,
-    disbursementModeIds = [],
-    repaymentModeIds = []
+    penalApplicable,
+    penalRate,
+    gracePeriod,
+    renewalFee
   } = req.body;
 
   if (
@@ -142,9 +161,7 @@ const createFinancialTerms = asyncHandler(async (req, res) => {
     prepaymentAllowed == null ||
     !prepaymentFeeType ||
     prepaymentFeeValue == null ||
-    !emiFrequency ||
-    disbursementModeIds.length === 0 ||
-    repaymentModeIds.length === 0
+    !emiFrequency
   ) {
     return res.respond(400, "All fields are required, including disbursement and repayment modes.");
   }
@@ -164,43 +181,33 @@ const createFinancialTerms = asyncHandler(async (req, res) => {
     return res.respond(409, "Financial terms already exist for this Master Product.");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const terms = await tx.financialTerms.create({
-      data: {
-        masterProductId,
-        minLoanAmount,
-        maxLoanAmount,
-        minTenureMonths,
-        maxTenureMonths,
-        interestRateType,
-        interestRateMin,
-        interestRateMax,
-        processingFeeType,
-        processingFeeValue,
-        latePaymentFeeType,
-        latePaymentFeeValue,
-        prepaymentAllowed,
-        prepaymentFeeType,
-        prepaymentFeeValue,
-        emiFrequency,
-
-        FinancialDisbursementMode: {
-          create: disbursementModeIds.map((disbursementId) => ({
-            disbursementId,
-          })),
-        },
-        FinancialRepaymentMode: {
-          create: repaymentModeIds.map((repaymentId) => ({
-            repaymentId,
-          })),
-        },
-      },
-    });
-
-    return terms;
+  const terms = await prisma.financialTerms.create({
+    data: {
+      masterProductId,
+      minLoanAmount,
+      maxLoanAmount,
+      minTenureMonths,
+      maxTenureMonths,
+      interestRateType,
+      interestRateMin,
+      interestRateMax,
+      processingFeeType,
+      processingFeeValue,
+      latePaymentFeeType,
+      latePaymentFeeValue,
+      prepaymentAllowed,
+      prepaymentFeeType,
+      prepaymentFeeValue,
+      overallGst,
+      emiFrequency,
+      penalApplicable,
+      penalRate,
+      gracePeriod,
+      renewalFee
+    },
   });
 
-  return res.respond(201, "Financial Terms Created Successfully!", result);
+  return res.respond(201, "Financial Terms Created Successfully!", terms);
 });
 
 // ##########----------Master Product Eligibility Criteria----------##########
@@ -213,12 +220,8 @@ const createEligibilityCriteria = asyncHandler(async (req, res) => {
     minMonthlyIncome,
     minBusinessVintage,
     minBureauScore,
-    bureauType,
-    blacklistFlags = [],
-    minDocumentsRequired = [],
-    documentSubmissionModes = [],
-    documentVerificationModes = [],
-    employmentTypesAllowed = []
+    coApplicantRequired,
+    collateralRequired,
   } = req.body;
 
   if (
@@ -227,8 +230,7 @@ const createEligibilityCriteria = asyncHandler(async (req, res) => {
     maxAge == null ||
     minMonthlyIncome == null ||
     minBusinessVintage == null ||
-    minBureauScore == null ||
-    !bureauType
+    minBureauScore == null
   ) {
     return res.respond(400, "Missing required fields.");
   }
@@ -248,37 +250,20 @@ const createEligibilityCriteria = asyncHandler(async (req, res) => {
     return res.respond(409, "Eligibility criteria already exist for this Master Product.");
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const criteria = await tx.eligibilityCriteria.create({
-      data: {
-        masterProductId,
-        minAge,
-        maxAge,
-        minMonthlyIncome,
-        minBusinessVintage,
-        minBureauScore,
-        bureauType,
-        blacklistFlags,
-        documentSubmissionModes,
-        documentVerificationModes,
-
-        minDocumentsRequired: {
-          create: minDocumentsRequired.map((documentId) => ({
-            documentId,
-          })),
-        },
-        employmentTypesAllowed: {
-          create: employmentTypesAllowed.map((employmentId) => ({
-            employmentId,
-          })),
-        },
-      },
-    });
-
-    return criteria;
+  const criteria = await prisma.eligibilityCriteria.create({
+    data: {
+      masterProductId,
+      minAge,
+      maxAge,
+      minMonthlyIncome,
+      minBusinessVintage,
+      minBureauScore,
+      coApplicantRequired,
+      collateralRequired,
+    },
   });
 
-  return res.respond(201, "Eligibility Criteria Created Successfully!", result);
+  return res.respond(201, "Eligibility Criteria Created Successfully!", criteria);
 });
 
 // ##########----------Master Product Credit Bureau----------##########
@@ -293,7 +278,6 @@ const createCreditBureauConfig = asyncHandler(async (req, res) => {
     enquiriesLast6Months,
     loanDelinquencyAllowed,
     bureauDataFreshnessDays,
-    customBureauFlags = [],
     scoreDecayTolerance,
   } = req.body;
 
@@ -335,271 +319,11 @@ const createCreditBureauConfig = asyncHandler(async (req, res) => {
       enquiriesLast6Months,
       loanDelinquencyAllowed,
       bureauDataFreshnessDays,
-      customBureauFlags,
       scoreDecayTolerance,
     },
   });
 
   return res.respond(201, "Credit Bureau Config created successfully!", creditBureauConfig);
-});
-
-// ##########----------Master Product Financial Statement----------##########
-const createFinancialStatements = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const {
-    masterProductId,
-    minMonthlyCredit,
-    minAverageBalance,
-    salaryCreditPattern,
-    bouncesLast3Months,
-    netIncomeRecognition,
-    cashDepositsCapPercent,
-    statementSources = [],
-    accountTypes = [],
-    pdfParsingRequired,
-  } = req.body;
-
-  if (
-    !masterProductId ||
-    minMonthlyCredit == null ||
-    minAverageBalance == null ||
-    !salaryCreditPattern ||
-    bouncesLast3Months == null ||
-    !netIncomeRecognition ||
-    cashDepositsCapPercent == null ||
-    pdfParsingRequired == null
-  ) {
-    return res.respond(400, "Missing required fields.");
-  }
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: { role: true },
-  });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can create Financial Statements.");
-  }
-
-  const existingStatement = await prisma.financialStatements.findUnique({
-    where: { masterProductId },
-  });
-  if (existingStatement) {
-    return res.respond(409, "Financial Statements already exist for this Master Product.");
-  }
-
-  const financialStatements = await prisma.financialStatements.create({
-    data: {
-      masterProductId,
-      minMonthlyCredit,
-      minAverageBalance,
-      salaryCreditPattern,
-      bouncesLast3Months,
-      netIncomeRecognition,
-      cashDepositsCapPercent,
-      statementSources,
-      accountTypes,
-      pdfParsingRequired,
-    },
-  });
-
-  return res.respond(201, "Financial Statements created successfully!", financialStatements);
-});
-
-// ##########----------Master Product Behavioral Data----------##########
-const createBehavioralData = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const {
-    masterProductId,
-    salaryRegularityThreshold,
-    spendingConsistencyPercent,
-    upiSpendToIncomeRatio,
-    billPaymentHistory,
-    digitalFootprintRequired,
-    locationConsistencyKm,
-    repeatBorrowerBehavior,
-  } = req.body;
-
-  if (
-    !masterProductId ||
-    salaryRegularityThreshold == null ||
-    spendingConsistencyPercent == null ||
-    upiSpendToIncomeRatio == null ||
-    !billPaymentHistory ||
-    digitalFootprintRequired == null ||
-    locationConsistencyKm == null ||
-    !repeatBorrowerBehavior
-  ) {
-    return res.respond(400, "Missing required fields.");
-  }
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: { role: true },
-  });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can create Behavioral Data.");
-  }
-
-  const existingData = await prisma.behavioralData.findUnique({
-    where: { masterProductId },
-  });
-  if (existingData) {
-    return res.respond(409, "Behavioral Data already exists for this Master Product.");
-  }
-
-  const behavioralData = await prisma.behavioralData.create({
-    data: {
-      masterProductId,
-      salaryRegularityThreshold,
-      spendingConsistencyPercent,
-      upiSpendToIncomeRatio,
-      billPaymentHistory,
-      digitalFootprintRequired,
-      locationConsistencyKm,
-      repeatBorrowerBehavior,
-    },
-  });
-
-  return res.respond(201, "Behavioral Data created successfully!", behavioralData);
-});
-
-// ##########----------Master Product Risk Scoring----------##########
-const createRiskScoring = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const {
-    masterProductId,
-    internalScoreVars,
-    externalScoreInputs,
-    riskCategoryMapping,
-    maxDTI,
-    maxLTV,
-    coBorrowerRequired,
-  } = req.body;
-
-  if (
-    !masterProductId ||
-    !Array.isArray(internalScoreVars) ||
-    !Array.isArray(externalScoreInputs) ||
-    riskCategoryMapping == null ||
-    maxDTI == null ||
-    maxLTV == null ||
-    coBorrowerRequired == null
-  ) {
-    return res.respond(400, "Missing or invalid required fields.");
-  }
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: { role: true },
-  });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(403, "Only Product Managers can create Risk Scoring.");
-  }
-
-  const existing = await prisma.riskScoring.findUnique({
-    where: { masterProductId },
-  });
-  if (existing) {
-    return res.respond(409, "Risk Scoring already exists for this Master Product.");
-  }
-
-  const riskScoring = await prisma.riskScoring.create({
-    data: {
-      masterProductId,
-      riskCategoryMapping,
-      maxDTI,
-      maxLTV,
-      coBorrowerRequired,
-      internalScoreVars: {
-        create: internalScoreVars.map(scoreId => ({
-          scoreId,
-        })),
-      },
-      externalScoreInputs: {
-        create: externalScoreInputs.map(externalId => ({
-          externalId,
-        })),
-      },
-    },
-  });
-
-  return res.respond(201, "Risk Scoring created successfully!", riskScoring);
-});
-
-// ##########----------Master Product Collateral----------##########
-const createCollateral = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const {
-    masterProductId,
-    collateralType,
-    collateralValue,
-    collateralValuationDate,
-    collateralDocs,
-    collateralOwnerName,
-    ownershipVerified,
-    guarantorRequired,
-    guarantorName,
-    guarantorRelationship,
-    guarantorPAN,
-    guarantorCreditBureau,
-    guarantorCreditScore,
-    guarantorMonthlyIncome,
-    guarantorIncomeProofTypes,
-    guarantorVerificationStatus,
-  } = req.body;
-
-  if (
-    !masterProductId ||
-    !collateralType ||
-    !collateralValue ||
-    !collateralValuationDate ||
-    !collateralOwnerName ||
-    ownershipVerified === undefined ||
-    guarantorRequired === undefined
-  ) {
-    return res.respond(400, "Missing required fields.");
-  }
-
-  const isAuthorized = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!isAuthorized) {
-    return res.respond(403, "Unauthorized.");
-  }
-
-  const collateral = await prisma.collateral.create({
-    data: {
-      masterProductId,
-      collateralType,
-      collateralValue,
-      collateralValuationDate: new Date(collateralValuationDate),
-      collateralOwnerName,
-      ownershipVerified,
-      guarantorRequired,
-      guarantorName,
-      guarantorRelationship,
-      guarantorPAN,
-      guarantorCreditBureau,
-      guarantorCreditScore,
-      guarantorMonthlyIncome,
-      guarantorVerificationStatus,
-      guarantorIncomeProofTypes,
-      collateralDocs: {
-        create: (collateralDocs || []).map((docId) => ({
-          docId,
-        })),
-      },
-    },
-    include: {
-      collateralDocs: {
-        include: {
-          OwnershipDocument: true,
-        },
-      },
-    },
-  });
-
-  return res.respond(201, "Collateral created successfully!", collateral);
 });
 
 // ##########----------Create Master Product Other Charges----------##########
@@ -662,59 +386,6 @@ const createMasterProductOtherCharges = asyncHandler(async (req, res) => {
   });
 
   return res.respond(201, "Other Charges created!", charges);
-});
-
-// ##########----------Create Master Product Repayment----------##########
-const createMasterProductRepayment = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const {
-    masterProductId,
-    penalInterestApplicable,
-    incentiveType,
-    incentiveValue,
-    payoutMode,
-    incentiveReversalConditions,
-  } = req.body;
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: {
-      role: true,
-    },
-  });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(
-      403,
-      "Only Product Managers can create variant products."
-    );
-  }
-
-  const exists = await prisma.masterProduct.findUnique({
-    where: { id: masterProductId },
-  });
-  if (!exists) {
-    return res.respond(404, "Master Product not found.");
-  }
-
-  const existingRepayment = await prisma.masterProductRepayment.findUnique({
-    where: { masterProductId },
-  });
-  if (existingRepayment) {
-    return res.respond(400, "Repayment already exists for this master product.");
-  }
-
-  const repayment = await prisma.masterProductRepayment.create({
-    data: {
-      masterProductId,
-      penalInterestApplicable,
-      incentiveType,
-      incentiveValue,
-      payoutMode,
-      incentiveReversalConditions,
-    },
-  });
-
-  return res.respond(201, "Repayment details created!", repayment);
 });
 
 // ##########----------Get All Master Products----------##########
@@ -858,6 +529,29 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           },
         },
       },
+      FinancialDisbursementMode: {
+        select: {
+          id: true,
+          DisbursementMode: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      FinancialRepaymentMode: {
+        select: {
+          id: true,
+          RepaymentModes: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+
       financialTerms: {
         select: {
           id: true,
@@ -876,7 +570,12 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           prepaymentAllowed: true,
           prepaymentFeeType: true,
           prepaymentFeeValue: true,
+          overallGst: true,
           emiFrequency: true,
+          penalApplicable: true,
+          penalRate: true,
+          gracePeriod: true,
+          renewalFee: true,
         },
       },
       eligibilityCriteria: {
@@ -887,11 +586,8 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           minMonthlyIncome: true,
           minBusinessVintage: true,
           minBureauScore: true,
-          blacklistFlags: true,
-          minDocumentsRequired: true,
-          documentSubmissionModes: true,
-          documentVerificationModes: true,
-          employmentTypesAllowed: true,
+          coApplicantRequired: true,
+          collateralRequired: true,
         },
       },
       creditBureauConfig: {
@@ -904,63 +600,7 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           enquiriesLast6Months: true,
           loanDelinquencyAllowed: true,
           bureauDataFreshnessDays: true,
-          customBureauFlags: true,
           scoreDecayTolerance: true,
-        },
-      },
-      financialStatements: {
-        select: {
-          id: true,
-          minMonthlyCredit: true,
-          minAverageBalance: true,
-          bouncesLast3Months: true,
-          netIncomeRecognition: true,
-          cashDepositsCapPercent: true,
-          statementSources: true,
-          accountTypes: true,
-          pdfParsingRequired: true,
-        },
-      },
-      behavioralData: {
-        select: {
-          id: true,
-          salaryRegularityThreshold: true,
-          spendingConsistencyPercent: true,
-          upiSpendToIncomeRatio: true,
-          billPaymentHistory: true,
-          digitalFootprintRequired: true,
-          locationConsistencyKm: true,
-          repeatBorrowerBehavior: true,
-        },
-      },
-      riskScoring: {
-        select: {
-          id: true,
-          internalScoreVars: true,
-          externalScoreInputs: true,
-          riskCategoryMapping: true,
-          maxDTI: true,
-          maxLTV: true,
-          coBorrowerRequired: true,
-        },
-      },
-      Collateral: {
-        select: {
-          id: true,
-          collateralType: true,
-          collateralValue: true,
-          collateralValuationDate: true,
-          collateralDocs: true,
-          collateralOwnerName: true,
-          guarantorRequired: true,
-          guarantorName: true,
-          guarantorRelationship: true,
-          guarantorPAN: true,
-          guarantorCreditBureau: true,
-          guarantorCreditScore: true,
-          guarantorMonthlyIncome: true,
-          guarantorIncomeProofTypes: true,
-          guarantorVerificationStatus: true,
         },
       },
       masterProductOtherCharges: {
@@ -975,16 +615,6 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           stampDutyCharge: true,
           nocCharge: true,
           incidentalCharge: true,
-        },
-      },
-      masterProductRepayment: {
-        select: {
-          id: true,
-          penalInterestApplicable: true,
-          incentiveType: true,
-          incentiveValue: true,
-          payoutMode: true,
-          incentiveReversalConditions: true,
         },
       },
     },
@@ -1015,14 +645,11 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
     financialTermsUpdate,
     eligibilityCriteriaUpdate,
     creditBureauConfigUpdate,
-    financialStatementsUpdate,
-    behavioralDataUpdate,
-    riskScoringUpdate,
-    collateralUpdate,
     otherChargesUpdate,
-    repaymentUpdate,
     purposeIds,
-    segmentIds
+    segmentIds,
+    disbursementModeIds,
+    repaymentModeIds,
   } = req.body;
 
   const productManager = await prisma.associateSubAdmin.findFirst({
@@ -1065,111 +692,20 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
         deliveryChannel,
 
         financialTermsUpdate: financialTermsUpdate
-          ? {
-            create: {
-              ...(() => {
-                const {
-                  disbursementModeIds = [],
-                  repaymentModeIds = [],
-                  ...cleanData
-                } = financialTermsUpdate;
-
-                return {
-                  ...cleanData,
-                  FinancialDisbursementModeUpdate: {
-                    create: disbursementModeIds?.map((disbursementId) => ({ disbursementId })),
-                  },
-                  FinancialRepaymentModeUpdate: {
-                    create: repaymentModeIds?.map((repaymentId) => ({ repaymentId })),
-                  },
-                };
-              })(),
-            },
-          }
+          ? { create: financialTermsUpdate }
           : undefined,
 
-        eligibilityCriteriaUpdate: eligibilityCriteriaUpdate && {
-          create: {
-            ...(() => {
-              const {
-                documentIds = [],
-                employmentIds = [],
-                ...rest
-              } = eligibilityCriteriaUpdate;
-
-              return {
-                ...rest,
-                minDocumentsRequired: {
-                  create: documentIds.map((documentId) => ({ documentId })),
-                },
-                employmentTypesAllowed: {
-                  create: employmentIds.map((employmentId) => ({ employmentId })),
-                },
-              };
-            })()
-          }
-        },
+        eligibilityCriteriaUpdate: eligibilityCriteriaUpdate
+          ? { create: eligibilityCriteriaUpdate }
+          : undefined,
 
         creditBureauConfigUpdate: creditBureauConfigUpdate
           ? { create: creditBureauConfigUpdate }
           : undefined,
 
-        financialStatementsUpdate: financialStatementsUpdate
-          ? { create: financialStatementsUpdate }
-          : undefined,
-
-        behavioralDataUpdate: behavioralDataUpdate
-          ? { create: behavioralDataUpdate }
-          : undefined,
-
-        riskScoringUpdate: riskScoringUpdate && {
-          create: {
-            ...(() => {
-              const {
-                scoreVariableIds = [],
-                externalScoreIds = [],
-                ...rest
-              } = riskScoringUpdate;
-
-              return {
-                ...rest,
-                internalScoreVars: {
-                  create: scoreVariableIds.map((scoreId) => ({ scoreId })),
-                },
-                externalScoreInputs: {
-                  create: externalScoreIds.map((externalId) => ({ externalId })),
-                },
-              };
-            })()
-          }
-        },
-
-        CollateralUpdate: collateralUpdate && {
-          create: {
-            ...(() => {
-              const {
-                documentIds = [],
-                ...rest
-              } = collateralUpdate;
-
-              return {
-                ...rest,
-                collateralDocs: {
-                  create: documentIds.map((docId) => ({ docId })),
-                },
-              };
-            })()
-          }
-        },
         masterProductOtherChargesUpdate: otherChargesUpdate
           ? {
             create: otherChargesUpdate,
-          }
-          : undefined,
-
-        masterProductRepaymentUpdate: repaymentUpdate
-          ? {
-            create: repaymentUpdate,
           }
           : undefined,
 
@@ -1182,6 +718,17 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
         MasterProductSegmentUpdate: segmentIds
           ? {
             create: segmentIds.map((segmentId) => ({ segmentId }))
+          }
+          : undefined,
+
+        FinancialDisbursementModeUpdate: disbursementModeIds
+          ? {
+            create: disbursementModeIds.map((disbursementModeId) => ({ disbursementModeId }))
+          }
+          : undefined,
+        FinancialRepaymentModeUpdate: repaymentModeIds
+          ? {
+            create: repaymentModeIds.map((repaymentModeId) => ({ repaymentModeId }))
           }
           : undefined,
       }
@@ -1284,6 +831,31 @@ const getMasterProductUpdateRequestDetails = asyncHandler(async (req, res) => {
           },
         },
       },
+
+      FinancialDisbursementModeUpdate: {
+        select: {
+          id: true,
+          DisbursementMode: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+
+      FinancialRepaymentModeUpdate: {
+        select: {
+          id: true,
+          RepaymentModes: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+
       financialTermsUpdate: {
         select: {
           id: true,
@@ -1302,7 +874,12 @@ const getMasterProductUpdateRequestDetails = asyncHandler(async (req, res) => {
           prepaymentAllowed: true,
           prepaymentFeeType: true,
           prepaymentFeeValue: true,
+          overallGst: true,
           emiFrequency: true,
+          penalApplicable: true,
+          penalRate: true,
+          gracePeriod: true,
+          renewalFee: true,
         },
       },
       eligibilityCriteriaUpdate: {
@@ -1313,20 +890,8 @@ const getMasterProductUpdateRequestDetails = asyncHandler(async (req, res) => {
           minMonthlyIncome: true,
           minBusinessVintage: true,
           minBureauScore: true,
-          blacklistFlags: true,
-          minDocumentsRequired: true,
-          documentSubmissionModes: true,
-          documentVerificationModes: true,
-          employmentTypesAllowed: {
-            select: {
-              EmploymentType: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          },
+          coApplicantRequired: true,
+          collateralRequired: true,
         },
       },
       creditBureauConfigUpdate: {
@@ -1339,81 +904,7 @@ const getMasterProductUpdateRequestDetails = asyncHandler(async (req, res) => {
           enquiriesLast6Months: true,
           loanDelinquencyAllowed: true,
           bureauDataFreshnessDays: true,
-          customBureauFlags: true,
           scoreDecayTolerance: true,
-        },
-      },
-      financialStatementsUpdate: {
-        select: {
-          id: true,
-          minMonthlyCredit: true,
-          minAverageBalance: true,
-          bouncesLast3Months: true,
-          netIncomeRecognition: true,
-          cashDepositsCapPercent: true,
-          statementSources: true,
-          accountTypes: true,
-          pdfParsingRequired: true,
-        },
-      },
-      behavioralDataUpdate: {
-        select: {
-          id: true,
-          salaryRegularityThreshold: true,
-          spendingConsistencyPercent: true,
-          upiSpendToIncomeRatio: true,
-          billPaymentHistory: true,
-          digitalFootprintRequired: true,
-          locationConsistencyKm: true,
-          repeatBorrowerBehavior: true,
-        },
-      },
-      riskScoringUpdate: {
-        select: {
-          id: true,
-          internalScoreVars: {
-            select: {
-              ScoreVariable: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          },
-          externalScoreInputs: {
-            select: {
-              ExternalScore: {
-                select: {
-                  id: true,
-                  name: true
-                }
-              }
-            }
-          },
-          riskCategoryMapping: true,
-          maxDTI: true,
-          maxLTV: true,
-          coBorrowerRequired: true,
-        },
-      },
-      CollateralUpdate: {
-        select: {
-          id: true,
-          collateralType: true,
-          collateralValue: true,
-          collateralValuationDate: true,
-          collateralDocs: true,
-          collateralOwnerName: true,
-          guarantorRequired: true,
-          guarantorName: true,
-          guarantorRelationship: true,
-          guarantorPAN: true,
-          guarantorCreditBureau: true,
-          guarantorCreditScore: true,
-          guarantorMonthlyIncome: true,
-          guarantorIncomeProofTypes: true,
-          guarantorVerificationStatus: true,
         },
       },
       masterProductOtherChargesUpdate: {
@@ -1428,16 +919,6 @@ const getMasterProductUpdateRequestDetails = asyncHandler(async (req, res) => {
           stampDutyCharge: true,
           nocCharge: true,
           incidentalCharge: true,
-        },
-      },
-      masterProductRepaymentUpdate: {
-        select: {
-          id: true,
-          penalInterestApplicable: true,
-          incentiveType: true,
-          incentiveValue: true,
-          payoutMode: true,
-          incentiveReversalConditions: true,
         },
       },
     },
@@ -2100,12 +1581,7 @@ module.exports = {
   createFinancialTerms,
   createEligibilityCriteria,
   createCreditBureauConfig,
-  createFinancialStatements,
-  createBehavioralData,
-  createRiskScoring,
-  createCollateral,
   createMasterProductOtherCharges,
-  createMasterProductRepayment,
   getAllMasterProducts,
   getMasterProductDetails,
   submitMasterProductUpdateRequest,

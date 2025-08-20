@@ -25,15 +25,12 @@ model MasterProductUpdateRequest {
     financialTermsUpdate            FinancialTermsUpdate?
     eligibilityCriteriaUpdate       EligibilityCriteriaUpdate?
     creditBureauConfigUpdate        CreditBureauConfigUpdate?
-    financialStatementsUpdate       FinancialStatementsUpdate?
-    behavioralDataUpdate            BehavioralDataUpdate?
-    riskScoringUpdate               RiskScoringUpdate?
-    CollateralUpdate                CollateralUpdate?
     masterProductOtherChargesUpdate MasterProductOtherChargesUpdate?
-    masterProductRepaymentUpdate    MasterProductRepaymentUpdate?
 
-    MasterProductPurposeUpdate MasterProductPurposeUpdate[]
-    MasterProductSegmentUpdate MasterProductSegmentUpdate[]
+    MasterProductPurposeUpdate      MasterProductPurposeUpdate[]
+    MasterProductSegmentUpdate      MasterProductSegmentUpdate[]
+    FinancialDisbursementModeUpdate FinancialDisbursementModeUpdate[]
+    FinancialRepaymentModeUpdate    FinancialRepaymentModeUpdate[]
 }
 
 // ##########----------Master Product Purpose Update Model----------##########
@@ -56,6 +53,26 @@ model MasterProductSegmentUpdate {
     productSegment      ProductSegment             @relation(fields: [segmentId], references: [id], onDelete: Cascade)
 }
 
+// ##########----------Financial Disbursement Mode Update Model----------##########
+model FinancialDisbursementModeUpdate {
+    id              String @id @default(uuid())
+    updateRequestId String?
+    disbursementId  String?
+
+    masterProductUpdate MasterProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    disbursementMode    DisbursementMode?           @relation(fields: [disbursementId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Financial Repayment Mode Update Model----------##########
+model FinancialRepaymentModeUpdate {
+    id              String @id @default(uuid())
+    updateRequestId String?
+    repaymentId     String?
+
+    masterProductUpdate MasterProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    RepaymentModes      RepaymentModes?             @relation(fields: [repaymentId], references: [id], onDelete: Cascade)
+}
+
 // ##########----------Financial Terms Update Model----------##########
 model FinancialTermsUpdate {
     id                  String       @id @default(uuid())
@@ -74,71 +91,29 @@ model FinancialTermsUpdate {
     prepaymentAllowed   Boolean
     prepaymentFeeType   FeeType
     prepaymentFeeValue  Float
+    overallGst          Float        @default(0.0)
     emiFrequency        EMIFrequency
-
-    FinancialDisbursementModeUpdate FinancialDisbursementModeUpdate[]
-    FinancialRepaymentModeUpdate    FinancialRepaymentModeUpdate[]
+    penalApplicable     Boolean      @default(false)
+    penalRate           Float        @default(0.0)
+    gracePeriod         Int          @default(0)
+    renewalFee          Float        @default(0.0)
 
     masterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Financial Disbursement Mode Update Model----------##########
-model FinancialDisbursementModeUpdate {
-    id             String @id @default(uuid())
-    financialId    String
-    disbursementId String
-
-    FinancialTermsUpdate FinancialTermsUpdate @relation(fields: [financialId], references: [id], onDelete: Cascade)
-    disbursementMode     DisbursementMode     @relation(fields: [disbursementId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Financial Repayment Mode Update Model----------##########
-model FinancialRepaymentModeUpdate {
-    id          String @id @default(uuid())
-    financialId String
-    repaymentId String
-
-    FinancialTermsUpdate FinancialTermsUpdate @relation(fields: [financialId], references: [id], onDelete: Cascade)
-    RepaymentModes       RepaymentModes       @relation(fields: [repaymentId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Fee Structure Update Model----------##########
 model EligibilityCriteriaUpdate {
-    id                        String                            @id @default(uuid())
-    updateRequestId           String                            @unique
-    minAge                    Int
-    maxAge                    Int
-    minMonthlyIncome          Int
-    minBusinessVintage        Int
-    minBureauScore            Int
-    bureauType                BureauType
-    blacklistFlags            BlacklistFlag[]
-    minDocumentsRequired      EligibilityDocumentUpdate[]
-    documentSubmissionModes   SubmissionMode[]
-    documentVerificationModes VerificationMode[]
-    employmentTypesAllowed    EligibilityEmploymentTypeUpdate[]
+    id                  String  @id @default(uuid())
+    updateRequestId     String  @unique
+    minAge              Int
+    maxAge              Int
+    minMonthlyIncome    Int
+    minBusinessVintage  Int
+    minBureauScore      Int
+    coApplicantRequired Boolean @default(false)
+    collateralRequired  Boolean @default(false)
 
     masterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Eligibility Employment Update Model----------##########
-model EligibilityEmploymentTypeUpdate {
-    id            String @id @default(uuid())
-    eligibilityId String
-    employmentId  String
-
-    EligibilityCriteriaUpdate EligibilityCriteriaUpdate @relation(fields: [eligibilityId], references: [id], onDelete: Cascade)
-    EmploymentType            EmploymentType            @relation(fields: [employmentId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Eligibility Document Update Model----------##########
-model EligibilityDocumentUpdate {
-    id            String @id @default(uuid())
-    eligibilityId String
-    documentId    String
-
-    EligibilityCriteriaUpdate EligibilityCriteriaUpdate @relation(fields: [eligibilityId], references: [id], onDelete: Cascade)
-    Document                  Document                  @relation(fields: [documentId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Security Compliance Update Model----------##########
@@ -152,109 +127,9 @@ model CreditBureauConfigUpdate {
     enquiriesLast6Months    Int
     loanDelinquencyAllowed  DelinquencyOption
     bureauDataFreshnessDays Int
-    customBureauFlags       BlacklistFlag[]
     scoreDecayTolerance     Int
 
     masterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id])
-}
-
-// ##########----------Master Product Financial Statement Update Model----------##########
-model FinancialStatementsUpdate {
-    id                     String                  @id @default(uuid())
-    updateRequestId        String                  @unique
-    minMonthlyCredit       Int
-    minAverageBalance      Int
-    salaryCreditPattern    SalaryPattern
-    bouncesLast3Months     Int
-    netIncomeRecognition   IncomeRecognitionMethod
-    cashDepositsCapPercent Float
-    statementSources       StatementSource[]
-    accountTypes           AccountType[]
-    pdfParsingRequired     Boolean
-
-    masterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id])
-}
-
-// ##########----------Master Product Performance Update Model----------##########
-model BehavioralDataUpdate {
-    id                         String             @id @default(uuid())
-    updateRequestId            String             @unique
-    salaryRegularityThreshold  Int
-    spendingConsistencyPercent Float
-    upiSpendToIncomeRatio      Float
-    billPaymentHistory         BillPaymentHistory
-    digitalFootprintRequired   Boolean
-    locationConsistencyKm      Int
-    repeatBorrowerBehavior     BorrowerBehavior
-
-    masterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id])
-}
-
-// ##########----------Master Product Risk Scoaring Update Model----------##########
-model RiskScoringUpdate {
-    id                  String                    @id @default(uuid())
-    updateRequestId     String                    @unique
-    internalScoreVars   RiskScoreVariableUpdate[]
-    externalScoreInputs RiskExternalScoreUpdate[]
-    riskCategoryMapping Int
-    maxDTI              Int
-    maxLTV              Int
-    coBorrowerRequired  Boolean                   @default(false)
-
-    MasterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id])
-}
-
-// ##########----------Risk Score Variable Update Model----------##########
-model RiskScoreVariableUpdate {
-    id            String @id @default(uuid())
-    riskScoringId String
-    scoreId       String
-
-    RiskScoringUpdate RiskScoringUpdate @relation(fields: [riskScoringId], references: [id], onDelete: Cascade)
-    ScoreVariable     ScoreVariable     @relation(fields: [scoreId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Risk External Score Update Model----------##########
-model RiskExternalScoreUpdate {
-    id            String @id @default(uuid())
-    riskScoringId String
-    externalId    String
-
-    RiskScoringUpdate RiskScoringUpdate @relation(fields: [riskScoringId], references: [id], onDelete: Cascade)
-    ExternalScore     ExternalScore     @relation(fields: [externalId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Master Product Collateral Update Model----------##########
-model CollateralUpdate {
-    id                          String                       @id @default(uuid())
-    updateRequestId             String                       @unique
-    collateralType              CollateralType
-    collateralValue             Int
-    collateralValuationDate     DateTime
-    collateralDocs              CollateralDocumentUpdate[]
-    collateralOwnerName         String
-    ownershipVerified           OwnershipVerificationStatus
-    guarantorRequired           Boolean
-    guarantorName               String?
-    guarantorRelationship       GuarantorRelationship?
-    guarantorPAN                String?                      @db.VarChar(10)
-    guarantorCreditBureau       CreditBureau?
-    guarantorCreditScore        Int?
-    guarantorMonthlyIncome      Int?
-    guarantorIncomeProofTypes   IncomeProofType[]
-    guarantorVerificationStatus GuarantorVerificationStatus?
-
-    masterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id])
-}
-
-// ##########----------Collateral Document Update Model----------##########
-model CollateralDocumentUpdate {
-    id           String @id @default(uuid())
-    collateralId String
-    docId        String
-
-    CollateralUpdate  CollateralUpdate  @relation(fields: [collateralId], references: [id], onDelete: Cascade)
-    OwnershipDocument OwnershipDocument @relation(fields: [docId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Other Charges Update Model----------##########
@@ -273,22 +148,6 @@ model MasterProductOtherChargesUpdate {
     createdAt          DateTime @default(now())
     updatedAt          DateTime @updatedAt
     isDeleted          Boolean  @default(false)
-
-    masterProductUpdate MasterProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Master Product Repayment Update Model----------##########
-model MasterProductRepaymentUpdate {
-    id                          String   @id @default(uuid())
-    updateRequestId             String   @unique
-    penalInterestApplicable     Boolean
-    incentiveType               String?
-    incentiveValue              Int?
-    payoutMode                  String?
-    incentiveReversalConditions String?
-    createdAt                   DateTime @default(now())
-    updatedAt                   DateTime @updatedAt
-    isDeleted                   Boolean  @default(false)
 
     masterProductUpdate MasterProductUpdateRequest? @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
