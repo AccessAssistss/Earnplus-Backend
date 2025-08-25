@@ -111,7 +111,6 @@ model MasterProduct {
     eligibilityCriteria       EligibilityCriteria?
     creditBureauConfig        CreditBureauConfig?
     masterProductOtherCharges MasterProductOtherCharges?
-    MasterProductDocument     MasterProductDocument?
 
     MasterProductPurpose       MasterProductPurpose[]
     FinancialDisbursementMode  FinancialDisbursementMode[]
@@ -121,11 +120,12 @@ model MasterProduct {
     MasterProductVersion       MasterProductVersion[]
     MasterProductSegment       MasterProductSegment[]
     MasterProductDeleteRequest MasterProductDeleteRequest[]
+    MasterProductField         MasterProductField[]
 }
 
 // ##########----------Master Product Purpose Model----------##########
 model MasterProductPurpose {
-    id              String  @id @default(uuid())
+    id              String @id @default(uuid())
     masterProductId String
     purposeId       String
 
@@ -135,7 +135,7 @@ model MasterProductPurpose {
 
 // ##########----------Master Product Segment Model----------##########
 model MasterProductSegment {
-    id              String  @id @default(uuid())
+    id              String @id @default(uuid())
     masterProductId String
     segmentId       String
 
@@ -155,11 +155,11 @@ model FinancialDisbursementMode {
 
 // ##########----------Financial Repayment Mode Model----------##########
 model FinancialRepaymentMode {
-    id              String  @id @default(uuid())
+    id              String          @id @default(uuid())
     masterProductId String?
     repaymentId     String?
-    masterProduct  MasterProduct?  @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-    RepaymentModes RepaymentModes? @relation(fields: [repaymentId], references: [id], onDelete: Cascade)
+    masterProduct   MasterProduct?  @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    RepaymentModes  RepaymentModes? @relation(fields: [repaymentId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Financial Terms----------##########
@@ -241,39 +241,58 @@ model MasterProductOtherCharges {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Product Document Model----------##########
-model Document {
+// ##########----------Product Field Model----------##########
+model Field {
+    id          String    @id @default(uuid())
+    name        String?
+    fieldType   FieldType
+    isMainField Boolean   @default(false)
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    isDeleted   Boolean   @default(false)
+
+    dropdowns           Dropdown[]
+    subFields           SubField[]
+    masterProductFields MasterProductField[]
+}
+
+// ##########----------Product Field Dropdown Model----------##########
+model Dropdown {
     id        String   @id @default(uuid())
-    name      String?
+    fieldId   String
+    value     String?
+    label     String?
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    ProductDocuments ProductDocuments[]
+    field Field @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+    subFields SubField[]
 }
 
-// ##########----------Master Product Documents Model----------##########
-model MasterProductDocument {
-    id              String   @id @default(uuid())
-    masterProductId String   @unique
-    employmentType  String
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
-    isDeleted       Boolean  @default(false)
+// ##########----------Sub-Field Mapping----------##########
+model SubField {
+    id         String   @id @default(uuid())
+    dropdownId String
+    fieldId    String
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+    isDeleted  Boolean  @default(false)
 
+    dropdown Dropdown @relation(fields: [dropdownId], references: [id], onDelete: Cascade)
+    field    Field    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Fields Model----------##########
+model MasterProductField {
+    id              String  @id @default(uuid())
+    masterProductId String
+    fieldId         String
+    isRequired      Boolean @default(false)
+
+    Field         Field          @relation(fields: [fieldId], references: [id], onDelete: Cascade)
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-
-    ProductDocuments ProductDocuments[]
-}
-
-// ##########----------Document Model----------##########
-model ProductDocuments {
-    id                String @id @default(uuid())
-    documentId        String
-    productDocumentId String
-
-    Document              Document              @relation(fields: [documentId], references: [id], onDelete: Cascade)
-    MasterProductDocument MasterProductDocument @relation(fields: [productDocumentId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Version Model----------##########

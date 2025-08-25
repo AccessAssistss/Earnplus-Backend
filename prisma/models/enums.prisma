@@ -248,3 +248,11 @@ enum CreditBureau {
   CRIF
   EQUIFAX
 }
+
+enum FieldType {
+  Dropdown
+  Number
+  String
+  Boolean
+  File
+}

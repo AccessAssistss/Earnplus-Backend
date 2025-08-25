@@ -25,5 +25,8 @@ router.use("/contractCombination", require("./contractCombinationRoute"));
 router.use("/productAllocation", require("./productAllocationRoute"));
 router.use("/CategorySubCategory", require("./queryCategorySubCategoryRoute"));
 router.use("/query", require("./queryRoute"));
+router.use("/field", require("./fieldRoute"));
+router.use("/dropdown", require("./dropdownRoute"));
+router.use("/subField", require("./subFieldRoute"));
 
 module.exports = router;

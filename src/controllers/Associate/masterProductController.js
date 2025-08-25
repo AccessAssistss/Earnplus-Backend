@@ -32,7 +32,7 @@ const createMasterProduct = asyncHandler(async (req, res) => {
     disbursementModeIds.length === 0 ||
     repaymentModeIds.length === 0
   ) {
-    return res.respond(400, "All fields are required!.");
+    return res.respond(400, "All fields are required!");
   }
 
   const productManager = await prisma.associateSubAdmin.findFirst({
@@ -388,6 +388,55 @@ const createMasterProductOtherCharges = asyncHandler(async (req, res) => {
   return res.respond(201, "Other Charges created!", charges);
 });
 
+// ##########----------Create Master Product Fields----------##########
+const createMasterProductFields = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const {
+    masterProductId,
+    isRequired = false,
+    fieldIds = [],
+  } = req.body;
+
+  if (!masterProductId || fieldIds.length === 0) {
+    return res.respond(400, "masterProductId and fieldIds are required!");
+  }
+
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: {
+      role: true,
+    },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product Manager") {
+    return res.respond(403, "Only Product Managers can create product fields.");
+  }
+
+  const exists = await prisma.masterProduct.findUnique({
+    where: { id: masterProductId },
+  });
+  if (!exists) {
+    return res.respond(404, "Master Product not found.");
+  }
+
+
+  const result = await prisma.$transaction(async (tx) => {
+    const createdFields = await tx.masterProductField.createMany({
+      data: fieldIds.map((fieldId) => ({
+        masterProductId,
+        fieldId,
+        isRequired,
+      })),
+      skipDuplicates: true,
+    });
+
+    return createdFields;
+  });
+
+  return res.respond(201, "Master Product Fields Created Successfully!", result);
+});
+
 // ##########----------Get All Master Products----------##########
 const getAllMasterProducts = asyncHandler(async (req, res) => {
   const userId = req.user;
@@ -473,7 +522,7 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
     return res.respond(403, "Only Product Managers can create products.");
   }
 
-  const masterProduct = await prisma.masterProduct.findMany({
+  const masterProduct = await prisma.masterProduct.findFirst({
     where: {
       id: productId,
       isDeleted: false,
@@ -532,7 +581,7 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
       FinancialDisbursementMode: {
         select: {
           id: true,
-          DisbursementMode: {
+          disbursementMode: {
             select: {
               id: true,
               name: true,
@@ -617,6 +666,12 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           incidentalCharge: true,
         },
       },
+      masterProductComplianceDocument: {
+        select: {
+          id: true,
+          employmentType: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -646,6 +701,7 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
     eligibilityCriteriaUpdate,
     creditBureauConfigUpdate,
     otherChargesUpdate,
+    complianceDocumentUpdate,
     purposeIds,
     segmentIds,
     disbursementModeIds,
@@ -706,6 +762,26 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
         masterProductOtherChargesUpdate: otherChargesUpdate
           ? {
             create: otherChargesUpdate,
+          }
+          : undefined,
+
+        masterProductComplianceDocument: masterProductComplianceDocument
+          ? {
+            create: {
+              ...(() => {
+                const {
+                  documentIds = [],
+                  ...cleanData
+                } = masterProductComplianceDocument;
+
+                return {
+                  ...cleanData,
+                  ProductDocuments: {
+                    create: documentIds?.map((documentId) => ({ documentId })),
+                  },
+                };
+              })(),
+            },
           }
           : undefined,
 
@@ -949,36 +1025,14 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
     where: { id: requestId },
     include: {
       masterProduct: true,
-      financialTermsUpdate: {
-        include: {
-          FinancialDisbursementModeUpdate: true,
-          FinancialRepaymentModeUpdate: true,
-        }
-      },
-      eligibilityCriteriaUpdate: {
-        include: {
-          minDocumentsRequired: true,
-          employmentTypesAllowed: true,
-        }
-      },
+      financialTermsUpdate: true,
+      eligibilityCriteriaUpdate: true,
       creditBureauConfigUpdate: true,
-      financialStatementsUpdate: true,
-      behavioralDataUpdate: true,
-      riskScoringUpdate: {
-        include: {
-          internalScoreVars: true,
-          externalScoreInputs: true,
-        }
-      },
-      CollateralUpdate: {
-        include: {
-          collateralDocs: true,
-        }
-      },
       MasterProductPurposeUpdate: true,
       MasterProductSegmentUpdate: true,
+      FinancialDisbursementModeUpdate: true,
+      FinancialRepaymentModeUpdate: true,
       masterProductOtherChargesUpdate: true,
-      masterProductRepaymentUpdate: true,
     },
   });
 
@@ -1009,34 +1063,12 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
       include: {
         MasterProductPurpose: true,
         MasterProductSegment: true,
-        financialTerms: {
-          include: {
-            FinancialDisbursementMode: true,
-            FinancialRepaymentMode: true,
-          },
-        },
-        eligibilityCriteria: {
-          include: {
-            minDocumentsRequired: true,
-            employmentTypesAllowed: true,
-          },
-        },
+        FinancialDisbursementMode: true,
+        FinancialRepaymentMode: true,
+        financialTerms: true,
+        eligibilityCriteria: true,
         creditBureauConfig: true,
-        financialStatements: true,
-        behavioralData: true,
-        riskScoring: {
-          include: {
-            internalScoreVars: true,
-            externalScoreInputs: true,
-          },
-        },
-        Collateral: {
-          include: {
-            collateralDocs: true,
-          },
-        },
         masterProductOtherCharges: true,
-        masterProductRepayment: true,
       },
     });
 
@@ -1052,14 +1084,11 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
       financialTermsUpdate: sanitizeUpdateData(updateRequest.financialTermsUpdate),
       eligibilityCriteriaUpdate: sanitizeUpdateData(updateRequest.eligibilityCriteriaUpdate),
       creditBureauConfigUpdate: sanitizeUpdateData(updateRequest.creditBureauConfigUpdate),
-      financialStatementsUpdate: sanitizeUpdateData(updateRequest.financialStatementsUpdate),
-      behavioralDataUpdate: sanitizeUpdateData(updateRequest.behavioralDataUpdate),
-      riskScoringUpdate: sanitizeUpdateData(updateRequest.riskScoringUpdate),
-      CollateralUpdate: sanitizeUpdateData(updateRequest.CollateralUpdate),
       MasterProductPurposeUpdate: sanitizeUpdateData(updateRequest.MasterProductPurposeUpdate),
       MasterProductSegmentUpdate: sanitizeUpdateData(updateRequest.MasterProductSegmentUpdate),
+      FinancialDisbursementModeUpdate: sanitizeUpdateData(updateRequest.FinancialDisbursementModeUpdate),
+      FinancialRepaymentModeUpdate: sanitizeUpdateData(updateRequest.FinancialRepaymentModeUpdate),
       masterProductOtherChargesUpdate: sanitizeUpdateData(updateRequest.masterProductOtherChargesUpdate),
-      masterProductRepaymentUpdate: sanitizeUpdateData(updateRequest.masterProductRepaymentUpdate),
     };
 
     function parseSafeDate(dateValue) {
@@ -1097,84 +1126,30 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
             segmentId: s.segmentId,
           })),
         },
+        FinancialDisbursementMode: {
+          deleteMany: {},
+          create: sanitizedUpdate.FinancialDisbursementModeUpdate.map((s) => ({
+            disbursementId: s.disbursementId,
+          })),
+        },
+        FinancialRepaymentMode: {
+          deleteMany: {},
+          create: sanitizedUpdate.FinancialRepaymentModeUpdate.map((s) => ({
+            repaymentId: s.repaymentId,
+          })),
+        },
 
         financialTerms: sanitizedUpdate.financialTermsUpdate && {
           upsert: {
-            update: {
-              FinancialDisbursementMode: {
-                deleteMany: {},
-                create: sanitizedUpdate.financialTermsUpdate.FinancialDisbursementModeUpdate?.map(d => ({
-                  disbursementId: d.disbursementId
-                })),
-              },
-              FinancialRepaymentMode: {
-                deleteMany: {},
-                create: sanitizedUpdate.financialTermsUpdate.FinancialRepaymentModeUpdate?.map(r => ({
-                  repaymentId: r.repaymentId
-                })),
-              },
-              ...(() => {
-                const {
-                  FinancialDisbursementModeUpdate,
-                  FinancialRepaymentModeUpdate,
-                  ...rest
-                } = sanitizedUpdate.financialTermsUpdate;
-                return rest;
-              })()
-            },
-            create: {
-              FinancialDisbursementMode: {
-                create: sanitizedUpdate.financialTermsUpdate.FinancialDisbursementModeUpdate?.map(d => ({
-                  disbursementId: d.disbursementId
-                })),
-              },
-              FinancialRepaymentMode: {
-                create: sanitizedUpdate.financialTermsUpdate.FinancialRepaymentModeUpdate?.map(r => ({
-                  repaymentId: r.repaymentId
-                })),
-              },
-              ...(() => {
-                const {
-                  FinancialDisbursementModeUpdate,
-                  FinancialRepaymentModeUpdate,
-                  ...rest
-                } = sanitizedUpdate.financialTermsUpdate;
-                return rest;
-              })()
-            }
+            update: sanitizedUpdate.financialTermsUpdate,
+            create: sanitizedUpdate.financialTermsUpdate,
           }
         },
 
         eligibilityCriteria: sanitizedUpdate.eligibilityCriteriaUpdate && {
           upsert: {
-            update: {
-              ...sanitizedUpdate.eligibilityCriteriaUpdate,
-              minDocumentsRequired: {
-                deleteMany: {},
-                create: sanitizedUpdate.eligibilityCriteriaUpdate.minDocumentsRequired?.map(d => ({
-                  documentId: d.documentId
-                }))
-              },
-              employmentTypesAllowed: {
-                deleteMany: {},
-                create: sanitizedUpdate.eligibilityCriteriaUpdate.employmentTypesAllowed?.map(e => ({
-                  employmentId: e.employmentId
-                }))
-              }
-            },
-            create: {
-              ...sanitizedUpdate.eligibilityCriteriaUpdate,
-              minDocumentsRequired: {
-                create: sanitizedUpdate.eligibilityCriteriaUpdate.minDocumentsRequired?.map(d => ({
-                  documentId: d.documentId
-                }))
-              },
-              employmentTypesAllowed: {
-                create: sanitizedUpdate.eligibilityCriteriaUpdate.employmentTypesAllowed?.map(e => ({
-                  employmentId: e.employmentId
-                }))
-              }
-            }
+            update: sanitizedUpdate.eligibilityCriteriaUpdate,
+            create: sanitizedUpdate.eligibilityCriteriaUpdate,
           }
         },
 
@@ -1185,87 +1160,10 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
           }
         },
 
-        financialStatements: sanitizedUpdate.financialStatementsUpdate && {
-          upsert: {
-            update: sanitizedUpdate.financialStatementsUpdate,
-            create: sanitizedUpdate.financialStatementsUpdate,
-          }
-        },
-
-        behavioralData: sanitizedUpdate.behavioralDataUpdate && {
-          upsert: {
-            update: sanitizedUpdate.behavioralDataUpdate,
-            create: sanitizedUpdate.behavioralDataUpdate,
-          }
-        },
-
-        riskScoring: sanitizedUpdate.riskScoringUpdate && {
-          upsert: {
-            update: {
-              ...sanitizedUpdate.riskScoringUpdate,
-              internalScoreVars: {
-                deleteMany: {},
-                create: sanitizedUpdate.riskScoringUpdate.internalScoreVars?.map((s) => ({
-                  scoreId: s.scoreId,
-                })),
-              },
-              externalScoreInputs: {
-                deleteMany: {},
-                create: sanitizedUpdate.riskScoringUpdate.externalScoreInputs?.map((e) => ({
-                  externalId: e.externalId,
-                })),
-              },
-            },
-            create: {
-              ...sanitizedUpdate.riskScoringUpdate,
-              internalScoreVars: {
-                create: sanitizedUpdate.riskScoringUpdate.internalScoreVars?.map((s) => ({
-                  scoreId: s.scoreId,
-                })),
-              },
-              externalScoreInputs: {
-                create: sanitizedUpdate.riskScoringUpdate.externalScoreInputs?.map((e) => ({
-                  externalId: e.externalId,
-                })),
-              },
-            }
-          }
-        },
-
-        Collateral: sanitizedUpdate.CollateralUpdate && {
-          upsert: {
-            update: {
-              ...sanitizedUpdate.CollateralUpdate,
-              collateralValuationDate: parseSafeDate(sanitizedUpdate.CollateralUpdate.collateralValuationDate) || new Date(),
-              collateralDocs: {
-                deleteMany: {},
-                create: sanitizedUpdate.CollateralUpdate.collateralDocs?.map((d) => ({
-                  docId: d.docId,
-                })),
-              },
-            },
-            create: {
-              ...sanitizedUpdate.CollateralUpdate,
-              collateralValuationDate: parseSafeDate(sanitizedUpdate.CollateralUpdate.collateralValuationDate) || new Date(),
-              collateralDocs: {
-                create: sanitizedUpdate.CollateralUpdate.collateralDocs?.map((d) => ({
-                  docId: d.docId,
-                })),
-              },
-            }
-          }
-        },
         masterProductOtherCharges: sanitizedUpdate.masterProductOtherChargesUpdate && {
           upsert: {
             update: sanitizedUpdate.masterProductOtherChargesUpdate,
             create: sanitizedUpdate.masterProductOtherChargesUpdate,
-          }
-        },
-
-        masterProductRepayment: sanitizedUpdate.masterProductRepaymentUpdate && {
-          upsert: {
-            update: sanitizedUpdate.masterProductRepaymentUpdate,
-            create: sanitizedUpdate.masterProductRepaymentUpdate,
           }
         },
       },
@@ -1582,6 +1480,7 @@ module.exports = {
   createEligibilityCriteria,
   createCreditBureauConfig,
   createMasterProductOtherCharges,
+  createMasterProductFields,
   getAllMasterProducts,
   getMasterProductDetails,
   submitMasterProductUpdateRequest,
