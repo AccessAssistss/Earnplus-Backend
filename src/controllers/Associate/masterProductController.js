@@ -395,13 +395,13 @@ const createMasterProductFields = asyncHandler(async (req, res) => {
     masterProductId,
     isRequired = false,
     fieldIds = [],
+    categoryId = null,
   } = req.body;
 
   if (!masterProductId || fieldIds.length === 0) {
     return res.respond(400, "masterProductId and fieldIds are required!");
   }
-
-
+  
   const productManager = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
     include: {
@@ -420,12 +420,21 @@ const createMasterProductFields = asyncHandler(async (req, res) => {
     return res.respond(404, "Master Product not found.");
   }
 
+  if (categoryId) {
+    const categoryExists = await prisma.fieldCategory.findFirst({
+      where: { id: categoryId, isDeleted: false },
+    });
+    if (!categoryExists) {
+      return res.respond(404, "Category not found or deleted.");
+    }
+  }
 
   const result = await prisma.$transaction(async (tx) => {
     const createdFields = await tx.masterProductField.createMany({
       data: fieldIds.map((fieldId) => ({
         masterProductId,
         fieldId,
+        categoryId,
         isRequired,
       })),
       skipDuplicates: true,
@@ -666,12 +675,6 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           incidentalCharge: true,
         },
       },
-      masterProductComplianceDocument: {
-        select: {
-          id: true,
-          employmentType: true,
-        },
-      },
     },
     orderBy: {
       createdAt: "desc",
@@ -682,7 +685,7 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
     return res.respond(404, "Product not found or access denied.");
   }
 
-  res.respond(200, "Master Products fetched successfully!", masterProduct);
+  res.respond(200, "Master Product Details fetched successfully!", masterProduct);
 });
 
 // ####################--------------------Mater Product EDIT And DELETE Requests Handeling--------------------####################

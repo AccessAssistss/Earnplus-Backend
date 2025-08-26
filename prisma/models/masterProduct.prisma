@@ -284,15 +284,28 @@ model SubField {
     field    Field    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Fields Model----------##########
+// ##########----------Field Category Model----------##########
+model FieldCategory {
+    id        String   @id @default(uuid())
+    name      String   @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    masterProductFields MasterProductField[]
+}
+
+// ##########----------Master Product Field Model----------##########
 model MasterProductField {
     id              String  @id @default(uuid())
     masterProductId String
     fieldId         String
+    categoryId      String?
     isRequired      Boolean @default(false)
 
     Field         Field          @relation(fields: [fieldId], references: [id], onDelete: Cascade)
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    category      FieldCategory? @relation(fields: [categoryId], references: [id])
 }
 
 // ##########----------Master Product Version Model----------##########
@@ -303,7 +316,7 @@ model MasterProductVersion {
     snapshot        Json
     createdAt       DateTime @default(now())
 
-    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id])
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Delete Request Model----------##########

@@ -28,5 +28,6 @@ router.use("/query", require("./queryRoute"));
 router.use("/field", require("./fieldRoute"));
 router.use("/dropdown", require("./dropdownRoute"));
 router.use("/subField", require("./subFieldRoute"));
+router.use("/fieldCategory", require("./fieldCategoryRoute"));
 
 module.exports = router;

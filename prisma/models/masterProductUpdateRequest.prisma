@@ -129,7 +129,7 @@ model CreditBureauConfigUpdate {
     bureauDataFreshnessDays Int
     scoreDecayTolerance     Int
 
-    masterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id])
+    masterProductUpdate MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Other Charges Update Model----------##########
