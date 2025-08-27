@@ -1,149 +1,35 @@
-// ##########----------Loan Application Model----------##########
+// ####################--------------------Loan Application Model--------------------####################
 model LoanApplication {
-    id                String     @id @default(uuid())
-    customerId        String
-    productId         String
-    loanID            String     @unique
-    loanAmount        Int
-    tenureMonths      Int
-    emiStartDate      DateTime
-    loanPurpose       String
-    incomeSource      String
-    existingLoanCount Int
-    loanStatus        LoanStatus @default(PENDING)
-    isCoApplicant     Boolean
-    isGuarantor       Boolean
-    createdAt         DateTime   @default(now())
-    updatedAt         DateTime   @updatedAt
-    isDeleted         Boolean    @default(false)
+    id          String   @id @default(uuid())
+    customerId  String
+    productId   String
+    submittedAt DateTime @default(now())
+    updatedAt   DateTime @updatedAt
 
-    customer       Employee?       @relation(fields: [customerId], references: [id], onDelete: Cascade)
-    variantProduct VariantProduct? @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-    kycDetails         LoanKYCDetails?
-    creditDetails      LoanCreditDetails?
-    coApplicantDetails CoApplicantDetails[]
-    guarantorDetails   GuarantorDetails[]
+    employee      Employee         @relation(fields: [customerId], references: [id])
+    masterProduct MasterProduct    @relation(fields: [productId], references: [id])
+    fieldValues   LoanFieldValue[]
+    documents     LoanDocument[]
 }
 
-// ##########----------Loan KYC Details Model----------##########
-model LoanKYCDetails {
-    id                  String               @id @default(uuid())
-    loanApplicationId   String               @unique
-    pancard             String
-    aadharFront         String
-    aadharBack          String
-    customerPhoto       String
-    videoKycStatus      ApplicationKYCStatus @default(Pending)
-    pancardStatus       ApplicationKYCStatus @default(Pending)
-    aadharFrontStatus   ApplicationKYCStatus @default(Pending)
-    aadharBackStatus    ApplicationKYCStatus @default(Pending)
-    customerPhotoStatus ApplicationKYCStatus @default(Pending)
-    createdAt           DateTime             @default(now())
-    updatedAt           DateTime             @updatedAt
-    isDeleted           Boolean              @default(false)
-
-    loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Loan Credit Details Model----------##########
-model LoanCreditDetails {
-    id                String   @id @default(uuid())
-    loanApplicationId String   @unique
-    accountHolderName String
-    accountNumber     String
-    ifscCode          String
-    salarySlip        String
-    bankStatement     String
-    monthlyIncome     String
-    cibilScore        String
-    crifScore         String
-    equifaxScore      String
-    bureauReport      String
-    passbookImage     String
-    createdAt         DateTime @default(now())
-    updatedAt         DateTime @updatedAt
-    isDeleted         Boolean  @default(false)
-
-    loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Co-Applicant Model----------##########
-model CoApplicantDetails {
-    id                String   @id @default(uuid())
+// ####################--------------------Loan Field Model--------------------####################
+model LoanFieldValue {
+    id                String  @id @default(uuid())
     loanApplicationId String
-    name              String
-    mobile            String
-    email             String
-    gender            String
-    dob               DateTime
-    aadharNo          String
-    panNo             String
-    createdAt         DateTime @default(now())
-    updatedAt         DateTime @updatedAt
-    isDeleted         Boolean  @default(false)
+    fieldId           String
+    value             String?
+    dropdownId        String?
+    subFieldId        String?
 
-    loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-
-    coApplicantKYCDetails CoApplicantKYCDetails?
+    loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id])
 }
 
-// ##########----------Co-Applicant KYC Details Model----------##########
-model CoApplicantKYCDetails {
-    id                  String               @id @default(uuid())
-    coApplicantId       String               @unique
-    pancard             String
-    aadharFront         String
-    aadharBack          String
-    customerPhoto       String
-    videoKycStatus      ApplicationKYCStatus @default(Pending)
-    pancardStatus       ApplicationKYCStatus @default(Pending)
-    aadharFrontStatus   ApplicationKYCStatus @default(Pending)
-    aadharBackStatus    ApplicationKYCStatus @default(Pending)
-    customerPhotoStatus ApplicationKYCStatus @default(Pending)
-    createdAt           DateTime             @default(now())
-    updatedAt           DateTime             @updatedAt
-    isDeleted           Boolean              @default(false)
-
-    coApplicantDetails CoApplicantDetails @relation(fields: [coApplicantId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Guarantor Model----------##########
-model GuarantorDetails {
-    id                String   @id @default(uuid())
+model LoanDocument {
+    id                String  @id @default(uuid())
     loanApplicationId String
-    name              String
-    mobile            String
-    email             String
-    gender            String
-    dob               DateTime
-    aadharNo          String
-    panNo             String
-    createdAt         DateTime @default(now())
-    updatedAt         DateTime @updatedAt
-    isDeleted         Boolean  @default(false)
+    type              String
+    url               String
+    verified          Boolean @default(false)
 
-    loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-
-    guarantorKYCDetails GuarantorKYCDetails?
-}
-
-// ##########----------Guarantor KYC Details Model----------##########
-model GuarantorKYCDetails {
-    id                  String               @id @default(uuid())
-    guarantorId         String               @unique
-    pancard             String
-    aadharFront         String
-    aadharBack          String
-    customerPhoto       String
-    videoKycStatus      ApplicationKYCStatus @default(Pending)
-    pancardStatus       ApplicationKYCStatus @default(Pending)
-    aadharFrontStatus   ApplicationKYCStatus @default(Pending)
-    aadharBackStatus    ApplicationKYCStatus @default(Pending)
-    customerPhotoStatus ApplicationKYCStatus @default(Pending)
-    createdAt           DateTime             @default(now())
-    updatedAt           DateTime             @updatedAt
-    isDeleted           Boolean              @default(false)
-
-    guarantorDetails GuarantorDetails @relation(fields: [guarantorId], references: [id], onDelete: Cascade)
+    loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id])
 }

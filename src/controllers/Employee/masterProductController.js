@@ -243,24 +243,42 @@ const getSubFieldsByFieldAndDropdown = asyncHandler(async (req, res) => {
 
   const subFields = await prisma.subField.findMany({
     where: {
-      dropdownId,
-      isDeleted: false,
+      dropdownId: dropdownId,
+      dropdown: {
+        fieldId: fieldId,
+      },
     },
     include: {
-      field: true,
+      field: {
+        select: {
+          id: true,
+          name: true,
+          fieldType: true,
+          dropdowns: {
+            select: {
+              id: true,
+              label: true,
+              value: true,
+            }
+          },
+        }
+      },
     },
   });
 
   const response = subFields.map((sf) => ({
     id: sf.id,
-    fieldId: sf.fieldId,
-    fieldName: sf.field.name,
+    name: sf.field.name,
     fieldType: sf.field.fieldType,
+    dropdowns: sf.field.dropdowns.map((dd) => ({
+      id: dd.id,
+      label: dd.label,
+      value: dd.value,
+    })),
   }));
 
   return res.respond(200, "SubFields fetched successfully!", response);
 });
-
 
 module.exports = {
   getMasterProductsForCustomer,
