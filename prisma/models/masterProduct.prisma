@@ -121,6 +121,7 @@ model MasterProduct {
     MasterProductSegment       MasterProductSegment[]
     MasterProductDeleteRequest MasterProductDeleteRequest[]
     MasterProductField         MasterProductField[]
+    LoanApplication            LoanApplication[]
 }
 
 // ##########----------Master Product Purpose Model----------##########
@@ -254,6 +255,7 @@ model Field {
     dropdowns           Dropdown[]
     subFields           SubField[]
     masterProductFields MasterProductField[]
+    LoanFieldValue LoanFieldValue[]
 }
 
 // ##########----------Product Field Dropdown Model----------##########
@@ -269,6 +271,7 @@ model Dropdown {
     field Field @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 
     subFields SubField[]
+    LoanFieldValue LoanFieldValue[]
 }
 
 // ##########----------Sub-Field Mapping----------##########
@@ -282,6 +285,8 @@ model SubField {
 
     dropdown Dropdown @relation(fields: [dropdownId], references: [id], onDelete: Cascade)
     field    Field    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+    
+    LoanFieldValue LoanFieldValue[]
 }
 
 // ##########----------Field Category Model----------##########

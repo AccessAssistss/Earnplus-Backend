@@ -109,38 +109,42 @@ const generateUniqueRuleBookId = async (prisma, contractCombinationUUID, contrac
   return `RULE-${contractCombinationUniqueId}-${sequence}`;
 };
 
-// ###############---------------Generate Unique Loan ID---------------###############
-const generateLoanID = async (variantId) => {
-  const prefix = `LN-${variantId}`;
+// ###############---------------Generate Unique Loan Application Code---------------###############
+const generateUniqueLoanCode = async (productId, customerId) => {
+  if (!productId || !customerId) {
+    throw new Error("Both productId and customerId are required");
+  }
+
+  const prefix = `LN-${productId}-${customerId}`;
 
   const latestLoan = await prisma.loanApplication.findFirst({
     where: {
-      loanID: {
-        startsWith: `${prefix}-`
-      }
+      loanCode: {
+        startsWith: prefix,
+      },
     },
     orderBy: {
-      createdAt: 'desc'
+      createdAt: "desc",
     },
     select: {
-      loanID: true
-    }
+      loanCode: true,
+    },
   });
 
   let nextNumber = 1;
 
-  if (latestLoan) {
-    const parts = latestLoan.loanID.split("-");
-    const currentNum = parseInt(parts[2]);
+  if (latestLoan?.loanCode) {
+    const parts = latestLoan.loanCode.split("-");
+    const lastPart = parts[parts.length - 1];
+    const currentNum = parseInt(lastPart, 10);
     if (!isNaN(currentNum)) {
       nextNumber = currentNum + 1;
     }
   }
 
-  const newLoanID = `${prefix}-${String(nextNumber).padStart(4, "0")}`;
-  return newLoanID;
+  const newLoanCode = `${prefix}-${String(nextNumber).padStart(3, "0")}`;
+  return newLoanCode;
 };
-
 
 module.exports = {
   generateProductCode,
@@ -148,5 +152,6 @@ module.exports = {
   generateUniqueEmployeeId,
   generateUniqueEmployerId,
   generateUniqueContractCombinationId,
-  generateUniqueRuleBookId
+  generateUniqueRuleBookId,
+  generateUniqueLoanCode
 };

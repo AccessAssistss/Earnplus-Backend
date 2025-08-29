@@ -28,7 +28,6 @@ model VariantProduct {
     AllocateProductToEmployer      AllocateProductToEmployer[]
     queries                        RaiseQuery[]
     VariantProductDeleteRequest    VariantProductDeleteRequest[]
-    LoanApplication                LoanApplication[]
 }
 
 // ##########----------Variant Product Parameter Model----------##########
