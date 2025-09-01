@@ -28,6 +28,9 @@ model AssociateSubAdmin {
     MasterProductDeleteRequest  MasterProductDeleteRequest[]
     VariantProductDeleteRequest VariantProductDeleteRequest[]
     VariantProductUpdateRequest VariantProductUpdateRequest[]
+    LoanApplication             LoanApplication[]
+    LoanAssignmentRule          LoanAssignmentRule[]
+    LoanApplicationAssignment   LoanApplicationAssignment[]
 }
 
 // ##########----------Sub-Admin Modules Model----------##########

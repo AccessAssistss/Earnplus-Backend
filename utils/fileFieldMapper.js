@@ -10,8 +10,12 @@ const MODULE_FILE_FIELDS = {
   icon: "icon",
 };
 
+const LOAN_FILE_FIELDS = {
+  doc: "doc",
+};
 
 module.exports = {
   EMPLOYER_FILE_FIELDS,
-  MODULE_FILE_FIELDS
+  MODULE_FILE_FIELDS,
+  LOAN_FILE_FIELDS
 };

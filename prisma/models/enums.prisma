@@ -28,10 +28,12 @@ enum MaritalStatus {
 
 enum LoanStatus {
   PENDING
+  OPS_REVIEWED
+  CREDIT_ASSIGNED
+  APPROVAL_PENDING
   APPROVED
   REJECTED
-  DISBURSED
-  CLOSED
+  FINANCE_VERIFIED
 }
 
 enum ApplicationKYCStatus {

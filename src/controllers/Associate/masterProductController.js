@@ -42,7 +42,7 @@ const createMasterProduct = asyncHandler(async (req, res) => {
     },
   });
 
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can create products.");
   }
 
@@ -170,7 +170,7 @@ const createFinancialTerms = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can create Financial Terms.");
   }
 
@@ -239,7 +239,7 @@ const createEligibilityCriteria = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can create Eligibility Criteria.");
   }
 
@@ -298,7 +298,7 @@ const createCreditBureauConfig = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can create Credit Bureau Config.");
   }
 
@@ -349,7 +349,7 @@ const createMasterProductOtherCharges = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(
       403,
       "Only Product Managers can create variant products."
@@ -409,7 +409,7 @@ const createMasterProductFields = asyncHandler(async (req, res) => {
     },
   });
 
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can create product fields.");
   }
 
@@ -456,7 +456,7 @@ const getAllMasterProducts = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can get products.");
   }
 
@@ -527,7 +527,7 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
     },
   });
 
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can create products.");
   }
 
@@ -717,7 +717,7 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can create products.");
   }
 
