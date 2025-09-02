@@ -37,13 +37,14 @@ model LoanFieldValue {
 // ##########----------Loan Assignment Rule Model----------##########
 model LoanAssignmentRule {
   id              String            @id @default(uuid())
+  creditManagerId String
   minScore        Int
   maxScore        Int
   chainOrder      Int
-  creditManagerId String
+  createdAt DateTime @default(now())
+  
   creditManager   AssociateSubAdmin @relation(fields: [creditManagerId], references: [id])
 
-  createdAt DateTime @default(now())
 }
 
 model LoanApplicationAssignment {
