@@ -9,11 +9,12 @@ model CustomUser {
     accessToken       String?
     refreshToken      String?
 
-    associates        Associate?
-    employers         Employer?
-    employees         Employee?
-    employerSubAdmin  EmployerSubAdmin?
-    associateSubAdmin AssociateSubAdmin?
+    associates             Associate?
+    employers              Employer?
+    employees              Employee?
+    employerSubAdmin       EmployerSubAdmin?
+    associateSubAdmin      AssociateSubAdmin?
+    LoanApplicationHistory LoanApplicationHistory[]
 }
 
 // ####################--------------------Country, State and District Model--------------------####################

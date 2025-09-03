@@ -26,16 +26,6 @@ enum MaritalStatus {
   Divorced
 }
 
-enum LoanStatus {
-  PENDING
-  OPS_REVIEWED
-  CREDIT_ASSIGNED
-  APPROVAL_PENDING
-  APPROVED
-  REJECTED
-  FINANCE_VERIFIED
-}
-
 enum ApplicationKYCStatus {
   Pending
   Approved
@@ -257,4 +247,40 @@ enum FieldType {
   String
   Boolean
   File
+}
+
+// ##########----------Loan Enums----------##########
+enum CustomerLoanStatus {
+  PENDING
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+  DISBURSED
+  CLOSED
+}
+
+enum InternalLoanStatus {
+  OPS_PENDING
+  OPS_REVIEWED
+  CREDIT_ASSIGNED
+  AWAITING_CM
+  AWAITING_FINANCE
+  APPROVAL_PENDING
+  APPROVED
+  REJECTED
+}
+
+enum LoanLifecycleStatus {
+  NOT_DISBURSED
+  DISBURSED
+  ACTIVE
+  OVERDUE
+  CLOSED
+  WRITTEN_OFF
+}
+
+enum AssignmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
