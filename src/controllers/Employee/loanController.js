@@ -358,6 +358,66 @@ const getLoansByCustomer = asyncHandler(async (req, res) => {
     res.respond(200, "Customer Loan Applications fetched successfully!", loans);
 });
 
+// ##########----------Get Loan Details By Customer----------##########
+const getLoansDeatilsByCustomer = asyncHandler(async (req, res) => {
+    const customerId = req.user;
+    const { loanApplicationId } = req.params;
+
+    const customer = await prisma.employee.findFirst({
+        where: { userId: customerId, isDeleted: false },
+    });
+    if (!customer) {
+        return res.respond(404, "Customer not found.");
+    }
+
+    const loans = await prisma.loanApplication.findFirst({
+        where: { id: loanApplicationId, customerId: customer.id },
+        include: {
+            masterProduct: {
+                select: {
+                    id: true,
+                    productId: true,
+                    loanType: true,
+                    productName: true,
+                    productDescription: true,
+                }
+            }
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    res.respond(200, "Customer Loan Applications fetched successfully!", loans);
+});
+
+// ##########----------Get Loan History By Customer----------##########
+const getLoanHistoryByCustomer = asyncHandler(async (req, res) => {
+    const customerId = req.user;
+
+    const customer = await prisma.employee.findFirst({
+        where: { userId: customerId, isDeleted: false },
+    });
+    if (!customer) {
+        return res.respond(404, "Customer not found.");
+    }
+
+    const loans = await prisma.loanApplication.findMany({
+        where: { customerId: customer.id, customerStatus: "CLOSED" },
+        include: {
+            masterProduct: {
+                select: {
+                    id: true,
+                    productName: true,
+                    productId: true,
+                    productDescription: true,
+                }
+            }
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    res.respond(200, "Customer Loan Applications fetched successfully!", loans);
+});
+
 // ##########----------Get Loans By Associate SubAdmin----------##########
 const getLoansByAssociateSubadmin = asyncHandler(async (req, res) => {
     const userId = req.user;
@@ -405,31 +465,31 @@ const getLoansByAssociateSubadmin = asyncHandler(async (req, res) => {
 
 // ##########----------Get Loans Logs----------##########
 const getLoanLogs = asyncHandler(async (req, res) => {
-  const { loanApplicationId } = req.params;
+    const { loanApplicationId } = req.params;
 
-  if (!loanApplicationId) {
-    return res.respond(400, "loanApplicationId is required");
-  }
+    if (!loanApplicationId) {
+        return res.respond(400, "loanApplicationId is required");
+    }
 
-  const history = await prisma.loanApplicationHistory.findMany({
-    where: { loanApplicationId },
-    include: {
-      performedBy: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
+    const history = await prisma.loanApplicationHistory.findMany({
+        where: { loanApplicationId },
+        include: {
+            performedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                },
+            },
         },
-      },
-    },
-    orderBy: { createdAt: "asc" },
-  });
+        orderBy: { createdAt: "asc" },
+    });
 
-  if (!history.length) {
-    return res.respond(404, "No history found for this application");
-  }
+    if (!history.length) {
+        return res.respond(404, "No history found for this application");
+    }
 
-  return res.respond(200, "Loan history fetched successfully", history);
+    return res.respond(200, "Loan history fetched successfully", history);
 });
 
 module.exports = {
@@ -439,6 +499,8 @@ module.exports = {
     assignLoanToCreditManager,
     approveLoanStep,
     getLoansByCustomer,
+    getLoansDeatilsByCustomer,
+    getLoanHistoryByCustomer,
     getLoansByAssociateSubadmin,
     getLoanLogs
 };

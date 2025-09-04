@@ -1,6 +1,6 @@
 const express = require("express");
 const validateToken = require("../../../middleware/validateJwtToken");
-const { applyLoan, getLoansByCustomer, getLoansByAssociateSubadmin, uploadDocs, assignLoanToCreditManager, approveLoanStep, rejectLoanByOpsManager, getLoanLogs } = require("../../controllers/Employee/loanController");
+const { applyLoan, getLoansByCustomer, getLoansByAssociateSubadmin, uploadDocs, assignLoanToCreditManager, approveLoanStep, rejectLoanByOpsManager, getLoanLogs, getLoansDeatilsByCustomer, getLoanHistoryByCustomer } = require("../../controllers/Employee/loanController");
 const multerErrorHandler = require("../../../middleware/multerErrorHandler");
 const createUploadMiddleware = require("../../../middleware/upload");
 const { LOAN_FILE_FIELDS } = require("../../../utils/fileFieldMapper")
@@ -17,6 +17,8 @@ router.post("/rejectLoanByOpsManager/:loanApplicationId", validateToken, rejectL
 router.post("/assignLoanToCreditManager/:loanApplicationId", validateToken, assignLoanToCreditManager);
 router.post("/approveLoanStep/:loanApplicationId", validateToken, approveLoanStep);
 router.get("/getLoansByCustomer", validateToken, getLoansByCustomer);
+router.get("/getLoansDeatilsByCustomer/:loanApplicationId", validateToken, getLoansDeatilsByCustomer);
+router.get("/getLoanHistoryByCustomer", validateToken, getLoanHistoryByCustomer);
 router.get("/getLoansByAssociateSubadmin", validateToken, getLoansByAssociateSubadmin);
 router.get("/getLoanLogs/:loanApplicationId", validateToken, getLoanLogs);
 
