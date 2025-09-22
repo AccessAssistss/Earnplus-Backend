@@ -13,6 +13,7 @@ const {
   getEmployeeBanks,
   getEmployeeProfile,
   updateEmployeeProfile,
+  cardController,
 } = require("../../controllers/Employee/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -35,5 +36,6 @@ router.patch("/handleVerifyAadhaarOtp", validateToken, handleVerifyAadhaarOtp);
 router.patch("/verifyEmployeePan", validateToken, verifyEmployeePan);
 router.patch("/faceLiveliness", validateToken, faceLiveliness);
 router.patch("/checkEmployeePanStatus", validateToken, checkEmployeePanStatus);
+router.get("/cardController", cardController);
 
 module.exports = router;

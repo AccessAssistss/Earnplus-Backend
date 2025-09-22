@@ -9,7 +9,7 @@ export async function logLoanHistory(tx, loanApplicationId, performedById, actio
   });
 }
 
-export async function safeCreateAssignment(tx, loanApplicationId, creditManagerId, sequenceOrder) {
+export async function safeCreateAssignment(tx, loanApplicationId, creditManagerId, sequenceOrder, active) {
   const exists = await tx.loanApplicationAssignment.findFirst({
     where: { loanApplicationId, creditManagerId, isDeleted: false },
   });
@@ -20,6 +20,7 @@ export async function safeCreateAssignment(tx, loanApplicationId, creditManagerI
         creditManagerId,
         sequenceOrder,
         status: "PENDING",
+        active
       },
     });
   }

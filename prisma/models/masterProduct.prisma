@@ -112,16 +112,17 @@ model MasterProduct {
     creditBureauConfig        CreditBureauConfig?
     masterProductOtherCharges MasterProductOtherCharges?
 
-    MasterProductPurpose       MasterProductPurpose[]
-    FinancialDisbursementMode  FinancialDisbursementMode[]
-    FinancialRepaymentMode     FinancialRepaymentMode[]
-    VariantProduct             VariantProduct[]
-    MasterProductUpdateRequest MasterProductUpdateRequest[]
-    MasterProductVersion       MasterProductVersion[]
-    MasterProductSegment       MasterProductSegment[]
-    MasterProductDeleteRequest MasterProductDeleteRequest[]
-    MasterProductField         MasterProductField[]
-    LoanApplication            LoanApplication[]
+    MasterProductPurpose        MasterProductPurpose[]
+    FinancialDisbursementMode   FinancialDisbursementMode[]
+    FinancialRepaymentMode      FinancialRepaymentMode[]
+    VariantProduct              VariantProduct[]
+    MasterProductUpdateRequest  MasterProductUpdateRequest[]
+    MasterProductVersion        MasterProductVersion[]
+    MasterProductSegment        MasterProductSegment[]
+    MasterProductDeleteRequest  MasterProductDeleteRequest[]
+    MasterProductField          MasterProductField[]
+    LoanApplication             LoanApplication[]
+    ProductCreditAssignmentRule ProductCreditAssignmentRule[]
 }
 
 // ##########----------Master Product Purpose Model----------##########
@@ -255,7 +256,7 @@ model Field {
     dropdowns           Dropdown[]
     subFields           SubField[]
     masterProductFields MasterProductField[]
-    LoanFieldValue LoanFieldValue[]
+    LoanFieldValue      LoanFieldValue[]
 }
 
 // ##########----------Product Field Dropdown Model----------##########
@@ -270,7 +271,7 @@ model Dropdown {
 
     field Field @relation(fields: [fieldId], references: [id], onDelete: Cascade)
 
-    subFields SubField[]
+    subFields      SubField[]
     LoanFieldValue LoanFieldValue[]
 }
 
@@ -285,7 +286,7 @@ model SubField {
 
     dropdown Dropdown @relation(fields: [dropdownId], references: [id], onDelete: Cascade)
     field    Field    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-    
+
     LoanFieldValue LoanFieldValue[]
 }
 
@@ -311,6 +312,22 @@ model MasterProductField {
     Field         Field          @relation(fields: [fieldId], references: [id], onDelete: Cascade)
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
     category      FieldCategory? @relation(fields: [categoryId], references: [id])
+}
+
+// ##########----------Product Credit Assignment Rule Model----------##########
+model ProductCreditAssignmentRule {
+    id              String   @id @default(uuid())
+    masterProductId String
+    creditManagerId String
+    minScore        Int
+    maxScore        Int
+    chainOrder      Int
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @default(now()) @updatedAt
+    isDeleted       Boolean  @default(false)
+
+    masterProduct MasterProduct     @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    creditManager AssociateSubAdmin @relation(fields: [creditManagerId], references: [id])
 }
 
 // ##########----------Master Product Version Model----------##########

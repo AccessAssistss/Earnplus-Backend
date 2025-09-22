@@ -4,7 +4,7 @@ const { createAssignmentRule, getAssignmentRules, updateAssignmentRule, deleteAs
 const router = express.Router();
 
 router.post("/createAssignmentRule", createAssignmentRule);
-router.get("/getAssignmentRules", getAssignmentRules);
+router.get("/getAssignmentRules/:masterProductId", getAssignmentRules);
 router.put("/updateAssignmentRule/:id", updateAssignmentRule);
 router.delete("/deleteAssignmentRule/:id", deleteAssignmentRule);
 

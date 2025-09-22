@@ -140,7 +140,10 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
     return res.respond(200, `Test user OTP verified successfully!`, {
       otp,
-      isExistingEmployee,
+      isEmployerPart: false,
+      isEmployerScreen: employee.isEmployerScreen,
+      isEmployerLinked: employee.isEmployerLinked,
+      isExistingUser: employee.isExistingUser,
       accessToken,
       refreshToken,
     });
@@ -655,6 +658,17 @@ const faceLiveliness = asyncHandler(async (req, res) => {
   }
 });
 
+const cardController = asyncHandler(async (req, res) => {
+  const today = new Date();
+  const nextPayDate = new Date(today.setDate(today.getDate() + 4));
+
+    res.respond(
+      200,
+      "Card Fetched successfully!",
+      { totalAmount: 10000, withdrawlAmount: 7500, nextPayDate }
+    );
+});
+
 module.exports = {
   sendUserOTP,
   verifyOTP,
@@ -668,5 +682,6 @@ module.exports = {
   handleVerifyAadhaarOtp,
   verifyEmployeePan,
   checkEmployeePanStatus,
-  faceLiveliness
+  faceLiveliness,
+  cardController
 };

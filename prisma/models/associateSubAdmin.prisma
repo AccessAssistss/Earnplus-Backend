@@ -31,6 +31,7 @@ model AssociateSubAdmin {
     LoanApplication             LoanApplication[]
     LoanAssignmentRule          LoanAssignmentRule[]
     LoanApplicationAssignment   LoanApplicationAssignment[]
+    ProductCreditAssignmentRule ProductCreditAssignmentRule[]
 }
 
 // ##########----------Sub-Admin Modules Model----------##########

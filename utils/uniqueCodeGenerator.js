@@ -111,9 +111,6 @@ const generateUniqueRuleBookId = async (prisma, contractCombinationUUID, contrac
 
 // ###############---------------Generate Unique Loan Application Code---------------###############
 const generateUniqueLoanCode = async (productId, customerId) => {
-  if (!productId || !customerId) {
-    throw new Error("Both productId and customerId are required");
-  }
 
   const prefix = `LN-${productId}-${customerId}`;
 

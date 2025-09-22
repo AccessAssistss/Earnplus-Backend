@@ -12,7 +12,7 @@ model LoanApplication {
   loanStatus     LoanLifecycleStatus @default(NOT_DISBURSED)
 
   createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
+  updatedAt DateTime @updatedAt
   isDeleted Boolean  @default(false)
 
   employee                  Employee                    @relation(fields: [customerId], references: [id])
@@ -32,7 +32,7 @@ model LoanFieldValue {
   subFieldId    String?
   value         String?
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @default(now()) @updatedAt
+  updatedAt     DateTime @updatedAt
   isDeleted     Boolean  @default(false)
 
   field           Field           @relation(fields: [fieldId], references: [id])
@@ -49,7 +49,7 @@ model LoanAssignmentRule {
   maxScore        Int
   chainOrder      Int
   createdAt       DateTime @default(now())
-  updatedAt       DateTime @default(now()) @updatedAt
+  updatedAt       DateTime @updatedAt
   isDeleted       Boolean  @default(false)
 
   creditManager AssociateSubAdmin @relation(fields: [creditManagerId], references: [id])
@@ -63,8 +63,10 @@ model LoanApplicationAssignment {
   sequenceOrder     Int
   status            AssignmentStatus @default(PENDING)
   remarks           String?
+  blockedUntilOps   Boolean          @default(false)
   createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @default(now()) @updatedAt
+  updatedAt         DateTime         @updatedAt
+  isDeleted       Boolean  @default(false)
 
   loanApplication LoanApplication   @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
   creditManager   AssociateSubAdmin @relation(fields: [creditManagerId], references: [id])

@@ -100,7 +100,6 @@ const getCrifReport = async () => {
       }
     );
 
-    // Response from CRIF
     return response.data;
   } catch (error) {
     console.error("Error fetching CRIF report:", error.response?.data || error.message);
