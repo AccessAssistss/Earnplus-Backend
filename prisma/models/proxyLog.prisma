@@ -1,0 +1,14 @@
+model ProxyLog {
+  id             String   @id @default(uuid())
+  partner        String
+  serviceName    String
+  endpoint       String
+  method         String
+  proxyKey       String
+  requestBody    Json
+  responseStatus Int?
+  responseBody   Json?
+  error          String?
+  
+  createdAt      DateTime  @default(now())
+}

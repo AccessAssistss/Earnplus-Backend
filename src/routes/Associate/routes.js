@@ -30,5 +30,6 @@ router.use("/dropdown", require("./dropdownRoute"));
 router.use("/subField", require("./subFieldRoute"));
 router.use("/fieldCategory", require("./fieldCategoryRoute"));
 router.use("/assignmentRule", require("./assignmentRulesRoute"));
+// router.use("/credential", require("./credentialRoute"));
 
 module.exports = router;

@@ -2,101 +2,85 @@ const axios = require("axios");
 
 const getCrifReport = async () => {
   try {
-    const response = await axios.post(
-      "https://test.crifhighmark.com/Inquiry/doGet.serviceJson/CIRProServiceSynchJson",
-      {
-        "REQUEST-FILE": {
-          "HEADER-SEGMENT": {
-            "PRODUCT-TYPE": "CIR PRO V2",
-            "PRODUCT-VER": "2.0",
-            "USER-ID": "jaspreet_uat_cirpro@l2gfincap.in",
-            "USER-PWD": "0070617196139C9B94BBD6ED0028FE044B74AD70",
-            "REQ-MBR": "NBF0003513",
-            "INQ-DT-TM": "15-05-2018 11:1",
-            "REQ-VOL-TYPE": "C04",
-            "REQ-ACTN-TYPE": "AT01",
-            "AUTH-FLG": "Y",
-            "AUTH-TITLE": "USER",
-            "RES-FRMT": "HTML",
-            "MEMBER-PREF-OVERRIDE": "N",
-            "RES-FRMT-EMBD": "N",
-            "LOS-NAME": "INHOUSE",
-            "LOS-VENDOR": "",
-            "LOS-VERSION": "",
-            "REQ-SERVICES-TYPE": "CIR",
-          },
-          "INQUIRY": {
-            "APPLICANT-SEGMENT": {
-              "APPLICANT-ID": "117872334422",
-              "FIRST-NAME": "ALAM",
-              "MIDDLE-NAME": "",
-              "LAST-NAME": "SINGH",
-              "DOB": {
-                "DOB-DT": "15-06-1982",
-                "AGE": "",
-                "AGE-AS-ON": "",
-              },
-              "RELATIONS": [
-                {
-                  "TYPE": "K01",
-                  "VALUE": "",
-                },
-              ],
-              "IDS": [
-                {
-                  "TYPE": "ID07",
-                  "VALUE": "KGIPE5241U",
-                },
-              ],
-              "ADDRESSES": [
-                {
-                  "TYPE": "D05",
-                  "ADDRESS-TEXT": "R 57 GREATER KAILASH I SOUTH ",
-                  "CITY": "DELHI",
-                  "STATE": "DL",
-                  "LOCALITY": "",
-                  "PIN": "110048",
-                  "COUNTRY": "INDIA",
-                },
-              ],
-              "PHONES": [
-                {
-                  "TYPE": "P04",
-                  "VALUE": "6612484145",
-                },
-              ],
-              "EMAILS": [{ "EMAIL": "" }],
-              "ACCOUNT-NUMBER": "",
-            },
-            "APPLICATION-SEGMENT": {
-              "INQUIRY-UNIQUE-REF-NO": "7869",
-              "CREDIT-RPT-ID": "",
-              "CREDIT-RPT-TRN-DT-TM": "12:00",
-              "CREDIT-INQ-PURPS-TYPE": "CP06",
-              "CREDIT-INQUIRY-STAGE": "COLLECTION",
-              "CLIENT-CONTRIBUTOR-ID": "PRB0000003",
-              "BRANCH-ID": "",
-              "APPLICATION-ID": "8092017181742",
-              "ACNT-OPEN-DT": "",
-              "LOAN-AMT": "500000",
-              "LTV": "12.3",
-              "TERM": "234",
-              "LOAN-TYPE": "A01",
-              "LOAN-TYPE-DESC": "",
-            },
-          },
+    const requestBody = {
+      "REQUEST-FILE": {
+        "HEADER-SEGMENT": {
+          "PRODUCT-TYPE": "CIR PRO V2",
+          "PRODUCT-VER": "2.0",
+          "USER-ID": "jaspreet_prd_cirpro@l2gfincap.in",
+          "USER-PWD": "A450AC81B3AC8DC04EDBC8C3FB40E3BE4EE44553",
+          "REQ-MBR": "NBF0005125",
+          "REQ-VOL-TYPE": "C04",        // volume type required
+          "REQ-ACTN-TYPE": "AT01",      // action type required
+          "INQ-DT-TM": "23-09-2025 12:00", // current date-time
+          "AUTH-FLG": "Y",
+          "AUTH-TITLE": "USER",
+          "RES-FRMT": "HTML",
+          "LOS-NAME": "INHOUSE",
+          "REQ-SERVICES-TYPE": "CIR"
         },
-      },
+        "INQUIRY": {
+          "APPLICANT-SEGMENT": {
+            "APPLICANT-ID": "117872334422",
+            "FIRST-NAME": "Sushil",
+            "MIDDLE-NAME": "",
+            "LAST-NAME": "Kumar",
+            "DOB": {
+              "DOB-DT": "28-03-2002"
+            },
+            // "RELATIONS": [
+            //   { "TYPE": "K01", "VALUE": "" }
+            // ],
+            "IDS": [
+              { "TYPE": "ID07", "VALUE": "JYGPK3476K" } // PAN
+            ],
+            "ADDRESSES": [
+              {
+                "TYPE": "D05",
+                "ADDRESS-TEXT": "445, street number 22, prashant enclave, baprola",
+                "CITY": "DELHI",
+                "STATE": "DL",
+                "PIN": "110043",
+                "COUNTRY": "INDIA"
+              }
+            ],
+            "PHONES": [
+              { "TYPE": "P04", "VALUE": "9318472622" }
+            ],
+            "EMAILS": [
+              { "EMAIL": "" }
+            ]
+          },
+          "APPLICATION-SEGMENT": {
+            "INQUIRY-UNIQUE-REF-NO": "7869",
+            "CREDIT-RPT-ID": "",
+            "CREDIT-RPT-TRN-DT-TM": "23-09-2025 12:00",
+            "CREDIT-INQ-PURPS-TYPE": "CP06",
+            "CREDIT-INQUIRY-STAGE": "COLLECTION",
+            "CLIENT-CONTRIBUTOR-ID": "PRB0000003",
+            "APPLICATION-ID": "8092017181742",
+            "LOAN-AMT": "500000",
+            "LTV": "12.3",
+            "TERM": "234",
+            "LOAN-TYPE": "A01"
+          }
+        }
+      }
+    };
+
+    const response = await axios.post(
+      "https://hub.crifhighmark.com/Inquiry/doGet.serviceJson/CIRProServiceSynchJson",
+      requestBody,
       {
         headers: {
-          "userId": "jaspreet_uat_cirpro@l2gfincap.in",
-          "password": "0070617196139C9B94BBD6ED0028FE044B74AD70",
-          "CUSTOMER-ID": "NBF0003513",
+          "userId": "jaspreet_prd_cirpro@l2gfincap.in",
+          "password": "A450AC81B3AC8DC04EDBC8C3FB40E3BE4EE44553",
+          "CUSTOMER-ID": "NBF0005125",
           "PRODUCT-TYPE": "CIR PRO V2",
           "PRODUCT-VER": "2.0",
           "REQ-VOL-TYPE": "C04",
           "Content-Type": "application/json",
-        },
+        }
       }
     );
 

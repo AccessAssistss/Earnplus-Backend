@@ -30,6 +30,9 @@ app.get("/", (req, res) => {
   });
 });
 
+// Microservice Routes
+app.use("/jhatpat", require("./src/microservices/thirdParty/jhatpat/src/routes/routes"));
+
 // API Routes
 app.use("/api/v1", require("./src/routes/routes"));
 
