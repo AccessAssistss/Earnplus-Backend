@@ -73,6 +73,7 @@ const applyLoan = asyncHandler(async (req, res) => {
                 customerStatus: "PENDING",
                 internalStatus: "OPS_PENDING",
                 loanStatus: "NOT_DISBURSED",
+                opsApproved: false,
             },
         });
 
@@ -92,15 +93,28 @@ const applyLoan = asyncHandler(async (req, res) => {
         }
 
         if (score != null) {
-            const rules = await tx.loanAssignmentRule.findMany({
+            const rules = await tx.productCreditAssignmentRule.findMany({
                 where: { masterProductId, minScore: { lte: score }, maxScore: { gte: score } },
                 orderBy: { chainOrder: "asc" },
             });
             for (let i = 0; i < rules.length; i++) {
-                await safeCreateAssignment(tx, createdApplication.id, rules[i].creditManagerId, i + 2, i === 0);
+                const isFirstCM = i === 0;
+                const isLastCM = i === rules.length - 1;
+
+                await safeCreateAssignment(tx, createdApplication.id, rules[i].creditManagerId, i + 2, isFirstCM);
                 if (i === rules.length - 1) {
                     await tx.loanApplicationAssignment.updateMany({
                         where: { loanApplicationId: createdApplication.id, creditManagerId: rules[i].creditManagerId },
+                        data: { blockedUntilOps: true },
+                    });
+                }
+
+                if (isLastCM) {
+                    await tx.loanApplicationAssignment.updateMany({
+                        where: {
+                        loanApplicationId: createdApplication.id,
+                        creditManagerId: rules[i].creditManagerId,
+                        },
                         data: { blockedUntilOps: true },
                     });
                 }
@@ -189,6 +203,14 @@ const approveLoanStep = asyncHandler(async (req, res) => {
     );
     if (!currentStep) return res.respond(403, "You are not authorised for this step or there is no pending assignment for you.");
 
+    const isLastCM =
+    currentStep.sequenceOrder ===
+    Math.max(...application.LoanApplicationAssignment.map((a) => a.sequenceOrder));
+
+    if (isLastCM && !application.opsApproved) {
+        return res.respond(400, "Ops Manager must approve before last CM approval.");
+    }
+
     const result = await prisma.$transaction(async (tx) => {
         if (decision === "REJECT") {
             await tx.loanApplicationAssignment.update({
@@ -219,24 +241,24 @@ const approveLoanStep = asyncHandler(async (req, res) => {
             a => a.sequenceOrder === currentStep.sequenceOrder + 1
         );
 
-        let newInternalStatus = application.internalStatus;
+        // let newInternalStatus = application.internalStatus;
 
-        if (!nextStep) {
-            newInternalStatus = "AWAITING_OPS";
-        } else if (nextStep.blockedUntilOps) {
-            newInternalStatus = "AWAITING_OPS";
-        } else {
-            await tx.loanApplicationAssignment.update({ where: { id: nextStep.id }, data: { active: true } });
-            newInternalStatus = "AWAITING_CM";
-        }
+        // if (!nextStep) {
+        //     newInternalStatus = "AWAITING_OPS";
+        // } else if (nextStep.blockedUntilOps) {
+        //     newInternalStatus = "AWAITING_OPS";
+        // } else {
+        //     await tx.loanApplicationAssignment.update({ where: { id: nextStep.id }, data: { active: true } });
+        //     newInternalStatus = "AWAITING_CM";
+        // }
 
-        await tx.loanApplication.update({
-            where: { id: loanApplicationId },
-            data: {
-                internalStatus: newInternalStatus,
-                approverId: nextStep ? nextStep.creditManagerId : null,
-            },
-        });
+        // await tx.loanApplication.update({
+        //     where: { id: loanApplicationId },
+        //     data: {
+        //         internalStatus: newInternalStatus,
+        //         approverId: nextStep ? nextStep.creditManagerId : null,
+        //     },
+        // });
 
         await logLoanHistory(tx, loanApplicationId, userId, "APPROVED", "Step approved");
 
@@ -263,14 +285,14 @@ const approveByOpsManager = asyncHandler(async (req, res) => {
     if (!application) return res.respond(404, "Loan Application not found!");
 
     await prisma.$transaction(async (tx) => {
+        await tx.loanApplication.update({
+        where: { id: loanApplicationId },
+        data: { opsApproved: true },
+        });
+
         await tx.loanApplicationAssignment.updateMany({
             where: { loanApplicationId, blockedUntilOps: true },
             data: { blockedUntilOps: false, active: true },
-        });
-
-        await tx.loanApplication.update({
-            where: { id: loanApplicationId },
-            data: { internalStatus: "AWAITING_CM" },
         });
 
         await logLoanHistory(tx, loanApplicationId, userId, "OPS_APPROVED", "OPS approved and unblocked last CM");
@@ -293,16 +315,28 @@ const assignToSeniorOps = asyncHandler(async (req, res) => {
         return res.respond(403, "Only Junior Ops can assign to Senior Ops.");
     }
 
+    const application = await prisma.loanApplication.findFirst({
+        where: { id: loanApplicationId },
+        include: { LoanApplicationAssignment: true },
+    });
+    if (!application) return res.respond(404, "Loan Application not found.");
+
+    if (["REJECTED"].includes(application.internalStatus)) {
+        return res.respond(400, "Cannot assign rejected application.");
+    }
+
+    const allCMsApproved = application.LoanApplicationAssignment.filter(
+        (a) => a.creditManagerId
+    ).every((a) => a.status === "APPROVED");
+
+    if (!allCMsApproved || !application.opsApproved) {
+        return res.respond(400, "All CMs and Ops must approve before Senior Ops.");
+    }
+
     const seniorOps = await prisma.associateSubAdmin.findFirst({
         where: { role: { roleName: "SENIOR_OPS_MANAGER" }, isDeleted: false },
     });
     if (!seniorOps) return res.respond(404, "Senior Ops not found.");
-
-    const application = await prisma.loanApplication.findFirst({ where: { id: loanApplicationId } });
-    if (!application) return res.respond(404, "Loan Application not found.");
-    if (["REJECTED"].includes(application.internalStatus)) {
-        return res.respond(400, "Cannot assign rejected application.");
-    }
 
     await prisma.loanApplication.update({
         where: { id: loanApplicationId },
@@ -510,7 +544,7 @@ const getLoansByAssociateSubadmin = asyncHandler(async (req, res) => {
     const userId = req.user;
 
     const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
-        where: { userId, isDeleted: false, role: { roleName: { in: ["OPS_MANAGER", "SENIOR_OPS_MANAGER", "CREDIT_MANAGER"] } } },
+        where: { userId, isDeleted: false, role: { roleName: { in: ["OPS_MANAGER", "SENIOR_OPS_MANAGER", "CM1", "CM2", "CM3"] } } },
         include: { role: true },
     });
     if (!associateSubAdmin) {
@@ -519,7 +553,13 @@ const getLoansByAssociateSubadmin = asyncHandler(async (req, res) => {
 
     const loans = await prisma.loanApplication.findMany({
         where: {
-            approverId: associateSubAdmin.id,
+            isDeleted: false,
+            LoanApplicationAssignment: {
+                some: {
+                    creditManagerId: associateSubAdmin.id,
+                    status: "PENDING",
+                },
+            },
             internalStatus: { in: ["OPS_PENDING", "AWAITING_CM", "AWAITING_FINANCE"] },
         },
         include: {
@@ -529,13 +569,20 @@ const getLoansByAssociateSubadmin = asyncHandler(async (req, res) => {
                     productId: true,
                     productCode: true,
                     productDescription: true,
-                }
+                },
             },
             fieldValues: {
-                include: {
+                    include: {
                     field: true,
                     dropdown: true,
                     subField: true,
+                },
+            },
+            LoanApplicationAssignment: {
+                include: {
+                    creditManager: {
+                        select: { id: true, userId: true, roleId: true },
+                    },
                 },
             },
         },

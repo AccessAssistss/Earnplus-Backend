@@ -13,6 +13,7 @@ model LoanApplication {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  opsApproved Boolean  @default(false)
   isDeleted Boolean  @default(false)
 
   employee                  Employee                    @relation(fields: [customerId], references: [id])
@@ -64,6 +65,7 @@ model LoanApplicationAssignment {
   status            AssignmentStatus @default(PENDING)
   remarks           String?
   blockedUntilOps   Boolean          @default(false)
+  active       Boolean  @default(false)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
   isDeleted       Boolean  @default(false)
