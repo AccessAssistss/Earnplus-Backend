@@ -5,42 +5,15 @@ const { logLoanHistory, safeCreateAssignment } = require("../../../helper/loanFu
 
 const prisma = new PrismaClient();
 
-// ##########----------Upload Loan Documents----------##########
-const uploadDocs = asyncHandler(async (req, res) => {
-    const userId = req.user;
-
-    const customer = await prisma.employee.findFirst({
-        where: { userId, isDeleted: false },
-    });
-    if (!customer) {
-        return res.respond(404, "Customer not found.");
-    }
-
-    const doc = req.files?.doc?.[0];
-
-    const docUrl = doc
-        ? `/uploads/loan/doc/${doc.filename}`
-        : null;
-
-    res.respond(201, "Document uploaded successfully!", { imageUrl: docUrl });
-});
-
-// ##########----------Apply Loan----------##########
+// ##########----------Apply Loan (Customer)----------##########
 const applyLoan = asyncHandler(async (req, res) => {
-    const customerId = req.user
+    const customerId = req.user;
     const { masterProductId } = req.params;
     const { values, score } = req.body;
 
     if (!masterProductId) return res.respond(400, "Master Product Id is required.");
     if (!Array.isArray(values) || values.length === 0) {
         return res.respond(400, "Values must be a non-empty array.");
-    }
-
-    for (const v of values) {
-        if (!v.fieldId) return res.respond(400, "Each value must include fieldId.");
-        if (v.subFieldId && !v.dropdownId) {
-            return res.respond(400, `subFieldId (${v.subFieldId}) cannot exist without dropdownId.`);
-        }
     }
 
     const customer = await prisma.employee.findFirst({
@@ -53,15 +26,11 @@ const applyLoan = asyncHandler(async (req, res) => {
     });
     if (!product) return res.respond(404, "Master Product not found.");
 
-    const { createdApplication, assignedTo } = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
         const loanCode = await generateUniqueLoanCode(
             product.productId,
             customer.customEmployeeId
         );
-
-        const opsManager = await tx.associateSubAdmin.findFirst({
-            where: { role: { roleName: "OPS_MANAGER" }, isActive: true, isDeleted: false },
-        });
 
         const createdApplication = await tx.loanApplication.create({
             data: {
@@ -69,7 +38,6 @@ const applyLoan = asyncHandler(async (req, res) => {
                 productId: masterProductId,
                 loanCode,
                 score: score ?? null,
-                approverId: opsManager ? opsManager.id : null,
                 customerStatus: "PENDING",
                 internalStatus: "OPS_PENDING",
                 loanStatus: "NOT_DISBURSED",
@@ -88,109 +56,89 @@ const applyLoan = asyncHandler(async (req, res) => {
             await tx.loanFieldValue.createMany({ data: fieldValuesData });
         }
 
+        const opsManager = await tx.associateSubAdmin.findFirst({
+            where: { 
+                role: { roleName: "OPS_MANAGER" }, 
+                isActive: true, 
+                isDeleted: false 
+            },
+        });
+
+        const assignments = [];
+        let sequenceOrder = 1;
+
         if (opsManager) {
-            await safeCreateAssignment(tx, createdApplication.id, opsManager.id, 1, true);
+            assignments.push({
+                loanApplicationId: createdApplication.id,
+                creditManagerId: opsManager.id,
+                sequenceOrder: sequenceOrder++,
+                status: "PENDING",
+                active: true,
+                blockedUntilOps: false
+            });
         }
 
         if (score != null) {
             const rules = await tx.productCreditAssignmentRule.findMany({
-                where: { masterProductId, minScore: { lte: score }, maxScore: { gte: score } },
+                where: {
+                    masterProductId,
+                    minScore: { lte: score },
+                    maxScore: { gte: score },
+                    isDeleted: false
+                },
                 orderBy: { chainOrder: "asc" },
             });
-            for (let i = 0; i < rules.length; i++) {
-                const isFirstCM = i === 0;
-                const isLastCM = i === rules.length - 1;
 
-                await safeCreateAssignment(tx, createdApplication.id, rules[i].creditManagerId, i + 2, isFirstCM);
-                if (i === rules.length - 1) {
-                    await tx.loanApplicationAssignment.updateMany({
-                        where: { loanApplicationId: createdApplication.id, creditManagerId: rules[i].creditManagerId },
-                        data: { blockedUntilOps: true },
-                    });
-                }
-
-                if (isLastCM) {
-                    await tx.loanApplicationAssignment.updateMany({
-                        where: {
+            if (rules.length > 0) {
+                const startingRule = rules[0];
+                
+                for (let i = 0; i < rules.length; i++) {
+                    const rule = rules[i];
+                    const isStartingCM = i === 0;
+                    const isLastCM = i === rules.length - 1;
+                    
+                    assignments.push({
                         loanApplicationId: createdApplication.id,
-                        creditManagerId: rules[i].creditManagerId,
-                        },
-                        data: { blockedUntilOps: true },
+                        creditManagerId: rule.creditManagerId,
+                        sequenceOrder: sequenceOrder++,
+                        status: "PENDING",
+                        active: isStartingCM,
+                        blockedUntilOps: isLastCM
                     });
                 }
             }
         }
 
-        await logLoanHistory(tx, createdApplication.id, customerId, "APPLIED", "Loan application submitted");
+        if (assignments.length > 0) {
+            await tx.loanApplicationAssignment.createMany({ data: assignments });
+        }
 
-        return { createdApplication, assignedTo: opsManager ? opsManager.id : null };
+        await logLoanHistory(
+            tx, 
+            createdApplication.id, 
+            customerId, 
+            "APPLIED", 
+            "Loan application submitted"
+        );
+
+        return createdApplication;
     });
 
     res.respond(201, "Loan Application Submitted Successfully!", {
-        loanApplicationId: createdApplication.id,
-        customerId,
-        masterProductId,
-        assignedTo,
+        loanApplicationId: result.id,
+        loanCode: result.loanCode
     });
 });
 
-// ##########----------Reject Loan By Operational Manager----------##########
-const rejectLoanByOpsManager = asyncHandler(async (req, res) => {
-    const userId = req.user;
-    const { loanApplicationId } = req.params;
-    const { remarks } = req.body;
-
-    const opsManager = await prisma.associateSubAdmin.findFirst({
-        where: { userId, role: { roleName: "OPS_MANAGER" }, isDeleted: false },
-    });
-    if (!opsManager) return res.respond(403, "Only Ops Managers can reject applications.");
-
-    const application = await prisma.loanApplication.findFirst({
-        where: { id: loanApplicationId, isDeleted: false },
-    });
-    if (!application) return res.respond(404, "Loan Application not found.");
-
-    if (application.internalStatus !== "OPS_PENDING") {
-        return res.respond(400, "Loan is already processed and cannot be rejected by Ops!");
-    }
-
-    await prisma.$transaction(async (tx) => {
-        await tx.loanApplicationAssignment.updateMany({
-            where: { loanApplicationId, creditManagerId: opsManager.id },
-            data: { status: "REJECTED", remarks }
-        });
-
-        await tx.loanApplication.update({
-            where: { id: loanApplicationId },
-            data: {
-                internalStatus: "REJECTED",
-                customerStatus: "REJECTED",
-                approverId: null
-            },
-        });
-
-        await logLoanHistory(tx, loanApplicationId, userId, "REJECTED", remarks || "Rejected by Ops Manager");
-    });
-
-    res.respond(200, "Loan Application rejected by Ops Manager.");
-});
-
-// ##########----------Approve Loan Step----------##########
-const approveLoanStep = asyncHandler(async (req, res) => {
+// ##########----------Unified Approval Controller----------##########
+const processLoanApproval = asyncHandler(async (req, res) => {
     const userId = req.user;
     const { loanApplicationId } = req.params;
     const { decision, remarks } = req.body;
 
-    const application = await prisma.loanApplication.findFirst({
-        where: { id: loanApplicationId, isDeleted: false },
-        include: {
-            LoanApplicationAssignment: {
-                orderBy: { sequenceOrder: 'asc' },
-                include: { creditManager: { include: { role: true } } }
-            }
-        }
-    });
-    if (!application) return res.respond(404, "Loan Application not found!");
+    if (!["APPROVE", "REJECT"].includes(decision)) {
+        return res.respond(400, "Decision must be APPROVE or REJECT");
+    }
 
     const approver = await prisma.associateSubAdmin.findFirst({
         where: { userId, isDeleted: false },
@@ -198,256 +146,494 @@ const approveLoanStep = asyncHandler(async (req, res) => {
     });
     if (!approver) return res.respond(403, "Approver not found.");
 
-    const currentStep = application.LoanApplicationAssignment.find(
-        a => a.creditManagerId === approver.id && a.status === "PENDING"
+    const application = await prisma.loanApplication.findFirst({
+        where: { id: loanApplicationId, isDeleted: false },
+        include: {
+            masterProduct: {
+                include: {
+                    ProductCreditAssignmentRule: {
+                        where: { isDeleted: false },
+                        orderBy: { chainOrder: 'asc' }
+                    }
+                }
+            },
+            LoanApplicationAssignment: {
+                orderBy: { sequenceOrder: 'asc' },
+                include: { 
+                    creditManager: { 
+                        include: { role: true } 
+                    } 
+                }
+            }
+        }
+    });
+    if (!application) return res.respond(404, "Loan Application not found!");
+
+    const currentAssignment = application.LoanApplicationAssignment.find(
+        a => a.creditManagerId === approver.id && 
+            a.status === "PENDING" && 
+            a.active
     );
-    if (!currentStep) return res.respond(403, "You are not authorised for this step or there is no pending assignment for you.");
 
-    const isLastCM =
-    currentStep.sequenceOrder ===
-    Math.max(...application.LoanApplicationAssignment.map((a) => a.sequenceOrder));
-
-    if (isLastCM && !application.opsApproved) {
-        return res.respond(400, "Ops Manager must approve before last CM approval.");
+    if (!currentAssignment) {
+        const blockedAssignment = application.LoanApplicationAssignment.find(
+            a => a.creditManagerId === approver.id && 
+                a.status === "PENDING" && 
+                a.blockedUntilOps
+        );
+        
+        if (blockedAssignment && !application.opsApproved) {
+            return res.respond(403, "Waiting for OPS approval before you can act.");
+        }
+        
+        return res.respond(403, "No active assignment for you on this application.");
     }
 
     const result = await prisma.$transaction(async (tx) => {
+        const roleName = approver.role.roleName;
+
         if (decision === "REJECT") {
             await tx.loanApplicationAssignment.update({
-                where: { id: currentStep.id },
-                data: { status: "REJECTED", remarks }
+                where: { id: currentAssignment.id },
+                data: { 
+                    status: "REJECTED", 
+                    remarks,
+                    active: false 
+                }
+            });
+
+            await tx.loanApplicationAssignment.updateMany({
+                where: { 
+                    loanApplicationId,
+                    status: "PENDING",
+                    id: { not: currentAssignment.id }
+                },
+                data: { active: false }
             });
 
             await tx.loanApplication.update({
                 where: { id: loanApplicationId },
                 data: {
                     internalStatus: "REJECTED",
-                    customerStatus: "REJECTED",
-                    approverId: null
-                },
+                    customerStatus: "REJECTED"
+                }
             });
 
-            await logLoanHistory(tx, loanApplicationId, userId, "REJECTED", remarks || "Application rejected");
+            await logLoanHistory(
+                tx, 
+                loanApplicationId, 
+                userId, 
+                "REJECTED", 
+                remarks || `Rejected by ${roleName}`
+            );
 
-            return { action: "REJECTED" };
+            return { message: `Loan Application rejected by ${roleName}.` };
         }
 
         await tx.loanApplicationAssignment.update({
-            where: { id: currentStep.id },
-            data: { status: "APPROVED", remarks }
+            where: { id: currentAssignment.id },
+            data: { 
+                status: "APPROVED", 
+                remarks,
+                active: false
+            }
         });
 
-        const nextStep = application.LoanApplicationAssignment.find(
-            a => a.sequenceOrder === currentStep.sequenceOrder + 1
+        let nextStep = null;
+
+        if (roleName === "OPS_MANAGER") {
+            await tx.loanApplication.update({
+                where: { id: loanApplicationId },
+                data: { opsApproved: true }
+            });
+
+            const blockedCM = application.LoanApplicationAssignment.find(
+                a => a.blockedUntilOps && 
+                     a.status === "PENDING" &&
+                     a.creditManager.role.roleName.startsWith("CM")
+            );
+
+            if (blockedCM) {
+                const cmAssignments = application.LoanApplicationAssignment
+                    .filter(a => a.creditManager.role.roleName.startsWith("CM"))
+                    .sort((a, b) => a.sequenceOrder - b.sequenceOrder);
+
+                const blockedIndex = cmAssignments.findIndex(a => a.id === blockedCM.id);
+                const allPreviousApproved = cmAssignments
+                    .slice(0, blockedIndex)
+                    .every(a => a.status === "APPROVED");
+
+                if (allPreviousApproved) {
+                    await tx.loanApplicationAssignment.update({
+                        where: { id: blockedCM.id },
+                        data: { 
+                            blockedUntilOps: false,
+                            active: true
+                        }
+                    });
+                    nextStep = `${blockedCM.creditManager.role.roleName} activated for approval`;
+                }
+            }
+
+            const allCMsApproved = application.LoanApplicationAssignment
+                .filter(a => a.creditManager.role.roleName.startsWith("CM"))
+                .every(a => a.status === "APPROVED");
+
+            if (allCMsApproved) {
+                await moveToSeniorOps(tx, loanApplicationId, application);
+                nextStep = "All approvals complete. Moved to Senior OPS";
+            }
+
+            await logLoanHistory(
+                tx, 
+                loanApplicationId, 
+                userId, 
+                "OPS_APPROVED", 
+                "OPS Manager approved"
+            );
+
+        } else if (roleName.startsWith("CM")) {
+            const cmAssignments = application.LoanApplicationAssignment
+                .filter(a => a.creditManager.role.roleName.startsWith("CM"))
+                .sort((a, b) => a.sequenceOrder - b.sequenceOrder);
+
+            const currentIndex = cmAssignments.findIndex(a => a.id === currentAssignment.id);
+            const nextCM = cmAssignments[currentIndex + 1];
+
+            if (nextCM && nextCM.status === "PENDING") {
+                if (nextCM.blockedUntilOps && !application.opsApproved) {
+                    nextStep = `Waiting for OPS approval before ${nextCM.creditManager.role.roleName} can act`;
+                } else {
+                    await tx.loanApplicationAssignment.update({
+                        where: { id: nextCM.id },
+                        data: { active: true }
+                    });
+                    nextStep = `Forwarded to ${nextCM.creditManager.role.roleName}`;
+                }
+            } else {
+                const opsAssignment = application.LoanApplicationAssignment.find(
+                    a => a.creditManager.role.roleName === "OPS_MANAGER"
+                );
+
+                if (opsAssignment?.status === "APPROVED") {
+                    await moveToSeniorOps(tx, loanApplicationId, application);
+                    nextStep = "All approvals complete. Moved to Senior OPS";
+                } else {
+                    nextStep = "CM chain complete. Waiting for OPS approval to proceed";
+                }
+            }
+
+            await logLoanHistory(
+                tx, 
+                loanApplicationId, 
+                userId, 
+                `${roleName}_APPROVED`, 
+                `${roleName} approved`
+            );
+        }
+        else if (roleName === "SENIOR_OPS_MANAGER") {
+            await moveToFinance(tx, loanApplicationId, application);
+            nextStep = "Forwarded to Finance Manager";
+            
+            await logLoanHistory(
+                tx, 
+                loanApplicationId, 
+                userId, 
+                "SENIOR_OPS_APPROVED", 
+                "Senior OPS approved"
+            );
+        }
+        else if (roleName === "FINANCE_MANAGER") {
+            await tx.loanApplication.update({
+                where: { id: loanApplicationId },
+                data: {
+                    internalStatus: "APPROVED",
+                    customerStatus: "APPROVED"
+                }
+            });
+
+            nextStep = "Loan fully approved and ready for disbursement";
+            
+            await logLoanHistory(
+                tx, 
+                loanApplicationId, 
+                userId, 
+                "FINANCE_APPROVED", 
+                "Finance approved - Loan fully approved"
+            );
+        }
+
+        return { 
+            message: `${roleName} approved successfully.`,
+            nextStep 
+        };
+    });
+
+    res.respond(200, result.message, { nextStep: result.nextStep });
+});
+
+// ##########----------Move to Senior Operation Manager Function----------##########
+async function moveToSeniorOps(tx, loanApplicationId, application) {
+    const seniorOps = await tx.associateSubAdmin.findFirst({
+        where: { 
+            role: { roleName: "SENIOR_OPS_MANAGER" }, 
+            isActive: true, 
+            isDeleted: false 
+        }
+    });
+
+    if (seniorOps) {
+        const maxSequence = Math.max(
+            ...application.LoanApplicationAssignment.map(a => a.sequenceOrder)
         );
 
-        // let newInternalStatus = application.internalStatus;
+        await tx.loanApplicationAssignment.create({
+            data: {
+                loanApplicationId,
+                creditManagerId: seniorOps.id,
+                sequenceOrder: maxSequence + 1,
+                status: "PENDING",
+                active: true,
+                blockedUntilOps: false
+            }
+        });
 
-        // if (!nextStep) {
-        //     newInternalStatus = "AWAITING_OPS";
-        // } else if (nextStep.blockedUntilOps) {
-        //     newInternalStatus = "AWAITING_OPS";
-        // } else {
-        //     await tx.loanApplicationAssignment.update({ where: { id: nextStep.id }, data: { active: true } });
-        //     newInternalStatus = "AWAITING_CM";
-        // }
-
-        // await tx.loanApplication.update({
-        //     where: { id: loanApplicationId },
-        //     data: {
-        //         internalStatus: newInternalStatus,
-        //         approverId: nextStep ? nextStep.creditManagerId : null,
-        //     },
-        // });
-
-        await logLoanHistory(tx, loanApplicationId, userId, "APPROVED", "Step approved");
-
-        return { action: "APPROVED" };
-    });
-
-    return res.respond(200, `Step ${result.action} successfully!`);
-});
-
-// ##########----------OPS Approval to unblock last CM----------##########
-const approveByOpsManager = asyncHandler(async (req, res) => {
-    const userId = req.user;
-    const { loanApplicationId } = req.params;
-
-    const opsManager = await prisma.associateSubAdmin.findFirst({
-        where: { userId, role: { roleName: "OPS_MANAGER" }, isDeleted: false },
-    });
-    if (!opsManager) return res.respond(403, "Only Ops Managers can approve.");
-
-    const application = await prisma.loanApplication.findFirst({
-        where: { id: loanApplicationId, isDeleted: false },
-        include: { LoanApplicationAssignment: true },
-    });
-    if (!application) return res.respond(404, "Loan Application not found!");
-
-    await prisma.$transaction(async (tx) => {
         await tx.loanApplication.update({
-        where: { id: loanApplicationId },
-        data: { opsApproved: true },
-        });
-
-        await tx.loanApplicationAssignment.updateMany({
-            where: { loanApplicationId, blockedUntilOps: true },
-            data: { blockedUntilOps: false, active: true },
-        });
-
-        await logLoanHistory(tx, loanApplicationId, userId, "OPS_APPROVED", "OPS approved and unblocked last CM");
-    });
-
-    res.respond(200, "OPS approval done, last CM unblocked.");
-});
-
-// ##########----------Assign Loan To Senior Ops----------##########
-const assignToSeniorOps = asyncHandler(async (req, res) => {
-    const userId = req.user;
-    const { loanApplicationId } = req.params;
-
-    const user = await prisma.associateSubAdmin.findUnique({
-        where: { userId },
-        include: { role: true },
-    });
-
-    if (!user || user.role.roleName !== "OPS_MANAGER") {
-        return res.respond(403, "Only Junior Ops can assign to Senior Ops.");
-    }
-
-    const application = await prisma.loanApplication.findFirst({
-        where: { id: loanApplicationId },
-        include: { LoanApplicationAssignment: true },
-    });
-    if (!application) return res.respond(404, "Loan Application not found.");
-
-    if (["REJECTED"].includes(application.internalStatus)) {
-        return res.respond(400, "Cannot assign rejected application.");
-    }
-
-    const allCMsApproved = application.LoanApplicationAssignment.filter(
-        (a) => a.creditManagerId
-    ).every((a) => a.status === "APPROVED");
-
-    if (!allCMsApproved || !application.opsApproved) {
-        return res.respond(400, "All CMs and Ops must approve before Senior Ops.");
-    }
-
-    const seniorOps = await prisma.associateSubAdmin.findFirst({
-        where: { role: { roleName: "SENIOR_OPS_MANAGER" }, isDeleted: false },
-    });
-    if (!seniorOps) return res.respond(404, "Senior Ops not found.");
-
-    await prisma.loanApplication.update({
-        where: { id: loanApplicationId },
-        data: { approverId: seniorOps.id, internalStatus: "OPS_PENDING" },
-    });
-
-    await prisma.loanApplicationHistory.create({
-            data: {
-            loanApplicationId,
-            action: "ASSIGNED_TO_SENIOR_OPS",
-            performedById: userId,
-            remarks: `Assigned to Senior Ops (${seniorOps.id})`,
-        },
-    });
-
-    res.respond(200, "Loan assigned to Senior Ops.");
-});
-
-// ##########----------Approve By Senior Ops----------##########
-const approveBySeniorOps = asyncHandler(async (req, res) => {
-    const userId = req.user;
-    const { loanApplicationId } = req.params;
-    const { action, remarks } = req.body;
-
-    if (!["REJECT", "APPROVE"].includes(action)) {
-        return res.respond(400, "Invalid action. Use REJECT or APPROVE.");
-    }
-
-    const user = await prisma.associateSubAdmin.findUnique({
-        where: { userId },
-        include: { role: true },
-    });
-    if (!user || user.role.roleName !== "SENIOR_OPS_MANAGER") {
-        return res.respond(403, "Only Senior Ops can perform this action.");
-    }
-
-    const application = await prisma.loanApplication.findFirst({ where: { id: loanApplicationId } });
-    if (!application) return res.respond(404, "Loan Application not found.");
-
-    if (action === "REJECT") {
-        await prisma.loanApplication.update({
             where: { id: loanApplicationId },
-            data: { internalStatus: "REJECTED", customerStatus: "REJECTED", approverId: user.id },
+            data: { internalStatus: "OPS_PENDING" }
+        });
+    }
+}
+
+// ##########----------Move to Finance Manager Function----------##########
+async function moveToFinance(tx, loanApplicationId, application) {
+    const finance = await tx.associateSubAdmin.findFirst({
+        where: { 
+            role: { roleName: "FINANCE_MANAGER" }, 
+            isActive: true, 
+            isDeleted: false 
+        }
+    });
+
+    if (finance) {
+        const maxSequence = Math.max(
+            ...application.LoanApplicationAssignment.map(a => a.sequenceOrder)
+        );
+
+        await tx.loanApplicationAssignment.create({
+            data: {
+                loanApplicationId,
+                creditManagerId: finance.id,
+                sequenceOrder: maxSequence + 1,
+                status: "PENDING",
+                active: true,
+                blockedUntilOps: false
+            }
         });
 
-        await logLoanHistory(prisma, loanApplicationId, userId, "REJECTED_BY_SENIOR_OPS", remarks || "Rejected by Senior Ops");
-        return res.respond(200, "Loan Application rejected by Senior Ops.");
-    }
-
-    const finance = await prisma.associateSubAdmin.findFirst({
-        where: { role: { roleName: "FINANCE_MANAGER" }, isDeleted: false },
-    });
-    if (!finance) return res.respond(404, "Finance Manager not found.");
-
-    await prisma.loanApplication.update({
-        where: { id: loanApplicationId },
-        data: { approverId: finance.id, internalStatus: "AWAITING_FINANCE" },
-    });
-
-    await logLoanHistory(prisma, loanApplicationId, userId, "FORWARDED_TO_FINANCE", `Forwarded to finance (${finance.id})`);
-
-    res.respond(200, "Loan approved by Senior Ops and assigned to Finance.");
-});
-
-// ##########----------Approve By Finance----------##########
-const approveByFinance = asyncHandler(async (req, res) => {
-    const userId = req.user;
-    const { loanApplicationId } = req.params;
-    const { action, remarks } = req.body;
-
-    if (!["REJECT", "APPROVE"].includes(action)) {
-        return res.respond(400, "Invalid action. Use REJECT or APPROVE.");
-    }
-
-    const user = await prisma.associateSubAdmin.findUnique({
-        where: { userId },
-        include: { role: true },
-    });
-    if (!user || user.role.roleName !== "FINANCE_MANAGER") {
-        return res.respond(403, "Only Finance can perform this action.");
-    }
-
-    const application = await prisma.loanApplication.findFirst({ where: { id: loanApplicationId } });
-    if (!application) return res.respond(404, "Loan Application not found.");
-
-    if (action === "REJECT") {
-        await prisma.loanApplication.update({
+        await tx.loanApplication.update({
             where: { id: loanApplicationId },
-            data: {
-                internalStatus: "REJECTED",
-                customerStatus: "REJECTED",
-                approverId: user.id,
+            data: { internalStatus: "AWAITING_FINANCE" }
+        });
+    }
+}
+
+// ##########----------Get My Pending Loans (For Approvers)----------##########
+const getMyPendingLoans = asyncHandler(async (req, res) => {
+    const userId = req.user;
+    const { page = 1, limit = 10, status = "PENDING" } = req.query;
+
+    const approver = await prisma.associateSubAdmin.findFirst({
+        where: { userId, isDeleted: false, isActive: true },
+        include: { role: true }
+    });
+    if (!approver) {
+        return res.respond(403, "Approver not found or not active.");
+    }
+
+    const whereClause = {
+        isDeleted: false,
+        LoanApplicationAssignment: {
+            some: {
+                creditManagerId: approver.id,
+                status: status,
+                active: true
+            }
+        }
+    };
+
+    if (approver.role.roleName.startsWith("CM")) {
+        whereClause.LoanApplicationAssignment.some = {
+            creditManagerId: approver.id,
+            status: status,
+            active: true,
+            OR: [
+                { blockedUntilOps: false },
+                { 
+                    blockedUntilOps: true,
+                    loanApplication: { opsApproved: true }
+                }
+            ]
+        };
+    }
+
+    const totalCount = await prisma.loanApplication.count({ where: whereClause });
+
+    const loans = await prisma.loanApplication.findMany({
+        where: whereClause,
+        include: {
+            employee: {
+                select: {
+                    id: true,
+                    customEmployeeId: true,
+                    employeeName: true,
+                    email: true,
+                    mobile: true
+                }
             },
-        });
-
-        await logLoanHistory(prisma, loanApplicationId, userId, "REJECTED_BY_FINANCE", remarks || "Rejected by Finance");
-        return res.respond(200, "Loan Application rejected by Finance.");
-    }
-
-    await prisma.loanApplication.update({
-        where: { id: loanApplicationId },
-        data: {
-            internalStatus: "APPROVED",
-            customerStatus: "APPROVED",
-            approverId: user.id,
+            masterProduct: {
+                select: {
+                    id: true,
+                    productName: true,
+                    productId: true,
+                    productCode: true
+                }
+            },
+            LoanApplicationAssignment: {
+                where: {
+                    creditManagerId: approver.id
+                },
+                select: {
+                    id: true,
+                    sequenceOrder: true,
+                    blockedUntilOps: true,
+                    active: true,
+                    status: true,
+                    remarks: true
+                }
+            }
         },
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: parseInt(limit)
     });
 
-    await logLoanHistory(prisma, loanApplicationId, userId, "APPROVED_BY_FINANCE", remarks || "Approved by Finance");
+    const loansWithStatus = loans.map(loan => {
+        const assignment = loan.LoanApplicationAssignment[0];
+        return {
+            ...loan,
+            canApprove: assignment.active && 
+                        assignment.status === "PENDING" &&
+                        (!assignment.blockedUntilOps || loan.opsApproved),
+            waitingForOps: assignment.blockedUntilOps && !loan.opsApproved
+        };
+    });
 
-    res.respond(200, "Loan Application approved by Finance.");
+    res.respond(200, "Loans fetched successfully!", {
+        loans: loansWithStatus,
+        pagination: {
+            currentPage: parseInt(page),
+            totalPages: Math.ceil(totalCount / limit),
+            totalCount,
+            limit: parseInt(limit)
+        },
+        role: approver.role.roleName
+    });
+});
+
+// ##########----------Get Loan Details with History----------##########
+const getLoanLogs = asyncHandler(async (req, res) => {
+    const { loanApplicationId } = req.params;
+
+    const loan = await prisma.loanApplication.findFirst({
+        where: { id: loanApplicationId },
+        include: {
+            employee: true,
+            masterProduct: true,
+            LoanApplicationAssignment: {
+                include: {
+                    creditManager: {
+                        include: { role: true }
+                    }
+                },
+                orderBy: { sequenceOrder: 'asc' }
+            },
+            LoanApplicationHistory: {
+                include: {
+                    performedBy: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true
+                        }
+                    }
+                },
+                orderBy: { createdAt: 'asc' }
+            },
+            fieldValues: {
+                include: {
+                    field: true,
+                    dropdown: true,
+                    subField: true
+                }
+            }
+        }
+    });
+
+    if (!loan) {
+        return res.respond(404, "Loan not found");
+    }
+
+    const workflowStatus = loan.LoanApplicationAssignment.map(assignment => ({
+        role: assignment.creditManager.role.roleName,
+        status: assignment.status,
+        active: assignment.active,
+        blockedUntilOps: assignment.blockedUntilOps,
+        remarks: assignment.remarks,
+        creditManager: assignment.creditManager.name,
+        sequenceOrder: assignment.sequenceOrder
+    }));
+
+    res.respond(200, "Loan details fetched successfully", {
+        ...loan,
+        workflowStatus
+    });
+});
+
+// ##########----------Customer Controllers----------##########
+const getLoanHistoryByCustomer = asyncHandler(async (req, res) => {
+    const customerId = req.user;
+    const { status } = req.query;
+
+    const customer = await prisma.employee.findFirst({
+        where: { userId: customerId, isDeleted: false },
+    });
+    if (!customer) {
+        return res.respond(404, "Customer not found.");
+    }
+
+    const whereClause = { customerId: customer.id };
+    
+    if (status === "CLOSED") {
+        whereClause.customerStatus = "CLOSED";
+    }
+
+    const loans = await prisma.loanApplication.findMany({
+        where: whereClause,
+        include: {
+            masterProduct: {
+                select: {
+                    productName: true,
+                    productId: true,
+                    productCode: true,
+                    productDescription: true,
+                }
+            }
+        },
+        orderBy: { createdAt: "desc" },
+    });
+
+    res.respond(200, "Customer Loan Applications fetched successfully!", loans);
 });
 
 // ##########----------Get Loans By Customer----------##########
@@ -491,7 +677,7 @@ const getLoansDeatilsByCustomer = asyncHandler(async (req, res) => {
         return res.respond(404, "Customer not found.");
     }
 
-    const loans = await prisma.loanApplication.findFirst({
+    const loan = await prisma.loanApplication.findFirst({
         where: { id: loanApplicationId, customerId: customer.id },
         include: {
             masterProduct: {
@@ -502,141 +688,51 @@ const getLoansDeatilsByCustomer = asyncHandler(async (req, res) => {
                     productName: true,
                     productDescription: true,
                 }
+            },
+            LoanApplicationHistory: {
+                orderBy: { createdAt: 'desc' },
+                take: 10
             }
-        },
-        orderBy: { createdAt: "desc" },
+        }
     });
 
-    res.respond(200, "Customer Loan Applications fetched successfully!", loans);
+    if (!loan) {
+        return res.respond(404, "Loan application not found.");
+    }
+
+    res.respond(200, "Loan details fetched successfully!", loan);
 });
 
-// ##########----------Get Loan History By Customer----------##########
-const getLoanHistoryByCustomer = asyncHandler(async (req, res) => {
-    const customerId = req.user;
+// ##########----------Upload Documents----------##########
+const uploadDocs = asyncHandler(async (req, res) => {
+    const userId = req.user;
 
     const customer = await prisma.employee.findFirst({
-        where: { userId: customerId, isDeleted: false },
+        where: { userId, isDeleted: false },
     });
     if (!customer) {
         return res.respond(404, "Customer not found.");
     }
 
-    const loans = await prisma.loanApplication.findMany({
-        where: { customerId: customer.id, customerStatus: "CLOSED" },
-        include: {
-            masterProduct: {
-                select: {
-                    id: true,
-                    productName: true,
-                    productId: true,
-                    productDescription: true,
-                }
-            }
-        },
-        orderBy: { createdAt: "desc" },
-    });
+    const doc = req.files?.doc?.[0];
 
-    res.respond(200, "Customer Loan Applications fetched successfully!", loans);
-});
+    const docUrl = doc
+        ? `/uploads/loan/doc/${doc.filename}`
+        : null;
 
-// ##########----------Get Loans By Associate SubAdmin----------##########
-const getLoansByAssociateSubadmin = asyncHandler(async (req, res) => {
-    const userId = req.user;
-
-    const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
-        where: { userId, isDeleted: false, role: { roleName: { in: ["OPS_MANAGER", "SENIOR_OPS_MANAGER", "CM1", "CM2", "CM3"] } } },
-        include: { role: true },
-    });
-    if (!associateSubAdmin) {
-        return res.respond(403, "Associate SubAdmin not found or role not authorized.");
-    }
-
-    const loans = await prisma.loanApplication.findMany({
-        where: {
-            isDeleted: false,
-            LoanApplicationAssignment: {
-                some: {
-                    creditManagerId: associateSubAdmin.id,
-                    status: "PENDING",
-                },
-            },
-            internalStatus: { in: ["OPS_PENDING", "AWAITING_CM", "AWAITING_FINANCE"] },
-        },
-        include: {
-            masterProduct: {
-                select: {
-                    productName: true,
-                    productId: true,
-                    productCode: true,
-                    productDescription: true,
-                },
-            },
-            fieldValues: {
-                    include: {
-                    field: true,
-                    dropdown: true,
-                    subField: true,
-                },
-            },
-            LoanApplicationAssignment: {
-                include: {
-                    creditManager: {
-                        select: { id: true, userId: true, roleId: true },
-                    },
-                },
-            },
-        },
-        orderBy: { createdAt: "desc" },
-    });
-
-    if (!loans || loans.length === 0) {
-        return res.respond(200, "No loans currently assigned to you", []);
-    }
-
-    res.respond(200, "Loan Applications fetched successfully!", loans);
-});
-
-// ##########----------Get Loans Logs----------##########
-const getLoanLogs = asyncHandler(async (req, res) => {
-    const { loanApplicationId } = req.params;
-
-    if (!loanApplicationId) {
-        return res.respond(400, "loanApplicationId is required");
-    }
-
-    const history = await prisma.loanApplicationHistory.findMany({
-        where: { loanApplicationId },
-        include: {
-            performedBy: {
-                select: {
-                    id: true,
-                    name: true,
-                    email: true,
-                },
-            },
-        },
-        orderBy: { createdAt: "asc" },
-    });
-
-    if (!history.length) {
-        return res.respond(404, "No history found for this application");
-    }
-
-    return res.respond(200, "Loan history fetched successfully", history);
+    res.respond(201, "Document uploaded successfully!", { imageUrl: docUrl });
 });
 
 module.exports = {
-    uploadDocs,
+    // Main workflow controllers
     applyLoan,
-    rejectLoanByOpsManager,
-    approveByOpsManager,
-    approveLoanStep,
-    assignToSeniorOps,
-    approveBySeniorOps,
-    approveByFinance,
+    processLoanApproval,
+    getMyPendingLoans,
+    getLoanLogs,
+    
+    // Customer specific controllers
+    getLoanHistoryByCustomer,
     getLoansByCustomer,
     getLoansDeatilsByCustomer,
-    getLoanHistoryByCustomer,
-    getLoansByAssociateSubadmin,
-    getLoanLogs
+    uploadDocs,
 };

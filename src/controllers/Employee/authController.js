@@ -669,6 +669,25 @@ const cardController = asyncHandler(async (req, res) => {
     );
 });
 
+// ##########----------Delete Employee----------##########
+const deleteEmployee = asyncHandler(async (req, res) => {
+  const userId = req.user;
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId },
+  });
+  if (!employee) {
+    return res.respond(404, "Employee not found!");
+  }
+
+  await prisma.employee.update({
+    where: { id: employee.id },
+    data: { isDeleted: true },
+  });
+
+  res.respond(200, "Employee deleted successfully!");
+});
+
 module.exports = {
   sendUserOTP,
   verifyOTP,
@@ -683,5 +702,6 @@ module.exports = {
   verifyEmployeePan,
   checkEmployeePanStatus,
   faceLiveliness,
-  cardController
+  cardController,
+  deleteEmployee
 };

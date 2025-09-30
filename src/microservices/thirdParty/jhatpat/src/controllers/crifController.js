@@ -7,29 +7,55 @@ const prisma = new PrismaClient();
 // ##########----------Forward CRIF Credentials----------##########
 const CRIFCreditReport = asyncHandler(async (req, res) => {
   const body = req.body;
-  const proxyKey = req.headers["x-api-key"];
+  const userId = req.headers["userid"];
+  const password = req.headers["password"];
   const endpoint = req.originalUrl;
+  console.log(body)
+
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch (err) {
+      return res.respond(400, "Invalid JSON body");
+    }
+  }
 
   let log = {
     partner: "Jhatpat",
     serviceName: "CRIF",
     endpoint,
     method: req.method,
-    proxyKey,
+    proxyKey: userId || "UNKNOWN",
     requestBody: body,
   };
 
-  if (!proxyKey || proxyKey !== process.env.PROXY_KEY_JHATPAT) {
-    log.error = "Unauthorized: Invalid proxy key";
+  if (!userId || userId !== process.env.PROXY_USERID_JHATPAT) {
+    log.error = "Unauthorized: Invalid User ID";
+    await prisma.proxyLog.create({ data: log });
+
+    return res.respond(401, log.error);
+  }
+
+  if (!password || password !== process.env.PROXY_PASSWORD_JHATPAT) {
+    log.error = "Unauthorized: Invalid Password";
     await prisma.proxyLog.create({ data: log });
 
     return res.respond(401, log.error);
   }
 
   try {
-    body["REQUEST-FILE"]["HEADER-SEGMENT"]["USER-ID"] = process.env.CRIF_USERID;
-    body["REQUEST-FILE"]["HEADER-SEGMENT"]["USER-PWD"] = process.env.CRIF_PASSWORD;
-    body["REQUEST-FILE"]["HEADER-SEGMENT"]["REQ-MBR"] = process.env.CRIF_CUSTOMERID;
+    try {
+      if (!body["REQUEST-FILE"] || !body["REQUEST-FILE"]["HEADER-SEGMENT"]) {
+        return res.respond(400, "Invalid CRIF request format: Missing REQUEST-FILE or HEADER-SEGMENT");
+      }
+
+      body["REQUEST-FILE"]["HEADER-SEGMENT"]["USER-ID"] = process.env.CRIF_USERID;
+      body["REQUEST-FILE"]["HEADER-SEGMENT"]["USER-PWD"] = process.env.CRIF_PASSWORD;
+      body["REQUEST-FILE"]["HEADER-SEGMENT"]["REQ-MBR"] = process.env.CRIF_CUSTOMERID;
+    } catch (err) {
+      console.error("Body format error:", err.message);
+      return res.respond(400, "Invalid CRIF request body");
+    }
 
     const targetUrl = `https://hub.crifhighmark.com/Inquiry/doGet.serviceJson/CIRProServiceSynchJson`;
 
@@ -47,15 +73,15 @@ const CRIFCreditReport = asyncHandler(async (req, res) => {
     });
 
     log.responseStatus = response.status;
-    log.responseBody = response.data;
 
     await prisma.proxyLog.create({ data: log });
 
-    res.respond(
-      response.status,
-      "Request forwarded successfully!",
-      response.data
-    );
+    // res.respond(
+    //   response.status,
+    //   "Request forwarded successfully!",
+    //   response.data
+    // );
+    res.status(response.status).json(response.data);
   } catch (error) {
     console.error("Proxy error:", error.message);
     log.error = error.message;

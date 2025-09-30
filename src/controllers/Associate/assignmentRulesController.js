@@ -79,7 +79,7 @@ const getAssignmentRules = asyncHandler(async (req, res) => {
   const rules = await prisma.productCreditAssignmentRule.findMany({
     where: { masterProductId, isDeleted: false },
     include: {
-      creditManager: { include: { role: true, user: { select: { email: true, phone: true } } } },
+      creditManager: { include: { role: true, user: { select: { email: true } } } },
     },
     orderBy: [{ minScore: "asc" }, { chainOrder: "asc" }],
     orderBy: [{ minScore: "asc" }, { chainOrder: "asc" }],
