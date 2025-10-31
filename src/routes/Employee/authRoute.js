@@ -14,7 +14,8 @@ const {
   getEmployeeProfile,
   updateEmployeeProfile,
   cardController,
-  deleteEmployee
+  deleteEmployee,
+  getCreditReport
 } = require("../../controllers/Employee/authController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -39,5 +40,6 @@ router.patch("/faceLiveliness", validateToken, faceLiveliness);
 router.patch("/checkEmployeePanStatus", validateToken, checkEmployeePanStatus);
 router.get("/cardController", cardController);
 router.delete("/deleteEmployee", validateToken, deleteEmployee);
+router.post("/pullCreditReport", validateToken, getCreditReport);
 
 module.exports = router;

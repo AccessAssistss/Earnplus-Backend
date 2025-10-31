@@ -48,6 +48,7 @@ model Employee {
     EmployeeVerification      EmployeeVerification?
     EmploymentDetails         EmploymentDetails?
     KYCRequest                KYCRequest?
+    CrifReport  CrifReport?
     EmployeeBankDetails       EmployeeBankDetails[]
     EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
     EmployeeBasePayroll       EmployeeBasePayroll[]
@@ -119,4 +120,15 @@ model KYCRequest {
 
     employee          Employee?          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
     associateSubAdmin AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee CRIF Report Model----------##########
+model CrifReport {
+  id              String       @id @default(uuid())
+  employeeId      String?   @unique
+  responseBody    Json
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  employee          Employee?          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }

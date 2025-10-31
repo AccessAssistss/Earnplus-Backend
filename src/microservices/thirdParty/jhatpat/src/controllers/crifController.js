@@ -10,7 +10,6 @@ const CRIFCreditReport = asyncHandler(async (req, res) => {
   const userId = req.headers["userid"];
   const password = req.headers["password"];
   const endpoint = req.originalUrl;
-  console.log(body)
 
   if (typeof body === "string") {
     try {

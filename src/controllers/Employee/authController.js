@@ -16,6 +16,7 @@ const {
   checkPanStatus,
   verifySelfie,
 } = require("../../../utils/verificationUtils");
+const { crifReport } = require("../../../utils/crifUtils");
 
 const prisma = new PrismaClient();
 
@@ -688,6 +689,76 @@ const deleteEmployee = asyncHandler(async (req, res) => {
   res.respond(200, "Employee deleted successfully!");
 });
 
+// ##########----------Get Employee Credit Report----------##########
+const getCreditReport = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { firstName, middleName, lastName, dob, pan, address, city, state, pincode, mobile } = req.body
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId },
+  });
+  if (!employee) {
+    return res.respond(404, "Employee not found!");
+  }
+
+  const existingReport = await prisma.crifReport.findFirst({
+    where: {
+      employeeId: employee.id,
+      createdAt: {
+        gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (existingReport) {
+    return res.respond(200, "CRIF report fetched from cache (within 30 days)", {
+      cached: true,
+      report: existingReport.responseBody,
+    });
+  }
+
+  const applicantData = {
+    firstName: firstName || "",
+    middleName: middleName || "",
+    lastName: lastName || "",
+    dob: dob,
+    pan_number: pan || "",
+    address: address || "",
+    city: city || "",
+    state: state || "",
+    pincode: pincode || "",
+    mobile: mobile,
+    applicationId: employee.id,
+    loanAmount: "5000",
+    ltv: "12.3",
+    term: "24",
+  };
+
+  const crifResponse = await crifReport(applicantData);
+
+  if (!crifResponse.success) {
+    return res.respond(crifResponse.statusCode || 500, "Failed to fetch CRIF report", crifResponse.data);
+  }
+
+  await prisma.crifReport.upsert({
+  where: { employeeId: employee.id },
+  update: {
+    responseBody: crifResponse.data,
+    updatedAt: new Date(),
+  },
+  create: {
+    employeeId: employee.id,
+    responseBody: crifResponse.data,
+  },
+});
+
+  res.respond(200, "CRIF Report retrieved successfully!", {
+    cached: false,
+    report: crifResponse.data,
+  });
+});
+
 module.exports = {
   sendUserOTP,
   verifyOTP,
@@ -703,5 +774,6 @@ module.exports = {
   checkEmployeePanStatus,
   faceLiveliness,
   cardController,
-  deleteEmployee
+  deleteEmployee,
+  getCreditReport
 };
