@@ -30,6 +30,8 @@ router.use("/dropdown", require("./dropdownRoute"));
 router.use("/subField", require("./subFieldRoute"));
 router.use("/fieldCategory", require("./fieldCategoryRoute"));
 router.use("/assignmentRule", require("./assignmentRulesRoute"));
+router.use("/quizCategory", require("./quizCategoryRoute"));
+router.use("/quizQna", require("./quizQnaRoute"));
 // router.use("/credential", require("./credentialRoute"));
 
 module.exports = router;

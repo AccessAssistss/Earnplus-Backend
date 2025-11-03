@@ -1,0 +1,37 @@
+// ##########----------Quiz Category Model----------##########
+model QuizCategory {
+    id        String   @id @default(uuid())
+    name      String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    QuizQuestion QuizQuestion[]
+}
+
+// ##########----------Quiz Question Model----------##########
+model QuizQuestion {
+    id             String   @id @default(uuid())
+    quizCategoryId String?
+    question       String
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    isDeleted      Boolean  @default(false)
+
+    QuizAnswer QuizAnswer[]
+
+    quizCategory QuizCategory? @relation(fields: [quizCategoryId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Quiz Answer Model----------##########
+model QuizAnswer {
+    id             String   @id @default(uuid())
+    quizQuestionId String?
+    question       String
+    point          Int
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+    isDeleted      Boolean  @default(false)
+
+    quizQuestion QuizQuestion? @relation(fields: [quizQuestionId], references: [id], onDelete: Cascade)
+}
