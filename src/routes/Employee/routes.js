@@ -8,5 +8,6 @@ router.use("/kyc", require("./kycRoute"));
 router.use("/loan", require("./loanRoute"));
 router.use("/faq", require("./faqRoute"));
 router.use("/masterProduct", require("./masterProductRoute"));
+router.use("/quiz", require("./quizRoute"));
 
 module.exports = router;

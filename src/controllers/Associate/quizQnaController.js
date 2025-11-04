@@ -134,9 +134,9 @@ const deleteQuizQuestion = asyncHandler(async (req, res) => {
 // ##########----------Quiz Answer CRUD----------##########
 // ##########----------Create Quiz Answer----------##########
 const createQuizAnswer = asyncHandler(async (req, res) => {
-    const { quizQuestionId, question, point } = req.body;
+    const { quizQuestionId, answer, point } = req.body;
 
-    if (!question) {
+    if (!answer) {
         return res.respond(400, "Answer is required!");
     }
 
@@ -157,7 +157,7 @@ const createQuizAnswer = asyncHandler(async (req, res) => {
     const quizAnswer = await prisma.quizAnswer.create({
         data: {
             quizQuestionId,
-            question,
+            answer,
             point
         },
         include: {
@@ -206,9 +206,9 @@ const getQuizAnswerById = asyncHandler(async (req, res) => {
 // ##########----------Update Quiz Answer----------##########
 const updateQuizAnswer = asyncHandler(async (req, res) => {
     const { id } = req.params;
-    const { quizQuestionId, question, point } = req.body;
+    const { quizQuestionId, answer, point } = req.body;
 
-    if (!question) {
+    if (!answer) {
         return res.respond(400, "Answer is required!");
     }
 
@@ -238,7 +238,7 @@ const updateQuizAnswer = asyncHandler(async (req, res) => {
         where: { id },
         data: {
             quizQuestionId,
-            question,
+            answer,
             point
         },
         include: {
@@ -261,8 +261,9 @@ const deleteQuizAnswer = asyncHandler(async (req, res) => {
         return res.respond(404, "Quiz Answer not found!");
     }
 
-    await prisma.quizAnswer.delete({
-        where: { id }
+    await prisma.quizAnswer.update({
+        where: { id },
+        data: { isDeleted: true }
     });
 
     res.respond(200, "Quiz Answer deleted successfully!");

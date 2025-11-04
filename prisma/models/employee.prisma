@@ -33,12 +33,13 @@ model Employee {
     updatedAt             DateTime       @updatedAt
     isDeleted             Boolean        @default(false)
     isEmployerLinked      Boolean        @default(false)
-    isExistingUser          Boolean        @default(false)
+    isExistingUser        Boolean        @default(false)
     isKycVerified         Boolean        @default(false)
     isEmployerScreen      Boolean        @default(false)
     agreedProductInsight  Boolean        @default(false)
     agreedToMessageViaApp Boolean        @default(false)
     agreedPolicyInsight   Boolean        @default(false)
+    totalQuizPoints       Int            @default(0)
 
     employer Employer?   @relation(fields: [employerId], references: [id], onDelete: Cascade)
     user     CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -48,12 +49,13 @@ model Employee {
     EmployeeVerification      EmployeeVerification?
     EmploymentDetails         EmploymentDetails?
     KYCRequest                KYCRequest?
-    CrifReport  CrifReport?
+    CrifReport                CrifReport?
     EmployeeBankDetails       EmployeeBankDetails[]
     EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
     EmployeeBasePayroll       EmployeeBasePayroll[]
     EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
     LoanApplication           LoanApplication[]
+    EmployeeQuizResponse      EmployeeQuizResponse[]
 }
 
 // ##########----------Employee Bank Detail Model----------##########
@@ -124,11 +126,27 @@ model KYCRequest {
 
 // ##########----------Employee CRIF Report Model----------##########
 model CrifReport {
-  id              String       @id @default(uuid())
-  employeeId      String?   @unique
-  responseBody    Json
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+    id           String   @id @default(uuid())
+    employeeId   String?  @unique
+    responseBody Json
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
 
-  employee          Employee?          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    employee Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Employee Quiz Response Model----------##########
+model EmployeeQuizResponse {
+    id             String   @id @default(uuid())
+    employeeId     String
+    quizQuestionId String
+    quizAnswerId   String
+    pointsEarned   Int
+    answeredAt     DateTime @default(now())
+    createdAt      DateTime @default(now())
+    updatedAt      DateTime @updatedAt
+
+    employee     Employee?     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+    quizQuestion QuizQuestion? @relation(fields: [quizQuestionId], references: [id], onDelete: Cascade)
+    quizAnswer   QuizAnswer?   @relation(fields: [quizAnswerId], references: [id], onDelete: Cascade)
 }

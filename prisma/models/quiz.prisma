@@ -19,6 +19,7 @@ model QuizQuestion {
     isDeleted      Boolean  @default(false)
 
     QuizAnswer QuizAnswer[]
+    EmployeeQuizResponse EmployeeQuizResponse[]
 
     quizCategory QuizCategory? @relation(fields: [quizCategoryId], references: [id], onDelete: Cascade)
 }
@@ -27,11 +28,13 @@ model QuizQuestion {
 model QuizAnswer {
     id             String   @id @default(uuid())
     quizQuestionId String?
-    question       String
+    answer       String
     point          Int
     createdAt      DateTime @default(now())
     updatedAt      DateTime @updatedAt
     isDeleted      Boolean  @default(false)
+
+    EmployeeQuizResponse EmployeeQuizResponse[]
 
     quizQuestion QuizQuestion? @relation(fields: [quizQuestionId], references: [id], onDelete: Cascade)
 }
