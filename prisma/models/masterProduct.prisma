@@ -7,7 +7,6 @@ model ProductCategory {
     isDeleted    Boolean  @default(false)
 
     MasterProduct              MasterProduct[]
-    MasterProductUpdateRequest MasterProductUpdateRequest[]
 }
 
 // ##########----------Product Purpose Model----------##########
@@ -19,7 +18,6 @@ model ProductPurpose {
     isDeleted Boolean  @default(false)
 
     MasterProductPurpose        MasterProductPurpose[]
-    masterProductPurposeUpdates MasterProductPurposeUpdate[]
 }
 
 // ##########----------Product Segment Model----------##########
@@ -31,7 +29,6 @@ model ProductSegment {
     isDeleted Boolean  @default(false)
 
     MasterProductSegment       MasterProductSegment[]
-    MasterProductSegmentUpdate MasterProductSegmentUpdate[]
 }
 
 // ##########----------Loan Type Model----------##########
@@ -43,7 +40,6 @@ model LoanType {
     isDeleted Boolean  @default(false)
 
     MasterProduct              MasterProduct[]
-    MasterProductUpdateRequest MasterProductUpdateRequest[]
 }
 
 // ##########----------Product Partner Model----------##########
@@ -55,7 +51,6 @@ model ProductPartner {
     isDeleted Boolean  @default(false)
 
     MasterProduct               MasterProduct[]
-    MasterProductUpdateRequest  MasterProductUpdateRequest[]
     VariantProduct              VariantProduct[]
     VariantProductUpdateRequest VariantProductUpdateRequest[]
 }
@@ -69,7 +64,6 @@ model DisbursementMode {
     isDeleted Boolean  @default(false)
 
     FinancialDisbursementMode       FinancialDisbursementMode[]
-    FinancialDisbursementModeUpdate FinancialDisbursementModeUpdate[]
 }
 
 // ##########----------Repayment Mode Model----------##########
@@ -81,22 +75,21 @@ model RepaymentModes {
     isDeleted Boolean  @default(false)
 
     FinancialRepaymentMode       FinancialRepaymentMode[]
-    FinancialRepaymentModeUpdate FinancialRepaymentModeUpdate[]
 }
 
 // ##########----------Master Product Model----------##########
 model MasterProduct {
     id                 String          @id @default(uuid())
     productManagerId   String?
-    productCategoryId  String?
-    productName        String?         @db.VarChar(100)
     productId          String?         @db.VarChar(100)
-    productCode        String?         @db.VarChar(100)
-    productDescription String?         @db.VarChar(100)
     versionId          Int
+    productCode        String?         @db.VarChar(100)
+    productName        String?         @db.VarChar(100)
+    productCategoryId  String?
     loanTypeId         String
     deliveryChannel    DeliveryChannel
     partnerId          String?
+    productDescription String?         @db.VarChar(100)
     status             ProductStatus   @default(Draft)
     createdAt          DateTime        @default(now())
     updatedAt          DateTime        @updatedAt
@@ -116,7 +109,6 @@ model MasterProduct {
     FinancialDisbursementMode   FinancialDisbursementMode[]
     FinancialRepaymentMode      FinancialRepaymentMode[]
     VariantProduct              VariantProduct[]
-    MasterProductUpdateRequest  MasterProductUpdateRequest[]
     MasterProductVersion        MasterProductVersion[]
     MasterProductSegment        MasterProductSegment[]
     MasterProductDeleteRequest  MasterProductDeleteRequest[]
@@ -339,19 +331,4 @@ model MasterProductVersion {
     createdAt       DateTime @default(now())
 
     masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Master Product Delete Request Model----------##########
-model MasterProductDeleteRequest {
-    id              String        @id @default(uuid())
-    masterProductId String
-    requestedById   String
-    status          RequestStatus @default(PENDING)
-    reason          String?
-    createdAt       DateTime      @default(now())
-    updatedAt       DateTime      @updatedAt
-    isDeleted       Boolean       @default(false)
-
-    masterProduct MasterProduct     @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-    requestedBy   AssociateSubAdmin @relation(fields: [requestedById], references: [id], onDelete: Cascade)
 }

@@ -9,5 +9,6 @@ router.use("/loan", require("./loanRoute"));
 router.use("/faq", require("./faqRoute"));
 router.use("/masterProduct", require("./masterProductRoute"));
 router.use("/quiz", require("./quizRoute"));
+router.use("/query", require("./queryRoute"));
 
 module.exports = router;
