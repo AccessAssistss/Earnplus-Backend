@@ -111,7 +111,6 @@ model MasterProduct {
     VariantProduct              VariantProduct[]
     MasterProductVersion        MasterProductVersion[]
     MasterProductSegment        MasterProductSegment[]
-    MasterProductDeleteRequest  MasterProductDeleteRequest[]
     MasterProductField          MasterProductField[]
     LoanApplication             LoanApplication[]
     ProductCreditAssignmentRule ProductCreditAssignmentRule[]

@@ -20,12 +20,10 @@ model AssociateSubAdmin {
     AssociateSubAdminModule     AssociateSubAdminModule[]
     MasterProduct               MasterProduct[]
     VariantProduct              VariantProduct[]
-    masterProductUpdateRequests MasterProductUpdateRequest[]
     AllocateProductToEmployer   AllocateProductToEmployer[]
     queriesRaised               RaiseQuery[]                  @relation("RaisedByRelation")
     queriesAssigned             RaiseQuery[]                  @relation("AssignedToRelation")
     KYCRequest                  KYCRequest[]
-    MasterProductDeleteRequest  MasterProductDeleteRequest[]
     VariantProductDeleteRequest VariantProductDeleteRequest[]
     VariantProductUpdateRequest VariantProductUpdateRequest[]
     LoanApplication             LoanApplication[]
