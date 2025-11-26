@@ -72,6 +72,7 @@ const CRIFCreditReport = asyncHandler(async (req, res) => {
     });
 
     log.responseStatus = response.status;
+    log.responseBody = response?.data || null;
 
     await prisma.proxyLog.create({ data: log });
 

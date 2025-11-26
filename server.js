@@ -9,7 +9,7 @@ const responseMiddleware = require("./utils/responseMiddleware");
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 app.use(helmet());
 
@@ -26,7 +26,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Welcome to the Earnplus Backend1!",
+    message: "Welcome to the Earnplus Backend Testing!",
   });
 });
 
