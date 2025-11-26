@@ -43,3 +43,4 @@ prisma/schema.prisma
 
 # Backup files (your DB dumps)
 dbBackup
+ecosystem.testing.config.js
