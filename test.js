@@ -7,9 +7,9 @@ const getCrifReport = async () => {
         "HEADER-SEGMENT": {
           "PRODUCT-TYPE": "CIR PRO V2",
           "PRODUCT-VER": "2.0",
-          "USER-ID": "jaspreet_prd_cirpro@l2gfincap.in",
-          "USER-PWD": "A450AC81B3AC8DC04EDBC8C3FB40E3BE4EE44553",
-          "REQ-MBR": "NBF0005125",
+          "USER-ID": "",
+          "USER-PWD": "",
+          "REQ-MBR": "",
           "REQ-VOL-TYPE": "C04",        // volume type required
           "REQ-ACTN-TYPE": "AT01",      // action type required
           "INQ-DT-TM": "23-09-2025 12:00", // current date-time
@@ -32,7 +32,7 @@ const getCrifReport = async () => {
             //   { "TYPE": "K01", "VALUE": "" }
             // ],
             "IDS": [
-              { "TYPE": "ID07", "VALUE": "JYGPK3476K" } // PAN
+              { "TYPE": "ID07", "VALUE": "" } // PAN
             ],
             "ADDRESSES": [
               {
@@ -45,7 +45,7 @@ const getCrifReport = async () => {
               }
             ],
             "PHONES": [
-              { "TYPE": "P04", "VALUE": "9318472622" }
+              { "TYPE": "P04", "VALUE": "" }
             ],
             "EMAILS": [
               { "EMAIL": "" }

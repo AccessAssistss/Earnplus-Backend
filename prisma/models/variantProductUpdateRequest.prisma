@@ -1,0 +1,95 @@
+model VariantProductUpdateRequest {
+    id                String        @id @default(uuid())
+    variantProductId  String
+    requestedById     String
+    reason            String        @db.Text
+    status            RequestStatus @default(PENDING)
+    rejectionReason   String?       @db.Text
+    variantName       String?
+    productType       ProductType?
+    partnerId         String?
+    remark            String?
+    createdAt         DateTime      @default(now())
+    updatedAt         DateTime      @updatedAt
+    isDeleted         Boolean       @default(false)
+
+    variantProduct    VariantProduct     @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+    requestedBy       AssociateSubAdmin  @relation(fields: [requestedById], references: [id])
+    productPartner    ProductPartner?    @relation(fields: [partnerId], references: [id])
+
+    parameterUpdate       VariantProductParameterUpdateRequest?
+    otherChargesUpdate    VariantProductOtherChargesUpdateRequest?
+    repaymentUpdate       VariantProductRepaymentUpdateRequest?
+}
+
+model VariantProductParameterUpdateRequest {
+    id                      String       @id @default(uuid())
+    updateRequestId         String       @unique
+    minLoanAmount           Int?
+    maxLoanAmount           Int?
+    minTenureMonths         Int?
+    maxTenureMonths         Int?
+    interestRateType        InterestType?
+    interestRateMin         Float?
+    interestRateMax         Float?
+    processingFeeType       FeeType?
+    processingFeeValue      Float?
+    latePaymentFeeType      FeeType?
+    latePaymentFeeValue     Float?
+    penalInterestApplicable Boolean?
+    emiFrequency            EMIFrequency?
+    prepaymentFeeType       FeeType?
+    prepaymentFeeValue      Float?
+    penalInterestRate       Int?
+    minAge                  Int?
+    maxAge                  Int?
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model VariantProductOtherChargesUpdateRequest {
+    id                 String    @id @default(uuid())
+    updateRequestId    String    @unique
+    chequeBounceCharge Int?
+    dublicateNocCharge Int?
+    furnishingCharge   Int?
+    chequeSwapCharge   Int?
+    revocation         Int?
+    documentCopyCharge Int?
+    stampDutyCharge    Int?
+    nocCharge          Int?
+    incidentalCharge   Int?
+    createdAt          DateTime  @default(now())
+    updatedAt          DateTime  @updatedAt
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model VariantProductRepaymentUpdateRequest {
+    id                          String   @id @default(uuid())
+    updateRequestId             String   @unique
+    penalInterestApplicable     Boolean?
+    incentiveType               String?
+    incentiveValue              Int?
+    payoutMode                  String?
+    incentiveReversalConditions String?
+    createdAt                   DateTime @default(now())
+    updatedAt                   DateTime @updatedAt
+
+    updateRequest VariantProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model VariantProductDeleteRequest {
+    id               String        @id @default(uuid())
+    variantProductId String
+    requestedById    String
+    reason           String        @db.Text
+    status           RequestStatus @default(PENDING)
+    rejectionReason  String?       @db.Text
+    createdAt        DateTime      @default(now())
+    updatedAt        DateTime      @updatedAt
+    isDeleted        Boolean       @default(false)
+
+    variantProduct VariantProduct     @relation(fields: [variantProductId], references: [id], onDelete: Cascade)
+    requestedBy    AssociateSubAdmin  @relation(fields: [requestedById], references: [id])
+}

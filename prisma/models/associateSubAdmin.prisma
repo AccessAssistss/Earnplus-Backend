@@ -18,20 +18,20 @@ model AssociateSubAdmin {
 
     Employer                    Employer[]
     AssociateSubAdminModule     AssociateSubAdminModule[]
-    MasterProduct               MasterProduct[]
-    VariantProduct              VariantProduct[]
     AllocateProductToEmployer   AllocateProductToEmployer[]
     queriesRaised               RaiseQuery[]                  @relation("RaisedByRelation")
     queriesAssigned             RaiseQuery[]                  @relation("AssignedToRelation")
     KYCRequest                  KYCRequest[]
-    VariantProductDeleteRequest VariantProductDeleteRequest[]
-    VariantProductUpdateRequest VariantProductUpdateRequest[]
     LoanApplication             LoanApplication[]
     LoanAssignmentRule          LoanAssignmentRule[]
     LoanApplicationAssignment   LoanApplicationAssignment[]
     ProductCreditAssignmentRule ProductCreditAssignmentRule[]
+    MasterProduct               MasterProduct[]
     MasterProductUpdateRequest  MasterProductUpdateRequest[]
     MasterProductDeleteRequest  MasterProductDeleteRequest[]
+    VariantProduct              VariantProduct[]
+    VariantProductUpdateRequest VariantProductUpdateRequest[]
+    VariantProductDeleteRequest VariantProductDeleteRequest[]
 }
 
 // ##########----------Sub-Admin Modules Model----------##########
@@ -44,53 +44,4 @@ model AssociateSubAdminModule {
     isDeleted           Boolean            @default(false)
     associateSubAdmin   AssociateSubAdmin? @relation(fields: [associateSubAdminId], references: [id], onDelete: Cascade)
     module              Module?            @relation(fields: [moduleId], references: [id], onDelete: Cascade)
-}
-
-// ##########----------Query Category Model----------##########
-model QueryCategory {
-    id        String   @id @default(uuid())
-    name      String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    QuerySubCategory QuerySubCategory[]
-    queries          RaiseQuery[]
-}
-
-// ##########----------Query Sub-Category Model----------##########
-model QuerySubCategory {
-    id              String   @id @default(uuid())
-    queryCategoryId String?
-    name            String?
-    description     String?
-    createdAt       DateTime @default(now())
-    updatedAt       DateTime @updatedAt
-    isDeleted       Boolean  @default(false)
-
-    queryCategory QueryCategory? @relation(fields: [queryCategoryId], references: [id], onDelete: Cascade)
-
-    queries RaiseQuery[]
-}
-
-// ##########----------Query Model----------##########
-model RaiseQuery {
-    id            String             @id @default(uuid())
-    raisedById    String?
-    assignedToId  String?
-    productId     String?
-    employerName  String?
-    categoryId    String?
-    subCategoryId String?
-    urgency       Urgency?
-    description   String?
-    queryStatus   Boolean?           @default(true)
-    createdAt     DateTime           @default(now())
-    updatedAt     DateTime           @updatedAt
-    isDeleted     Boolean            @default(false)
-    RaisedBy      AssociateSubAdmin? @relation("RaisedByRelation", fields: [raisedById], references: [id], onDelete: Cascade)
-    AssignedTo    AssociateSubAdmin? @relation("AssignedToRelation", fields: [assignedToId], references: [id], onDelete: Cascade)
-    product       VariantProduct?    @relation(fields: [productId], references: [id], onDelete: Cascade)
-    category      QueryCategory?     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-    subCategory   QuerySubCategory?  @relation(fields: [subCategoryId], references: [id], onDelete: Cascade)
 }

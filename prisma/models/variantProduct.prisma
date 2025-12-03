@@ -26,6 +26,8 @@ model VariantProduct {
     AssignVariantProductToEmployer AssignVariantProductToEmployer[]
     AllocateProductToEmployer      AllocateProductToEmployer[]
     queries                        RaiseQuery[]
+    VariantProductUpdateRequest    VariantProductUpdateRequest[]
+    VariantProductDeleteRequest    VariantProductDeleteRequest[]
 }
 
 // ##########----------Variant Product Parameter Model----------##########

@@ -26,7 +26,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Welcome to the Earnplus Backend!",
+    message: "Welcome to the Earnplus Backend Testing!",
   });
 });
 
