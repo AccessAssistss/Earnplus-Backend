@@ -60,16 +60,6 @@ enum Ticket {
   RESOLVED
 }
 
-// ##########----------Product Enums----------##########
-enum DeliveryChannel {
-  Mobile_App
-  Field_Agent
-  Call_Center
-  Embedded_Api
-  Partner_Portal
-  Whatsapp_Bot
-}
-
 enum ProductStatus {
   Draft
   Active

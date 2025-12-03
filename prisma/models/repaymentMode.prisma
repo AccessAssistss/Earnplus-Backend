@@ -1,0 +1,10 @@
+// ##########----------Repayment Mode Model----------##########
+model RepaymentModes {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    FinancialRepaymentMode FinancialRepaymentMode[]
+}

@@ -1,0 +1,10 @@
+// ##########----------Product Segment Model----------##########
+model ProductSegment {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    MasterProductSegment MasterProductSegment[]
+}

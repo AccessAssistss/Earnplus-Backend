@@ -1,0 +1,133 @@
+model MasterProductUpdateRequest {
+    id                  String        @id @default(uuid())
+    masterProductId     String
+    requestedById       String
+    reason              String        @db.Text
+    status              RequestStatus @default(PENDING)
+    rejectionReason     String?       @db.Text
+    productName         String?
+    productDescription  String?
+    productCategoryId   String?
+    loanTypeId          String?
+    partnerId           String?
+    purposeIds          String[]
+    segmentIds          String[]
+    deliveryChannelIds  String[]
+    disbursementModeIds String[]
+    repaymentModeIds    String[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    masterProduct   MasterProduct     @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    requestedBy     AssociateSubAdmin @relation(fields: [requestedById], references: [id])
+    productCategory ProductCategory?  @relation(fields: [productCategoryId], references: [id])
+    loanType        LoanType?         @relation(fields: [loanTypeId], references: [id])
+    productPartner  ProductPartner?   @relation(fields: [partnerId], references: [id])
+
+    financialTermsUpdate            FinancialTermsUpdateRequest?
+    eligibilityCriteriaUpdate       EligibilityCriteriaUpdateRequest?
+    creditBureauConfigUpdate        CreditBureauConfigUpdateRequest?
+    masterProductOtherChargesUpdate MasterProductOtherChargesUpdateRequest?
+
+    MasterProductUpdateRequestDeliveryChannel MasterProductUpdateRequestDeliveryChannel[]
+}
+
+model MasterProductUpdateRequestDeliveryChannel {
+  id                String @id @default(uuid())
+  updateRequestId   String
+  deliveryChannelId String
+
+  updateRequest   MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+  deliveryChannel DeliveryChannel            @relation(fields: [deliveryChannelId], references: [id], onDelete: Cascade)
+}
+
+model FinancialTermsUpdateRequest {
+    id                  String       @id @default(uuid())
+    updateRequestId     String       @unique
+    minLoanAmount       Int
+    maxLoanAmount       Int
+    minTenureMonths     Int
+    maxTenureMonths     Int
+    interestRateType    InterestType
+    interestRateMin     Float
+    interestRateMax     Float
+    processingFeeType   FeeType
+    processingFeeValue  Float
+    latePaymentFeeType  FeeType
+    latePaymentFeeValue Float
+    prepaymentAllowed   Boolean
+    prepaymentFeeType   FeeType
+    prepaymentFeeValue  Float
+    overallGst          Float        @default(0.0)
+    emiFrequency        EMIFrequency
+    penalApplicable     Boolean      @default(false)
+    penalRate           Float        @default(0.0)
+    gracePeriod         Int          @default(0)
+    renewalFee          Float        @default(0.0)
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model EligibilityCriteriaUpdateRequest {
+    id                  String  @id @default(uuid())
+    updateRequestId     String  @unique
+    minAge              Int
+    maxAge              Int
+    minMonthlyIncome    Int
+    minBusinessVintage  Int
+    minBureauScore      Int
+    coApplicantRequired Boolean @default(false)
+    collateralRequired  Boolean @default(false)
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model CreditBureauConfigUpdateRequest {
+    id                      String            @id @default(uuid())
+    updateRequestId         String            @unique
+    creditBureauSources     BureauType[]
+    minScoreRequired        Int
+    maxActiveLoans          Int
+    maxCreditUtilization    Float
+    enquiriesLast6Months    Int
+    loanDelinquencyAllowed  DelinquencyOption
+    bureauDataFreshnessDays Int
+    scoreDecayTolerance     Int
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model MasterProductOtherChargesUpdateRequest {
+    id                 String   @id @default(uuid())
+    updateRequestId    String   @unique
+    chequeBounceCharge Int?
+    dublicateNocCharge Int?
+    furnishingCharge   Int?
+    chequeSwapCharge   Int?
+    revocation         Int?
+    documentCopyCharge Int?
+    stampDutyCharge    Int?
+    nocCharge          Int?
+    incidentalCharge   Int?
+    createdAt          DateTime @default(now())
+    updatedAt          DateTime @updatedAt
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model MasterProductDeleteRequest {
+    id              String        @id @default(uuid())
+    masterProductId String
+    requestedById   String
+    reason          String        @db.Text
+    status          RequestStatus @default(PENDING)
+    rejectionReason String?       @db.Text
+    createdAt       DateTime      @default(now())
+    updatedAt       DateTime      @updatedAt
+    isDeleted       Boolean       @default(false)
+
+    masterProduct MasterProduct     @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    requestedBy   AssociateSubAdmin @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+}

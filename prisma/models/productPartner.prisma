@@ -1,0 +1,13 @@
+// ##########----------Product Partner Model----------##########
+model ProductPartner {
+    id        String   @id @default(uuid())
+    name      String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    MasterProduct               MasterProduct[]
+    VariantProduct              VariantProduct[]
+    VariantProductUpdateRequest VariantProductUpdateRequest[]
+    MasterProductUpdateRequest  MasterProductUpdateRequest[]
+}

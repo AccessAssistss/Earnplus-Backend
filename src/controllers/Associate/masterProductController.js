@@ -13,7 +13,7 @@ const createMasterProduct = asyncHandler(async (req, res) => {
     productDescription,
     productCode,
     loanTypeId,
-    deliveryChannel,
+    deliveryChannelIds = [],
     partnerId,
     purposeIds = [],
     segments = [],
@@ -26,7 +26,7 @@ const createMasterProduct = asyncHandler(async (req, res) => {
     !productCategoryId ||
     !productCode ||
     !loanTypeId ||
-    !deliveryChannel ||
+    deliveryChannelIds.length === 0 ||
     !partnerId ||
     purposeIds.length === 0 ||
     disbursementModeIds.length === 0 ||
@@ -82,7 +82,6 @@ const createMasterProduct = asyncHandler(async (req, res) => {
         productCode,
         productDescription,
         loanTypeId,
-        deliveryChannel,
         partnerId,
         versionId: newVersionId,
 
@@ -95,6 +94,12 @@ const createMasterProduct = asyncHandler(async (req, res) => {
         MasterProductSegment: {
           create: segments?.map((segmentId) => ({
             segmentId,
+          })),
+        },
+
+        MasterProductDeliveryChannel: {
+          create: deliveryChannelIds.map((deliveryChannelId) => ({
+            deliveryChannelId,
           })),
         },
 
@@ -480,7 +485,6 @@ const getAllMasterProducts = asyncHandler(async (req, res) => {
       productCode: true,
       productId: true,
       productDescription: true,
-      deliveryChannel: true,
       versionId: true,
       status: true,
       createdAt: true,
@@ -542,7 +546,6 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
       productCode: true,
       productId: true,
       productDescription: true,
-      deliveryChannel: true,
       versionId: true,
       status: true,
       createdAt: true,
@@ -580,6 +583,17 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
         select: {
           id: true,
           productSegment: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      },
+      MasterProductDeliveryChannel: {
+        select: {
+          id: true,
+          deliveryChannel: {
             select: {
               id: true,
               name: true,
@@ -698,7 +712,7 @@ const getMasterProductVersions = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 
@@ -731,7 +745,7 @@ const getMasterProductVersionById = asyncHandler(async (req, res) => {
     include: { role: true },
   });
 
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 

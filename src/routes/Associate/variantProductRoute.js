@@ -4,9 +4,6 @@ const {
   createVariantProduct,
   getAllVariantProductsByProduct,
   getVariantProductDetail,
-  submitVariantProductUpdateRequest,
-  approveVariantProductUpdateRequest,
-  rejectVariantProductUpdateRequest,
   assignVariantProductToEmployer,
   getVariantProductVersions,
   getVariantProductVersionById,
@@ -14,12 +11,7 @@ const {
   createVariantProductParameter,
   createVariantProductOtherCharges,
   createVariantProductRepayment,
-  createVariantProductDeleteRequest,
   getAssignedEmployers,
-  handleVariantProductDeleteRequest,
-  getAllVariantProductUpdateRequests,
-  getVariantProductDeleteRequests,
-  getVariantProductUpdateRequestDetail,
 } = require("../../controllers/Associate/variantProductController");
 
 const router = express.Router();
@@ -28,46 +20,6 @@ router.post("/createVariantProduct", validateToken, createVariantProduct);
 router.post("/createVariantProductParameter", validateToken, createVariantProductParameter);
 router.post("/createVariantProductOtherCharges", validateToken, createVariantProductOtherCharges);
 router.post("/createVariantProductRepayment", validateToken, createVariantProductRepayment);
-router.post(
-  "/submitVariantProductUpdateRequest",
-  validateToken,
-  submitVariantProductUpdateRequest
-);
-router.patch(
-  "/approveVariantProductUpdateRequest/:requestId",
-  validateToken,
-  approveVariantProductUpdateRequest
-);
-router.get(
-  "/getAllVariantProductUpdateRequests",
-  validateToken,
-  getAllVariantProductUpdateRequests
-);
-router.get(
-  "/getVariantProductUpdateRequestDetail",
-  validateToken,
-  getVariantProductUpdateRequestDetail
-);
-router.patch(
-  "/rejectVariantProductUpdateRequest",
-  validateToken,
-  rejectVariantProductUpdateRequest
-);
-router.post(
-  "/createVariantProductDeleteRequest",
-  validateToken,
-  createVariantProductDeleteRequest
-);
-router.patch(
-  "/handleVariantProductDeleteRequest",
-  validateToken,
-  handleVariantProductDeleteRequest
-);
-router.get(
-  "/getVariantProductDeleteRequests",
-  validateToken,
-  getVariantProductDeleteRequests
-);
 router.get(
   "/getAllVariantProductsByProduct/:productId",
   validateToken,

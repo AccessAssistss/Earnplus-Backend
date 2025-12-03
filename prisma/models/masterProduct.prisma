@@ -1,99 +1,19 @@
-// ##########----------Product Category Model----------##########
-model ProductCategory {
-    id           String   @id @default(uuid())
-    categoryName String?  @db.VarChar(100)
-    createdAt    DateTime @default(now())
-    updatedAt    DateTime @updatedAt
-    isDeleted    Boolean  @default(false)
-
-    MasterProduct              MasterProduct[]
-}
-
-// ##########----------Product Purpose Model----------##########
-model ProductPurpose {
-    id        String   @id @default(uuid())
-    purpose   String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    MasterProductPurpose        MasterProductPurpose[]
-}
-
-// ##########----------Product Segment Model----------##########
-model ProductSegment {
-    id        String   @id @default(uuid())
-    name      String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    MasterProductSegment       MasterProductSegment[]
-}
-
-// ##########----------Loan Type Model----------##########
-model LoanType {
-    id        String   @id @default(uuid())
-    name      String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    MasterProduct              MasterProduct[]
-}
-
-// ##########----------Product Partner Model----------##########
-model ProductPartner {
-    id        String   @id @default(uuid())
-    name      String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    MasterProduct               MasterProduct[]
-    VariantProduct              VariantProduct[]
-    VariantProductUpdateRequest VariantProductUpdateRequest[]
-}
-
-// ##########----------Disbursement Mode Model----------##########
-model DisbursementMode {
-    id        String   @id @default(uuid())
-    name      String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    FinancialDisbursementMode       FinancialDisbursementMode[]
-}
-
-// ##########----------Repayment Mode Model----------##########
-model RepaymentModes {
-    id        String   @id @default(uuid())
-    name      String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    FinancialRepaymentMode       FinancialRepaymentMode[]
-}
-
 // ##########----------Master Product Model----------##########
 model MasterProduct {
-    id                 String          @id @default(uuid())
+    id                 String        @id @default(uuid())
+    productId          String?       @db.VarChar(100)
     productManagerId   String?
-    productId          String?         @db.VarChar(100)
     versionId          Int
-    productCode        String?         @db.VarChar(100)
-    productName        String?         @db.VarChar(100)
+    productCode        String?       @db.VarChar(100)
+    productName        String?       @db.VarChar(200)
     productCategoryId  String?
     loanTypeId         String
-    deliveryChannel    DeliveryChannel
     partnerId          String?
-    productDescription String?         @db.VarChar(100)
-    status             ProductStatus   @default(Draft)
-    createdAt          DateTime        @default(now())
-    updatedAt          DateTime        @updatedAt
-    isDeleted          Boolean         @default(false)
+    productDescription String?       @db.Text
+    status             ProductStatus @default(Draft)
+    createdAt          DateTime      @default(now())
+    updatedAt          DateTime      @updatedAt
+    isDeleted          Boolean       @default(false)
 
     productCategory ProductCategory?   @relation(fields: [productCategoryId], references: [id], onDelete: Cascade)
     productManager  AssociateSubAdmin? @relation(fields: [productManagerId], references: [id], onDelete: Cascade)
@@ -105,15 +25,18 @@ model MasterProduct {
     creditBureauConfig        CreditBureauConfig?
     masterProductOtherCharges MasterProductOtherCharges?
 
-    MasterProductPurpose        MasterProductPurpose[]
-    FinancialDisbursementMode   FinancialDisbursementMode[]
-    FinancialRepaymentMode      FinancialRepaymentMode[]
-    VariantProduct              VariantProduct[]
-    MasterProductVersion        MasterProductVersion[]
-    MasterProductSegment        MasterProductSegment[]
-    MasterProductField          MasterProductField[]
-    LoanApplication             LoanApplication[]
-    ProductCreditAssignmentRule ProductCreditAssignmentRule[]
+    MasterProductPurpose         MasterProductPurpose[]
+    FinancialDisbursementMode    FinancialDisbursementMode[]
+    FinancialRepaymentMode       FinancialRepaymentMode[]
+    VariantProduct               VariantProduct[]
+    MasterProductVersion         MasterProductVersion[]
+    MasterProductSegment         MasterProductSegment[]
+    MasterProductField           MasterProductField[]
+    LoanApplication              LoanApplication[]
+    ProductCreditAssignmentRule  ProductCreditAssignmentRule[]
+    MasterProductUpdateRequest   MasterProductUpdateRequest[]
+    MasterProductDeleteRequest   MasterProductDeleteRequest[]
+    MasterProductDeliveryChannel MasterProductDeliveryChannel[]
 }
 
 // ##########----------Master Product Purpose Model----------##########
@@ -153,6 +76,16 @@ model FinancialRepaymentMode {
     repaymentId     String?
     masterProduct   MasterProduct?  @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
     RepaymentModes  RepaymentModes? @relation(fields: [repaymentId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Dilevery Channel Model----------##########
+model MasterProductDeliveryChannel {
+    id                String @id @default(uuid())
+    masterProductId   String
+    deliveryChannelId String
+
+    masterProduct   MasterProduct   @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    deliveryChannel DeliveryChannel @relation(fields: [deliveryChannelId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Financial Terms----------##########
@@ -302,7 +235,7 @@ model MasterProductField {
 
     Field         Field          @relation(fields: [fieldId], references: [id], onDelete: Cascade)
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-    category      FieldCategory? @relation(fields: [categoryId], references: [id])
+    category      FieldCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Product Credit Assignment Rule Model----------##########
@@ -318,7 +251,7 @@ model ProductCreditAssignmentRule {
     isDeleted       Boolean  @default(false)
 
     masterProduct MasterProduct     @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-    creditManager AssociateSubAdmin @relation(fields: [creditManagerId], references: [id])
+    creditManager AssociateSubAdmin @relation(fields: [creditManagerId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Version Model----------##########

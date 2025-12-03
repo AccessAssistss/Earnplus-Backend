@@ -1,0 +1,11 @@
+// ##########----------Product Category Model----------##########
+model ProductCategory {
+    id           String   @id @default(uuid())
+    categoryName String?  @db.VarChar(100)
+    createdAt    DateTime @default(now())
+    updatedAt    DateTime @updatedAt
+    isDeleted    Boolean  @default(false)
+
+    MasterProduct MasterProduct[]
+    MasterProductUpdateRequest MasterProductUpdateRequest[]
+}

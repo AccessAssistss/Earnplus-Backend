@@ -16,7 +16,7 @@ const createRole = asyncHandler(async (req, res) => {
     where: { userId: associateId, isDeleted: false },
   });
   if (!associate) {
-    return res.respond(404, "Associated profile not found!");
+    return res.respond(404, "Associate profile not found!");
   }
 
   const existingRole = await prisma.role.findFirst({

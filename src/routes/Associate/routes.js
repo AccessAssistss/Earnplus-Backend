@@ -33,5 +33,8 @@ router.use("/assignmentRule", require("./assignmentRulesRoute"));
 router.use("/quizCategory", require("./quizCategoryRoute"));
 router.use("/quizQna", require("./quizQnaRoute"));
 // router.use("/credential", require("./credentialRoute"));
+router.use("/deliveryChannel", require("./deliveryChannelRoute"));
+router.use("/masterProductUpdateRequest", require("./masterProductUpdateRequestRoute"));
+router.use("/masterProductDeleteRequest", require("./masterProductDeleteRequestRoute"));
 
 module.exports = router;

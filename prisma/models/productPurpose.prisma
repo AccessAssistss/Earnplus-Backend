@@ -1,0 +1,10 @@
+// ##########----------Product Purpose Model----------##########
+model ProductPurpose {
+    id        String   @id @default(uuid())
+    purpose   String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    MasterProductPurpose MasterProductPurpose[]
+}

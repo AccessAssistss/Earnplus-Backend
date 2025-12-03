@@ -25,7 +25,7 @@ const createVariantProduct = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(
       403,
       "Only Product Managers can create variant products."
@@ -53,13 +53,30 @@ const createVariantProduct = asyncHandler(async (req, res) => {
     variantCount
   );
 
+  const existingCode = await prisma.variantProduct.findFirst({
+    where: { variantId: generatedCode },
+  });
+  if (existingCode) {
+    return res.respond(
+      409,
+      "Generated product code already exists. Try a different name."
+    );
+  }
+
+  const latestVersion = await prisma.variantProductVersion.findFirst({
+    where: { variantProduct: { variantName: { equals: variantName, mode: "insensitive" } } },
+    orderBy: { versionId: 'desc' },
+  });
+
+  const newVersionId = latestVersion ? latestVersion.versionId + 1 : 1;
+
   const result = await prisma.$transaction(async (tx) => {
     const product = await tx.variantProduct.create({
       data: {
         masterProductId,
         productManagerId: productManager.id,
         variantName,
-        versionId: 1,
+        versionId: newVersionId,
         variantType,
         variantCode,
         variantId: generatedCode,
@@ -110,7 +127,7 @@ const createVariantProductParameter = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(
       403,
       "Only Product Managers can create variant products."
@@ -122,6 +139,13 @@ const createVariantProductParameter = asyncHandler(async (req, res) => {
   });
   if (!exists) {
     return res.respond(404, "Variant Product not found.");
+  }
+
+  const existingParameter = await prisma.variantProductParameter.findUnique({
+    where: { variantProductId },
+  });
+  if (existingParameter) {
+    return res.respond(409, "Product Parameters already exist for this Variant Product.");
   }
 
   const parameter = await prisma.variantProductParameter.create({
@@ -173,7 +197,7 @@ const createVariantProductOtherCharges = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(
       403,
       "Only Product Managers can create variant products."
@@ -185,6 +209,13 @@ const createVariantProductOtherCharges = asyncHandler(async (req, res) => {
   });
   if (!exists) {
     return res.respond(404, "Variant Product not found.");
+  }
+
+  const existingOtherCharges = await prisma.variantProductOtherCharges.findUnique({
+    where: { variantProductId },
+  });
+  if (existingOtherCharges) {
+    return res.respond(409, "Other Charges already exist for this Variant Product.");
   }
 
   const charges = await prisma.variantProductOtherCharges.create({
@@ -223,7 +254,7 @@ const createVariantProductRepayment = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(
       403,
       "Only Product Managers can create variant products."
@@ -269,7 +300,7 @@ const getAllVariantProductsByProduct = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 
@@ -315,7 +346,7 @@ const getVariantProductDetail = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 
@@ -343,424 +374,6 @@ const getVariantProductDetail = asyncHandler(async (req, res) => {
   );
 });
 
-// ####################--------------------Variant Product EDIT And DELETE Requests Handeling--------------------####################
-// ##########----------Submit Variant Product Update Request----------##########
-const submitVariantProductUpdateRequest = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const {
-    variantProductId,
-    productType,
-    variantName,
-    variantType,
-    partnerId,
-    remark,
-    parameterUpdate,
-    otherChargesUpdate,
-    repaymentUpdate,
-    rejectionReason
-  } = req.body;
-
-  if (!variantProductId) {
-    return res.respond(400, "Required field missing.");
-  }
-
-  const productManager = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-    include: { role: true },
-  });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
-    return res.respond(
-      403,
-      "Only Product Managers can submit update requests."
-    );
-  }
-
-  const variantProduct = await prisma.variantProduct.findUnique({
-    where: { id: variantProductId },
-  });
-  if (!variantProduct) {
-    return res.respond(404, "Variant Product not found.");
-  }
-
-  if (partnerId) {
-    const partnerExists = await prisma.productPartner.findUnique({
-      where: { id: partnerId },
-    });
-    if (!partnerExists) {
-      return res.respond(400, "Invalid partnerId. Partner not found.");
-    }
-  }
-
-  const updateRequest = await prisma.variantProductUpdateRequest.create({
-    data: {
-      variantProductId,
-      productManagerId: productManager.id,
-      productType,
-      variantName,
-      variantType,
-      partnerId,
-      remark,
-      rejectionReason,
-
-      VariantProductParameterUpdate: parameterUpdate
-        ? {
-          create: parameterUpdate,
-        }
-        : undefined,
-
-      VariantProductOtherChargesUpdate: otherChargesUpdate
-        ? {
-          create: otherChargesUpdate,
-        }
-        : undefined,
-
-      VariantProductRepaymentUpdate: repaymentUpdate
-        ? {
-          create: repaymentUpdate,
-        }
-        : undefined,
-    },
-    include: {
-      VariantProductParameterUpdate: true,
-      VariantProductOtherChargesUpdate: true,
-      VariantProductRepaymentUpdate: true,
-    },
-  });
-
-  return res.respond(
-    201,
-    "Variant Product Update Request Submitted!",
-    updateRequest
-  );
-});
-
-// ##########----------Get Variant Product Update Requests----------##########
-const getAllVariantProductUpdateRequests = asyncHandler(async (req, res) => {
-  const userId = req.user;
-
-  const associate = await prisma.associate.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!associate) {
-    return res.respond(403, "Associate not found.");
-  }
-
-  const updateRequests = await prisma.variantProductUpdateRequest.findMany({
-    include: {
-      variantProduct: {
-        select: {
-          id: true,
-          variantCode: true,
-          variantId: true,
-        },
-      },
-      productManager: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
-    },
-  });
-
-  res.respond(200, "Fetched all update requests successfully.", updateRequests);
-});
-
-// ##########----------Get Variant Product Update Request Details----------##########
-const getVariantProductUpdateRequestDetail = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const { updateProductId } = req.params;
-
-  const associate = await prisma.associate.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!associate) {
-    return res.respond(403, "Associate not found.");
-  }
-
-  const variantProductUpdate = await prisma.variantProductUpdateRequest.findFirst({
-    where: {
-      id: updateProductId,
-    },
-    select: {
-      id: true,
-      productType: true,
-      variantName: true,
-      variantType: true,
-      remark: true,
-      VariantProductParameter: true,
-      VariantProductOtherCharges: true,
-      VariantProductRepayment: true,
-    }
-  });
-  if (!variantProductUpdate) {
-    return res.respond(404, "Variant product update request not found.");
-  }
-
-  return res.respond(
-    200,
-    "product details fetched successfully!",
-    variantProductUpdate
-  );
-});
-
-// ##########----------Approve Variant Product Update Request----------##########
-const approveVariantProductUpdateRequest = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const { requestId } = req.params;
-
-  const associate = await prisma.associate.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!associate) {
-    return res.respond(403, "Associate not found.");
-  }
-
-  const request = await prisma.variantProductUpdateRequest.findUnique({
-    where: { id: requestId },
-    include: {
-      variantProduct: true,
-      VariantProductParameterUpdate: true,
-      VariantProductOtherChargesUpdate: true,
-      VariantProductRepaymentUpdate: true,
-    },
-  });
-  if (!request) {
-    return res.respond(404, "Update request not found!");
-  }
-
-  const { variantProduct } = request;
-  const newVersionId = variantProduct.versionId + 1;
-
-  function cleanPrismaUpdateData(data, disallowedFields = ["id", "updateRequestId", "createdAt", "updatedAt", "isDeleted"]) {
-    const cleaned = { ...data };
-    for (const field of disallowedFields) {
-      delete cleaned[field];
-    }
-    return cleaned;
-  }
-
-  await prisma.$transaction(async (tx) => {
-    await tx.variantProductVersion.create({
-      data: {
-        variantProductId: variantProduct.id,
-        versionId: newVersionId,
-        snapshot: JSON.parse(JSON.stringify(variantProduct)),
-      },
-    });
-
-    await tx.variantProduct.update({
-      where: { id: variantProduct.id },
-      data: {
-        variantName: request.variantName,
-        variantType: request.variantType,
-        productType: request.productType,
-        partnerId: request.partnerId,
-        remark: request.remark,
-        versionId: newVersionId,
-      },
-    });
-
-    if (request.VariantProductParameterUpdate) {
-      await tx.variantProductParameter.update({
-        where: { variantProductId: variantProduct.id },
-        data: cleanPrismaUpdateData(request.VariantProductParameterUpdate),
-      });
-    }
-
-    if (request.VariantProductOtherChargesUpdate) {
-      await tx.variantProductOtherCharges.update({
-        where: { variantProductId: variantProduct.id },
-        data: cleanPrismaUpdateData(request.VariantProductOtherChargesUpdate),
-      });
-    }
-
-    if (request.VariantProductRepaymentUpdate) {
-      await tx.variantProductRepayment.update({
-        where: { variantProductId: variantProduct.id },
-        data: cleanPrismaUpdateData(request.VariantProductRepaymentUpdate),
-      });
-    }
-
-    await tx.variantProductUpdateRequest.update({
-      where: { id: requestId },
-      data: {
-        isDeleted: true,
-        isApproved: true,
-      },
-    });
-  });
-
-  return res.respond(200, "Variant Product Update Request Approved!");
-});
-
-// ##########----------Reject Variant Product Update Request----------##########
-const rejectVariantProductUpdateRequest = asyncHandler(async (req, res) => {
-  const { requestId, reason } = req.body;
-
-  const updateRequest = await prisma.variantProductUpdateRequest.findUnique({
-    where: { id: requestId },
-  });
-  if (!updateRequest) {
-    return res.respond(404, "Update Request not found!");
-  }
-
-  await prisma.variantProductUpdateRequest.update({
-    where: { id: requestId },
-    data: {
-      isrejected: true,
-      rejectionReason: reason,
-    },
-  });
-
-  res.respond(200, "Variant Product Update Request Rejected!");
-});
-
-// ##########----------Create Variant Product Delete Request----------##########
-const createVariantProductDeleteRequest = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const { variantProductId, reason } = req.body;
-
-  const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!associateSubAdmin) {
-    return res.respond(403, "associate subadmin not found!");
-  }
-
-  const product = await prisma.variantProduct.findFirst({
-    where: {
-      id: variantProductId,
-      isDeleted: false,
-    },
-  });
-  if (!product) {
-    return res.respond(404, "Variant Product not found or already deleted!");
-  }
-
-  const existingRequest = await prisma.variantProductDeleteRequest.findFirst({
-    where: {
-      variantProductId,
-      status: 'PENDING',
-    },
-  });
-  if (existingRequest) {
-    return res.respond(400, "A delete request is already pending for this product!");
-  }
-
-  const deleteRequest = await prisma.variantProductDeleteRequest.create({
-    data: {
-      variantProductId,
-      reason,
-      requestedById: associateSubAdmin.id,
-    },
-  });
-
-  return res.respond(200, "Delete request submitted successfully!", deleteRequest);
-});
-
-// ##########----------Get Variant Product Delete Requests----------##########
-const getVariantProductDeleteRequests = asyncHandler(async (req, res) => {
-  const userId = req.user;
-
-  const associate = await prisma.associate.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!associate) {
-    return res.respond(404, "Associate not found!");
-  }
-
-  const whereClause = {
-    isDeleted: false,
-  };
-
-  const requests = await prisma.variantProductDeleteRequest.findMany({
-    where: whereClause,
-    include: {
-      variantProduct: true,
-      requestedBy: {
-        select: {
-          id: true,
-          name: true,
-        }
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-  });
-
-  return res.respond(200, "Delete requests fetched successfully!", requests);
-});
-
-// ##########----------Handle Variant Product Delete Request----------##########
-const handleVariantProductDeleteRequest = asyncHandler(async (req, res) => {
-  const userId = req.user;
-  const { requestId, action, reason } = req.body;
-
-  if (!["APPROVED", "REJECTED"].includes(action)) {
-    return res.respond(400, "Invalid action. Must be APPROVED or REJECTED.");
-  }
-
-  const associate = await prisma.associate.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!associate) {
-    return res.respond(404, "Associate not found!");
-  }
-
-  const request = await prisma.variantProductDeleteRequest.findUnique({
-    where: { id: requestId },
-    include: { variantProduct: true },
-  });
-  if (!request || request.status !== "PENDING") {
-    return res.respond(404, "Valid pending delete request not found.");
-  }
-
-  const actions = [];
-
-  if (action === "APPROVED") {
-    actions.push(
-      prisma.variantProduct.update({
-        where: { id: request.variantProductId },
-        data: { isDeleted: true },
-      })
-    );
-
-    actions.push(
-      prisma.assignVariantProductToEmployer.updateMany({
-        where: {
-          variantProductId: request.variantProductId,
-          isDeleted: false,
-        },
-        data: { isDeleted: true },
-      })
-    );
-
-    actions.push(
-      prisma.variantProductUpdateRequest.updateMany({
-        where: {
-          variantProductId: request.variantProductId,
-          isDeleted: false,
-        },
-        data: { isDeleted: true },
-      })
-    );
-  }
-
-  actions.push(
-    prisma.variantProductDeleteRequest.update({
-      where: { id: requestId },
-      data: {
-        status: action,
-        reason: reason || request.reason,
-      },
-    })
-  );
-
-  await prisma.$transaction(actions);
-
-  return res.respond(200, `Delete request ${action.toLowerCase()} successfully!`);
-});
-
 // ####################--------------------Variant Product Assigning To Employer--------------------####################
 // ##########----------Assign Variant product to Employer----------##########
 const assignVariantProductToEmployer = asyncHandler(async (req, res) => {
@@ -779,7 +392,7 @@ const assignVariantProductToEmployer = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 
@@ -884,7 +497,7 @@ const getAssignedEmployers = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 
@@ -923,7 +536,7 @@ const getVariantProductVersions = asyncHandler(async (req, res) => {
       role: true,
     },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 
@@ -955,7 +568,7 @@ const getVariantProductVersionById = asyncHandler(async (req, res) => {
     where: { userId, isDeleted: false },
     include: { role: true },
   });
-  if (!productManager || productManager.role.roleName !== "Product Manager") {
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
     return res.respond(403, "Only Product Managers can access this data.");
   }
 
@@ -980,14 +593,6 @@ module.exports = {
   createVariantProductRepayment,
   getAllVariantProductsByProduct,
   getVariantProductDetail,
-  submitVariantProductUpdateRequest,
-  getAllVariantProductUpdateRequests,
-  getVariantProductUpdateRequestDetail,
-  approveVariantProductUpdateRequest,
-  rejectVariantProductUpdateRequest,
-  createVariantProductDeleteRequest,
-  getVariantProductDeleteRequests,
-  handleVariantProductDeleteRequest,
   assignVariantProductToEmployer,
   getAssignedVariantProducts,
   getAssignedEmployers,
