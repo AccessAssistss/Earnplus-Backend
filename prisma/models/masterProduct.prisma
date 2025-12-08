@@ -242,16 +242,14 @@ model MasterProductField {
 model ProductCreditAssignmentRule {
     id              String   @id @default(uuid())
     masterProductId String
-    creditManagerId String
+    creditRole      String
     minScore        Int
     maxScore        Int
-    chainOrder      Int
     createdAt       DateTime @default(now())
     updatedAt       DateTime @default(now()) @updatedAt
     isDeleted       Boolean  @default(false)
 
     masterProduct MasterProduct     @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-    creditManager AssociateSubAdmin @relation(fields: [creditManagerId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Version Model----------##########

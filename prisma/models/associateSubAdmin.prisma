@@ -19,19 +19,17 @@ model AssociateSubAdmin {
     Employer                    Employer[]
     AssociateSubAdminModule     AssociateSubAdminModule[]
     AllocateProductToEmployer   AllocateProductToEmployer[]
-    queriesRaised               RaiseQuery[]                  @relation("RaisedByRelation")
-    queriesAssigned             RaiseQuery[]                  @relation("AssignedToRelation")
     KYCRequest                  KYCRequest[]
     LoanApplication             LoanApplication[]
     LoanAssignmentRule          LoanAssignmentRule[]
-    LoanApplicationAssignment   LoanApplicationAssignment[]
-    ProductCreditAssignmentRule ProductCreditAssignmentRule[]
     MasterProduct               MasterProduct[]
     MasterProductUpdateRequest  MasterProductUpdateRequest[]
     MasterProductDeleteRequest  MasterProductDeleteRequest[]
     VariantProduct              VariantProduct[]
     VariantProductUpdateRequest VariantProductUpdateRequest[]
     VariantProductDeleteRequest VariantProductDeleteRequest[]
+    LoanApplicationLogs         LoanApplicationLogs[]
+    assignedToLogs              LoanApplicationLogs[]         @relation("AssignedTo")
 }
 
 // ##########----------Sub-Admin Modules Model----------##########

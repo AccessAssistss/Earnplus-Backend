@@ -1,27 +1,26 @@
 // ####################--------------------Loan Application Model--------------------####################
 model LoanApplication {
-  id         String  @id @default(uuid())
-  customerId String
-  productId  String
-  approverId String?
-  loanCode   String  @unique
-  score      Int?
-
+  id             String              @id @default(uuid())
+  customerId     String
+  productId      String
+  approverId     String?
+  loanCode       String              @unique
+  score          Int?
   customerStatus CustomerLoanStatus  @default(PENDING)
   internalStatus InternalLoanStatus  @default(OPS_PENDING)
   loanStatus     LoanLifecycleStatus @default(NOT_DISBURSED)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  opsApproved    Boolean             @default(false)
+  creditApproved Boolean             @default(false)
+  pennyDrop      Boolean             @default(false)
+  isDeleted      Boolean             @default(false)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  opsApproved Boolean  @default(false)
-  isDeleted Boolean  @default(false)
-
-  employee                  Employee                    @relation(fields: [customerId], references: [id])
-  masterProduct             MasterProduct               @relation(fields: [productId], references: [id])
-  approver                  AssociateSubAdmin?          @relation(fields: [approverId], references: [id])
-  fieldValues               LoanFieldValue[]
-  LoanApplicationAssignment LoanApplicationAssignment[]
-  LoanApplicationHistory    LoanApplicationHistory[]
+  employee            Employee              @relation(fields: [customerId], references: [id])
+  masterProduct       MasterProduct         @relation(fields: [productId], references: [id])
+  approver            AssociateSubAdmin?    @relation(fields: [approverId], references: [id])
+  fieldValues         LoanFieldValue[]
+  LoanApplicationLogs LoanApplicationLogs[]
 }
 
 // ####################--------------------Loan Field Model--------------------####################
@@ -56,34 +55,18 @@ model LoanAssignmentRule {
   creditManager AssociateSubAdmin @relation(fields: [creditManagerId], references: [id])
 }
 
-// ##########----------Loan Application Assignment Model----------##########
-model LoanApplicationAssignment {
-  id                String           @id @default(uuid())
-  loanApplicationId String
-  creditManagerId   String
-  sequenceOrder     Int
-  status            AssignmentStatus @default(PENDING)
-  remarks           String?
-  blockedUntilOps   Boolean          @default(false)
-  active            Boolean          @default(false)
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
-  isDeleted       Boolean  @default(false)
-
-  loanApplication LoanApplication   @relation(fields: [loanApplicationId], references: [id], onDelete: Cascade)
-  creditManager   AssociateSubAdmin @relation(fields: [creditManagerId], references: [id])
-}
-
-// ##########----------Loan Application History Model----------##########
-model LoanApplicationHistory {
+// ##########----------Loan Application Logs Model----------##########
+model LoanApplicationLogs {
   id                String   @id @default(uuid())
   loanApplicationId String
-  action            String
   performedById     String
+  assignedToId      String?
+  action            String
   remarks           String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id])
-  performedBy     CustomUser      @relation(fields: [performedById], references: [id])
+  loanApplication LoanApplication    @relation(fields: [loanApplicationId], references: [id])
+  performedBy     AssociateSubAdmin  @relation(fields: [performedById], references: [id])
+  assignedTo      AssociateSubAdmin? @relation("AssignedTo", fields: [assignedToId], references: [id])
 }

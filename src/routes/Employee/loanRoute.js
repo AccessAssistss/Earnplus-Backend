@@ -4,7 +4,6 @@ const {
   applyLoan, 
   getMyPendingLoans, 
   uploadDocs, 
-  processLoanApproval, 
   getLoanLogs, 
   getLoansDeatilsByCustomer, 
   getLoanHistoryByCustomer,
@@ -20,7 +19,6 @@ const uploadEmployerFiles = createUploadMiddleware("loan", LOAN_FILE_FIELDS);
 
 router.post("/uploadDocs", validateToken, uploadEmployerFiles, multerErrorHandler, uploadDocs);
 router.post("/applyLoan/:masterProductId", validateToken, applyLoan);
-router.post("/processLoanApproval/:loanApplicationId", validateToken, processLoanApproval);
 router.get("/getMyPendingLoans", validateToken, getMyPendingLoans);
 router.get("/getLoansByCustomer", validateToken, getLoansByCustomer);
 router.get("/getLoansDeatilsByCustomer/:loanApplicationId", validateToken, getLoansDeatilsByCustomer);
