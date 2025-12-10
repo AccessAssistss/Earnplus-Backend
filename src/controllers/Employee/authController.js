@@ -16,7 +16,7 @@ const {
   checkPanStatus,
   verifySelfie,
 } = require("../../../utils/verificationUtils");
-const { crifReport } = require("../../../utils/crifUtils");
+// const { crifReport } = require("../../../utils/crifUtils");
 
 const prisma = new PrismaClient();
 
@@ -287,7 +287,7 @@ const updateEmployeeProfile = asyncHandler(async (req, res) => {
     return res.respond(400, "Employee not found!")
   }
 
-   const updateData = {};
+  const updateData = {};
 
   if (employeeName !== undefined) updateData.employeeName = employeeName;
   if (dob !== undefined) updateData.dob = new Date(dob);
@@ -663,11 +663,11 @@ const cardController = asyncHandler(async (req, res) => {
   const today = new Date();
   const nextPayDate = new Date(today.setDate(today.getDate() + 4));
 
-    res.respond(
-      200,
-      "Card Fetched successfully!",
-      { totalAmount: 10000, withdrawlAmount: 7500, nextPayDate }
-    );
+  res.respond(
+    200,
+    "Card Fetched successfully!",
+    { totalAmount: 10000, withdrawlAmount: 7500, nextPayDate }
+  );
 });
 
 // ##########----------Delete Employee----------##########
@@ -742,16 +742,16 @@ const getCreditReport = asyncHandler(async (req, res) => {
   }
 
   await prisma.crifReport.upsert({
-  where: { employeeId: employee.id },
-  update: {
-    responseBody: crifResponse.data,
-    updatedAt: new Date(),
-  },
-  create: {
-    employeeId: employee.id,
-    responseBody: crifResponse.data,
-  },
-});
+    where: { employeeId: employee.id },
+    update: {
+      responseBody: crifResponse.data,
+      updatedAt: new Date(),
+    },
+    create: {
+      employeeId: employee.id,
+      responseBody: crifResponse.data,
+    },
+  });
 
   res.respond(200, "CRIF Report retrieved successfully!", {
     cached: false,

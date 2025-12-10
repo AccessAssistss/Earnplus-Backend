@@ -21,6 +21,7 @@ model LoanApplication {
   approver            AssociateSubAdmin?    @relation(fields: [approverId], references: [id])
   fieldValues         LoanFieldValue[]
   LoanApplicationLogs LoanApplicationLogs[]
+  LoanCrifReport      LoanCrifReport?
 }
 
 // ####################--------------------Loan Field Model--------------------####################
@@ -69,4 +70,15 @@ model LoanApplicationLogs {
   loanApplication LoanApplication    @relation(fields: [loanApplicationId], references: [id])
   performedBy     AssociateSubAdmin  @relation(fields: [performedById], references: [id])
   assignedTo      AssociateSubAdmin? @relation("AssignedTo", fields: [assignedToId], references: [id])
+}
+
+// ##########----------Loan CRIF Report Model----------##########
+model LoanCrifReport {
+  id                String   @id @default(uuid())
+  loanApplicationId String   @unique
+  responseBody      Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id])
 }

@@ -146,10 +146,26 @@ async function assignToSeniorOps(tx, loanApplication, performedById, remarks) {
 
 // ##########----------Assign Loan Application To Credit Manager Function----------##########
 async function assignToCredit(tx, loanApplication, performedById, remarks) {
+    const creditReport = await prisma.loanCrifReport.findUnique({
+        where: { loanApplicationId: loanApplication.id },
+    });
+    if (!creditReport) return res.respond(404, "Credit Report not found for this Loan Application!");
+
+    const score =
+        creditReport?.["CIR-REPORT-FILE"]
+        ?.["REPORT-DATA"]
+        ?.["STANDARD-DATA"]
+        ?.["SCORE"]?.[0]
+        ?.["VALUE"] || null;
+
+    console.log(score);
+
+    if (!score) return res.respond(400, "Score is Invalid!");
+
     const selectedCredit = await selectCreditManagerByScore(
         tx,
         loanApplication.productId,
-        loanApplication.score
+        score
     );
 
     await tx.loanApplication.update({
