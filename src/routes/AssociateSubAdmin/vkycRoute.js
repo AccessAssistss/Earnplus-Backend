@@ -5,6 +5,6 @@ const { createVKYCLinkForCustomer, getVKYCDataPointDetails } = require("../../co
 const router = express.Router();
 
 router.post("/createVKYCLinkForCustomer/:loanApplicationId", validateToken, createVKYCLinkForCustomer);
-router.get("/getVKYCDataPointDetails/:loanApplicationId", getVKYCDataPointDetails);
+router.get("/getVKYCDataPointDetails/:loanApplicationId", validateToken, getVKYCDataPointDetails);
 
 module.exports = router;

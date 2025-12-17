@@ -179,7 +179,10 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
 // ##########----------Get All Master Product Update Requests----------##########
 const getAllMasterProductUpdateRequests = asyncHandler(async (req, res) => {
     const userId = req.user;
-    const { status, page = 1, limit = 10 } = req.query;
+    const { status } = req.query;
+
+    const pageNumber = parseInt(req.query.page) || 1;
+    const limitNumber = parseInt(req.query.limit) || 10;
 
     const associate = await prisma.associate.findFirst({
         where: { userId, isDeleted: false },
@@ -194,7 +197,7 @@ const getAllMasterProductUpdateRequests = asyncHandler(async (req, res) => {
         ...(status && { status }),
     };
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
 
     const [requests, totalCount] = await Promise.all([
         prisma.masterProductUpdateRequest.findMany({
@@ -218,16 +221,16 @@ const getAllMasterProductUpdateRequests = asyncHandler(async (req, res) => {
             },
             orderBy: { createdAt: "desc" },
             skip,
-            take: parseInt(limit),
+            take: limitNumber,
         }),
         prisma.masterProductUpdateRequest.count({ where: whereClause }),
     ]);
 
     res.respond(200, "Master Product Update Requests fetched successfully!", {
         total: totalCount,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(totalCount / parseInt(limit)),
+        page: pageNumber,
+        limit: limitNumber,
+        totalPages: Math.ceil(totalCount / parseInt(limitNumber)),
         data: requests,
     });
 });

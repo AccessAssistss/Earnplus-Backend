@@ -185,9 +185,130 @@ const GetVKYCStatusByUniqueId = async (uniqueIds = []) => {
     }
 };
 
+// ###############---------------Cams BSA Authentication--------------###############
+const camsAuthentication = async () => {
+    try {
+        const url = `${BASE_URL}/api/v1/proxy/earnplus/cams/authentication`;
+
+        const headers = {
+            "userid": PROXY_CRIF_USER_ID,
+            "password": PROXY_CRIF_PASSWORD,
+            "Content-Type": "application/json",
+        };
+
+        const payload = {};
+
+        const response = await axios.post(url, payload, { headers, validateStatus: () => true });
+
+        if (response.status === 200) {
+            return { success: true, data: response.data };
+        } else {
+            return { success: false, data: response.data, statusCode: response.status };
+        }
+    } catch (error) {
+        console.error("Error while Authenticating Cams BSA:", error.message);
+        return { success: false, error: error.message, statusCode: 500 };
+    }
+};
+
+// ###############---------------Cams AA Redirection--------------###############
+const camsAARedirection = async (clienttrnxid, phoneNumber, sessionId, token) => {
+    try {
+        const url = `${BASE_URL}/api/v1/proxy/earnplus/cams/aaRedirection`;
+
+        const headers = {
+            "userid": PROXY_CRIF_USER_ID,
+            "password": PROXY_CRIF_PASSWORD,
+            "Content-Type": "application/json",
+        };
+
+        const payload = {
+            clienttrnxid,
+            phoneNumber,
+            sessionId,
+            token,
+        };
+
+        const response = await axios.post(url, payload, { headers, validateStatus: () => true });
+
+        if (response.status === 200) {
+            return { success: true, data: response.data };
+        } else {
+            return { success: false, data: response.data, statusCode: response.status };
+        }
+    } catch (error) {
+        console.error("Error while Creating Cams AA Redirection:", error.message);
+        return { success: false, error: error.message, statusCode: 500 };
+    }
+};
+
+// ###############---------------Cams Get Consent Data--------------###############
+const camsGetConsentData = async (consentId, token) => {
+    try {
+        const url = `${BASE_URL}/api/v1/proxy/earnplus/cams/getConsentData`;
+
+        const headers = {
+            "userid": PROXY_CRIF_USER_ID,
+            "password": PROXY_CRIF_PASSWORD,
+            "Content-Type": "application/json",
+        };
+
+        const payload = {
+            consentId,
+            token,
+        };
+
+        const response = await axios.post(url, payload, { headers, validateStatus: () => true });
+
+        if (response.status === 200) {
+            return { success: true, data: response.data };
+        } else {
+            return { success: false, data: response.data, statusCode: response.status };
+        }
+    } catch (error) {
+        console.error("Error while getting Cams consent data:", error.message);
+        return { success: false, error: error.message, statusCode: 500 };
+    }
+};
+
+// ###############---------------Cams Fetch Periodic Data--------------###############
+const camsFetchPeriodicData = async (sessionId, txnId, consentId, token) => {
+    try {
+        const url = `${BASE_URL}/api/v1/proxy/earnplus/cams/fetchPeriodicData`;
+
+        const headers = {
+            "userid": PROXY_CRIF_USER_ID,
+            "password": PROXY_CRIF_PASSWORD,
+            "Content-Type": "application/json",
+        };
+
+        const payload = {
+            sessionId,
+            txnId,
+            consentId,
+            token,
+        };
+
+        const response = await axios.post(url, payload, { headers, validateStatus: () => true });
+
+        if (response.status === 200) {
+            return { success: true, data: response.data };
+        } else {
+            return { success: false, data: response.data, statusCode: response.status };
+        }
+    } catch (error) {
+        console.error("Error while Fetching Cams Periodic Data:", error.message);
+        return { success: false, error: error.message, statusCode: 500 };
+    }
+};
+
 module.exports = {
     crifReport,
     createVKYCLink,
     GetVKYCDetailsBySessionId,
-    GetVKYCStatusByUniqueId
+    GetVKYCStatusByUniqueId,
+    camsAuthentication,
+    camsAARedirection,
+    camsGetConsentData,
+    camsFetchPeriodicData,
 }
