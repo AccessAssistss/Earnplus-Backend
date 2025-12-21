@@ -21,7 +21,6 @@ model AssociateSubAdmin {
     AllocateProductToEmployer   AllocateProductToEmployer[]
     KYCRequest                  KYCRequest[]
     LoanApplication             LoanApplication[]
-    LoanAssignmentRule          LoanAssignmentRule[]
     MasterProduct               MasterProduct[]
     MasterProductUpdateRequest  MasterProductUpdateRequest[]
     MasterProductDeleteRequest  MasterProductDeleteRequest[]

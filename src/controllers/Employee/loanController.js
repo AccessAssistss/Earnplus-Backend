@@ -1,7 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const { asyncHandler } = require("../../../utils/asyncHandler");
 const { generateUniqueLoanCode } = require("../../../utils/uniqueCodeGenerator");
-const { logLoanHistory, safeCreateAssignment } = require("../../../helper/loanFunc");
 const { selectOpsManager } = require("../../../helper/selectOpsManager");
 
 const prisma = new PrismaClient();
@@ -10,11 +9,11 @@ const prisma = new PrismaClient();
 const applyLoan = asyncHandler(async (req, res) => {
     const customerId = req.user;
     const { masterProductId } = req.params;
-    const { values, score } = req.body;
+    const { formJsonData, score } = req.body;
 
     if (!masterProductId) return res.respond(400, "Master Product Id is required.");
-    if (!Array.isArray(values) || values.length === 0) {
-        return res.respond(400, "Values must be a non-empty array.");
+    if (!formJsonData || typeof formJsonData !== 'object') {
+        return res.respond(400, "Form data is required and must be an object.");
     }
 
     const customer = await prisma.employee.findFirst({
@@ -48,16 +47,21 @@ const applyLoan = asyncHandler(async (req, res) => {
             },
         });
 
-        const fieldValuesData = values.map((v) => ({
-            applicationId: createdApplication.id,
-            fieldId: v.fieldId,
-            dropdownId: v.dropdownId || null,
-            subFieldId: v.subFieldId || null,
-            value: v.value ?? null,
-        }));
-        if (fieldValuesData.length) {
-            await tx.loanFieldValue.createMany({ data: fieldValuesData });
-        }
+        await tx.loanFormData.create({
+            data: {
+                applicationId: createdApplication.id,
+                formJsonData: formJsonData,
+            },
+        });
+
+        await tx.loanApplicationLogs.create({
+            data: {
+                loanApplicationId: createdApplication.id,
+                performedById: selectedOps.id,
+                action: "LOAN_APPLICATION_SUBMITTED",
+                remarks: "Loan application submitted by customer",
+            },
+        });
 
         return createdApplication;
     });
@@ -71,7 +75,7 @@ const applyLoan = asyncHandler(async (req, res) => {
 // ##########----------Get My Pending Loans (For Approvers)----------##########
 const getMyPendingLoans = asyncHandler(async (req, res) => {
     const userId = req.user;
-    const { page = 1, limit = 10, status = "PENDING" } = req.query;
+    const { page = 1, limit = 10 } = req.query;
 
     const approver = await prisma.associateSubAdmin.findFirst({
         where: { userId, isDeleted: false, isActive: true },
@@ -83,28 +87,18 @@ const getMyPendingLoans = asyncHandler(async (req, res) => {
 
     const whereClause = {
         isDeleted: false,
-        LoanApplicationAssignment: {
-            some: {
-                creditManagerId: approver.id,
-                status: status,
-                active: true
-            }
-        }
+        approverId: approver.id,
     };
 
-    if (approver.role.roleName.startsWith("CM")) {
-        whereClause.LoanApplicationAssignment.some = {
-            creditManagerId: approver.id,
-            status: status,
-            active: true,
-            OR: [
-                { blockedUntilOps: false },
-                {
-                    blockedUntilOps: true,
-                    loanApplication: { opsApproved: true }
-                }
-            ]
-        };
+    if (internalStatus) {
+        whereClause.internalStatus = internalStatus;
+    } else {
+        if (approver.role.roleName === "Ops_Manager") {
+            whereClause.internalStatus = "OPS_PENDING";
+        } else if (approver.role.roleName.startsWith("CM")) {
+            whereClause.internalStatus = "CREDIT_PENDING";
+            whereClause.opsApproved = true;
+        }
     }
 
     const totalCount = await prisma.loanApplication.count({ where: whereClause });
@@ -129,17 +123,10 @@ const getMyPendingLoans = asyncHandler(async (req, res) => {
                     productCode: true
                 }
             },
-            LoanApplicationAssignment: {
-                where: {
-                    creditManagerId: approver.id
-                },
+            LoanFormData: {
                 select: {
                     id: true,
-                    sequenceOrder: true,
-                    blockedUntilOps: true,
-                    active: true,
-                    status: true,
-                    remarks: true
+                    formJsonData: true,
                 }
             }
         },
@@ -148,19 +135,8 @@ const getMyPendingLoans = asyncHandler(async (req, res) => {
         take: parseInt(limit)
     });
 
-    const loansWithStatus = loans.map(loan => {
-        const assignment = loan.LoanApplicationAssignment[0];
-        return {
-            ...loan,
-            canApprove: assignment.active &&
-                assignment.status === "PENDING" &&
-                (!assignment.blockedUntilOps || loan.opsApproved),
-            waitingForOps: assignment.blockedUntilOps && !loan.opsApproved
-        };
-    });
-
     res.respond(200, "Loans fetched successfully!", {
-        loans: loansWithStatus,
+        loans,
         pagination: {
             currentPage: parseInt(page),
             totalPages: Math.ceil(totalCount / limit),
@@ -178,34 +154,67 @@ const getLoanLogs = asyncHandler(async (req, res) => {
     const loan = await prisma.loanApplication.findFirst({
         where: { id: loanApplicationId },
         include: {
-            employee: true,
-            masterProduct: true,
-            LoanApplicationAssignment: {
-                include: {
-                    creditManager: {
-                        include: { role: true }
-                    }
-                },
-                orderBy: { sequenceOrder: 'asc' }
+            employee: {
+                select: {
+                    id: true,
+                    customEmployeeId: true,
+                    employeeName: true,
+                    email: true,
+                    mobile: true,
+                }
             },
-            LoanApplicationHistory: {
+            masterProduct: {
+                select: {
+                    id: true,
+                    productName: true,
+                    productId: true,
+                    productCode: true,
+                    productDescription: true,
+                }
+            },
+            approver: {
+                select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                    role: {
+                        select: {
+                            roleName: true,
+                        }
+                    }
+                }
+            },
+            LoanFormData: true,
+            LoanVkycData: true,
+            LoanCrifReport: true,
+            LoanApplicationLogs: {
                 include: {
                     performedBy: {
                         select: {
                             id: true,
                             name: true,
-                            email: true
+                            email: true,
+                            role: {
+                                select: {
+                                    roleName: true,
+                                }
+                            }
+                        }
+                    },
+                    assignedTo: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                            role: {
+                                select: {
+                                    roleName: true,
+                                }
+                            }
                         }
                     }
                 },
                 orderBy: { createdAt: 'asc' }
-            },
-            fieldValues: {
-                include: {
-                    field: true,
-                    dropdown: true,
-                    subField: true
-                }
             }
         }
     });
@@ -214,26 +223,13 @@ const getLoanLogs = asyncHandler(async (req, res) => {
         return res.respond(404, "Loan not found");
     }
 
-    const workflowStatus = loan.LoanApplicationAssignment.map(assignment => ({
-        role: assignment.creditManager.role.roleName,
-        status: assignment.status,
-        active: assignment.active,
-        blockedUntilOps: assignment.blockedUntilOps,
-        remarks: assignment.remarks,
-        creditManager: assignment.creditManager.name,
-        sequenceOrder: assignment.sequenceOrder
-    }));
-
-    res.respond(200, "Loan details fetched successfully", {
-        ...loan,
-        workflowStatus
-    });
+    res.respond(200, "Loan details fetched successfully", loan);
 });
 
 // ##########----------Customer Controllers----------##########
 const getLoanHistoryByCustomer = asyncHandler(async (req, res) => {
     const customerId = req.user;
-    const { status } = req.query;
+    const { customerStatus } = req.query;
 
     const customer = await prisma.employee.findFirst({
         where: { userId: customerId, isDeleted: false },
@@ -242,10 +238,13 @@ const getLoanHistoryByCustomer = asyncHandler(async (req, res) => {
         return res.respond(404, "Customer not found.");
     }
 
-    const whereClause = { customerId: customer.id };
+    const whereClause = {
+        customerId: customer.id,
+        isDeleted: false
+    };
 
-    if (status === "CLOSED") {
-        whereClause.customerStatus = "CLOSED";
+    if (customerStatus) {
+        whereClause.customerStatus = customerStatus;
     }
 
     const loans = await prisma.loanApplication.findMany({
@@ -258,6 +257,12 @@ const getLoanHistoryByCustomer = asyncHandler(async (req, res) => {
                     productCode: true,
                     productDescription: true,
                 }
+            }
+        },
+        LoanFormData: {
+            select: {
+                id: true,
+                formJsonData: true,
             }
         },
         orderBy: { createdAt: "desc" },
@@ -319,7 +324,24 @@ const getLoansDeatilsByCustomer = asyncHandler(async (req, res) => {
                     productDescription: true,
                 }
             },
-            LoanApplicationHistory: {
+            LoanFormData: true,
+            LoanVkycData: {
+                select: {
+                    id: true,
+                    vkycPdf: true,
+                    createdAt: true,
+                }
+            },
+            LoanApplicationLogs: {
+                include: {
+                    performedBy: {
+                        select: {
+                            id: true,
+                            name: true,
+                            email: true,
+                        }
+                    }
+                },
                 orderBy: { createdAt: 'desc' },
                 take: 10
             }

@@ -398,57 +398,138 @@ const createMasterProductFields = asyncHandler(async (req, res) => {
   const userId = req.user;
   const {
     masterProductId,
-    isRequired = false,
-    fieldIds = [],
-    categoryId = null,
+    fieldsJsonData
   } = req.body;
 
-  if (!masterProductId || fieldIds.length === 0) {
-    return res.respond(400, "masterProductId and fieldIds are required!");
+  if (!masterProductId || !fieldsJsonData) {
+    return res.respond(400, "Master Product ID and fields data are required!");
   }
-  
+
   const productManager = await prisma.associateSubAdmin.findFirst({
     where: { userId, isDeleted: false },
-    include: {
-      role: true,
-    },
+    include: { role: true },
   });
 
   if (!productManager || productManager.role.roleName !== "Product_Manager") {
-    return res.respond(403, "Only Product Managers can create product fields.");
+    return res.respond(403, "Only Product Managers can create Master Product Fields.");
   }
 
-  const exists = await prisma.masterProduct.findUnique({
+  const masterProduct = await prisma.masterProduct.findUnique({
     where: { id: masterProductId },
   });
-  if (!exists) {
+
+  if (!masterProduct) {
     return res.respond(404, "Master Product not found.");
   }
 
-  if (categoryId) {
-    const categoryExists = await prisma.fieldCategory.findFirst({
-      where: { id: categoryId, isDeleted: false },
-    });
-    if (!categoryExists) {
-      return res.respond(404, "Category not found or deleted.");
+  const existingFields = await prisma.masterProductFields.findUnique({
+    where: { masterProductId },
+  });
+
+  if (existingFields) {
+    return res.respond(409, "Master Product Fields already exist for this product.");
+  }
+
+  const fields = await prisma.masterProductFields.create({
+    data: {
+      masterProductId,
+      fieldsJsonData,
+    },
+  });
+
+  return res.respond(201, "Master Product Fields Created Successfully!", fields);
+});
+
+// ##########----------Create Product Credit Assignment Rule----------##########
+const createProductCreditAssignmentRule = asyncHandler(async (req, res) => {
+  const userId = req.user;
+  const { masterProductId, rules } = req.body;
+
+  if (!masterProductId || !Array.isArray(rules) || rules.length === 0) {
+    return res.respond(400, "Master Product ID and rules array are required!");
+  }
+
+  const productManager = await prisma.associateSubAdmin.findFirst({
+    where: { userId, isDeleted: false },
+    include: { role: true },
+  });
+
+  if (!productManager || productManager.role.roleName !== "Product_Manager") {
+    return res.respond(403, "Only Product Managers can create Credit Assignment Rules.");
+  }
+
+  const masterProduct = await prisma.masterProduct.findUnique({
+    where: { id: masterProductId },
+  });
+
+  if (!masterProduct) {
+    return res.respond(404, "Master Product not found.");
+  }
+
+  for (const rule of rules) {
+    if (!rule.creditRole || rule.minScore == null || rule.maxScore == null) {
+      return res.respond(400, "Each rule must have creditRole, minScore, and maxScore.");
+    }
+    if (rule.minScore > rule.maxScore) {
+      return res.respond(400, `Invalid score range for ${rule.creditRole}: minScore cannot be greater than maxScore.`);
     }
   }
 
-  const result = await prisma.$transaction(async (tx) => {
-    const createdFields = await tx.masterProductField.createMany({
-      data: fieldIds.map((fieldId) => ({
-        masterProductId,
-        fieldId,
-        categoryId,
-        isRequired,
-      })),
-      skipDuplicates: true,
-    });
+  for (let i = 0; i < rules.length; i++) {
+    for (let j = i + 1; j < rules.length; j++) {
+      if (rules[i].creditRole === rules[j].creditRole) {
+        const overlap =
+          (rules[i].minScore <= rules[j].maxScore && rules[i].maxScore >= rules[j].minScore) ||
+          (rules[j].minScore <= rules[i].maxScore && rules[j].maxScore >= rules[i].minScore);
 
-    return createdFields;
+        if (overlap) {
+          return res.respond(409, `Score ranges overlap for ${rules[i].creditRole} in submitted rules.`);
+        }
+      }
+    }
+  }
+
+  const existingRules = await prisma.productCreditAssignmentRule.findMany({
+    where: {
+      masterProductId,
+      isDeleted: false,
+    },
   });
 
-  return res.respond(201, "Master Product Fields Created Successfully!", result);
+  for (const newRule of rules) {
+    for (const existingRule of existingRules) {
+      if (newRule.creditRole === existingRule.creditRole) {
+        const overlap =
+          (newRule.minScore <= existingRule.maxScore && newRule.maxScore >= existingRule.minScore) ||
+          (existingRule.minScore <= newRule.maxScore && existingRule.maxScore >= newRule.minScore);
+
+        if (overlap) {
+          return res.respond(409, `Score range overlaps with existing rule for ${newRule.creditRole}.`);
+        }
+      }
+    }
+  }
+
+  const createdRules = await prisma.$transaction(async (tx) => {
+    const created = [];
+    for (const rule of rules) {
+      const newRule = await tx.productCreditAssignmentRule.create({
+        data: {
+          masterProductId,
+          creditRole: rule.creditRole,
+          minScore: rule.minScore,
+          maxScore: rule.maxScore,
+        },
+      });
+      created.push(newRule);
+    }
+    return created;
+  });
+
+  return res.respond(201, "Product Credit Assignment Rules Created Successfully!", {
+    count: createdRules.length,
+    rules: createdRules,
+  });
 });
 
 // ##########----------Get All Master Products----------##########
@@ -689,6 +770,24 @@ const getMasterProductDetails = asyncHandler(async (req, res) => {
           incidentalCharge: true,
         },
       },
+      MasterProductFields: {
+        select: {
+          id: true,
+          fieldsJsonData: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
+      ProductCreditAssignmentRule: {
+        select: {
+          id: true,
+          creditRole: true,
+          minScore: true,
+          maxScore: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
@@ -780,6 +879,7 @@ module.exports = {
   createCreditBureauConfig,
   createMasterProductOtherCharges,
   createMasterProductFields,
+  createProductCreditAssignmentRule,
   getAllMasterProducts,
   getMasterProductDetails,
   getMasterProductVersions,

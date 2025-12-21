@@ -24,6 +24,7 @@ model MasterProduct {
     eligibilityCriteria       EligibilityCriteria?
     creditBureauConfig        CreditBureauConfig?
     masterProductOtherCharges MasterProductOtherCharges?
+    MasterProductFields       MasterProductFields?
 
     MasterProductPurpose         MasterProductPurpose[]
     FinancialDisbursementMode    FinancialDisbursementMode[]
@@ -31,7 +32,6 @@ model MasterProduct {
     VariantProduct               VariantProduct[]
     MasterProductVersion         MasterProductVersion[]
     MasterProductSegment         MasterProductSegment[]
-    MasterProductField           MasterProductField[]
     LoanApplication              LoanApplication[]
     ProductCreditAssignmentRule  ProductCreditAssignmentRule[]
     MasterProductUpdateRequest   MasterProductUpdateRequest[]
@@ -167,75 +167,16 @@ model MasterProductOtherCharges {
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Product Field Model----------##########
-model Field {
-    id          String    @id @default(uuid())
-    name        String?
-    fieldType   FieldType
-    isMainField Boolean   @default(false)
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
-    isDeleted   Boolean   @default(false)
-
-    dropdowns           Dropdown[]
-    subFields           SubField[]
-    masterProductFields MasterProductField[]
-    LoanFieldValue      LoanFieldValue[]
-}
-
-// ##########----------Product Field Dropdown Model----------##########
-model Dropdown {
-    id        String   @id @default(uuid())
-    fieldId   String
-    value     String?
-    label     String?
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    field Field @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-
-    subFields      SubField[]
-    LoanFieldValue LoanFieldValue[]
-}
-
-// ##########----------Sub-Field Mapping----------##########
-model SubField {
-    id         String   @id @default(uuid())
-    dropdownId String
-    fieldId    String
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
-    isDeleted  Boolean  @default(false)
-
-    dropdown Dropdown @relation(fields: [dropdownId], references: [id], onDelete: Cascade)
-    field    Field    @relation(fields: [fieldId], references: [id], onDelete: Cascade)
-
-    LoanFieldValue LoanFieldValue[]
-}
-
-// ##########----------Field Category Model----------##########
-model FieldCategory {
-    id        String   @id @default(uuid())
-    name      String   @unique
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-    isDeleted Boolean  @default(false)
-
-    masterProductFields MasterProductField[]
-}
-
 // ##########----------Master Product Field Model----------##########
-model MasterProductField {
-    id              String  @id @default(uuid())
-    masterProductId String
-    fieldId         String
-    categoryId      String?
-    isRequired      Boolean @default(false)
+model MasterProductFields {
+    id              String   @id @default(uuid())
+    masterProductId String   @unique
+    fieldsJsonData  Json?
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    isDeleted       Boolean  @default(false)
 
-    Field         Field          @relation(fields: [fieldId], references: [id], onDelete: Cascade)
     masterProduct MasterProduct? @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
-    category      FieldCategory? @relation(fields: [categoryId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Product Credit Assignment Rule Model----------##########
@@ -249,7 +190,7 @@ model ProductCreditAssignmentRule {
     updatedAt       DateTime @default(now()) @updatedAt
     isDeleted       Boolean  @default(false)
 
-    masterProduct MasterProduct     @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
+    masterProduct MasterProduct @relation(fields: [masterProductId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Master Product Version Model----------##########

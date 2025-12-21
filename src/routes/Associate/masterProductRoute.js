@@ -10,6 +10,7 @@ const {
   getMasterProductVersionById,
   createMasterProductOtherCharges,
   createMasterProductFields,
+  createProductCreditAssignmentRule,
 } = require("../../controllers/Associate/masterProductController");
 const validateToken = require("../../../middleware/validateJwtToken");
 
@@ -21,6 +22,7 @@ router.post("/createEligibilityCriteria", validateToken, createEligibilityCriter
 router.post("/createCreditBureauConfig", validateToken, createCreditBureauConfig);
 router.post("/createMasterProductOtherCharges", validateToken, createMasterProductOtherCharges);
 router.post("/createMasterProductFields", validateToken, createMasterProductFields);
+router.post("/createProductCreditAssignmentRule", validateToken, createProductCreditAssignmentRule);
 router.get("/getAllMasterProducts", validateToken, getAllMasterProducts);
 router.get("/getMasterProductDetails/:productId", validateToken, getMasterProductDetails);
 router.get(

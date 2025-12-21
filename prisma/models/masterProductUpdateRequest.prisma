@@ -30,17 +30,19 @@ model MasterProductUpdateRequest {
     eligibilityCriteriaUpdate       EligibilityCriteriaUpdateRequest?
     creditBureauConfigUpdate        CreditBureauConfigUpdateRequest?
     masterProductOtherChargesUpdate MasterProductOtherChargesUpdateRequest?
+    masterProductFieldsUpdate                  MasterProductFieldsUpdateRequest?
 
     MasterProductUpdateRequestDeliveryChannel MasterProductUpdateRequestDeliveryChannel[]
+    productCreditAssignmentRuleUpdate          ProductCreditAssignmentRuleUpdateRequest[]
 }
 
 model MasterProductUpdateRequestDeliveryChannel {
-  id                String @id @default(uuid())
-  updateRequestId   String
-  deliveryChannelId String
+    id                String @id @default(uuid())
+    updateRequestId   String
+    deliveryChannelId String
 
-  updateRequest   MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
-  deliveryChannel DeliveryChannel            @relation(fields: [deliveryChannelId], references: [id], onDelete: Cascade)
+    updateRequest   MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+    deliveryChannel DeliveryChannel            @relation(fields: [deliveryChannelId], references: [id], onDelete: Cascade)
 }
 
 model FinancialTermsUpdateRequest {
@@ -113,6 +115,30 @@ model MasterProductOtherChargesUpdateRequest {
     incidentalCharge   Int?
     createdAt          DateTime @default(now())
     updatedAt          DateTime @updatedAt
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model MasterProductFieldsUpdateRequest {
+    id              String   @id @default(uuid())
+    updateRequestId String   @unique
+    fieldsJsonData  Json?
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @updatedAt
+    isDeleted       Boolean  @default(false)
+
+    updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
+}
+
+model ProductCreditAssignmentRuleUpdateRequest {
+    id              String   @id @default(uuid())
+    updateRequestId String   @unique
+    creditRole      String
+    minScore        Int
+    maxScore        Int
+    createdAt       DateTime @default(now())
+    updatedAt       DateTime @default(now()) @updatedAt
+    isDeleted       Boolean  @default(false)
 
     updateRequest MasterProductUpdateRequest @relation(fields: [updateRequestId], references: [id], onDelete: Cascade)
 }

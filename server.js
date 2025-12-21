@@ -17,8 +17,8 @@ app.use(cors({
   origin: process.env.CORS_ORIGIN
 }));
 
-app.use(express.json({ limit: "5mb" }));
-app.use(express.urlencoded({ extended: true, limit: "16kb" }));
+app.use(express.json({ limit: "100mb" }));
+app.use(express.urlencoded({ extended: true, limit: "100mb" }));
 app.use(responseMiddleware);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -26,7 +26,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Welcome to the Earnplus Backend!",
+    message: "Welcome to the Earnplus Backend Testing!",
   });
 });
 

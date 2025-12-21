@@ -201,7 +201,7 @@ const camsAuthentication = async () => {
         const response = await axios.post(url, payload, { headers, validateStatus: () => true });
 
         if (response.status === 200) {
-            return { success: true, data: response.data };
+            return { success: true, data: response.data.data };
         } else {
             return { success: false, data: response.data, statusCode: response.status };
         }
@@ -257,6 +257,7 @@ const camsGetConsentData = async (consentId, token) => {
             consentId,
             token,
         };
+
 
         const response = await axios.post(url, payload, { headers, validateStatus: () => true });
 

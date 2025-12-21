@@ -9,51 +9,72 @@ model LoanApplication {
   customerStatus CustomerLoanStatus  @default(PENDING)
   internalStatus InternalLoanStatus  @default(OPS_PENDING)
   loanStatus     LoanLifecycleStatus @default(NOT_DISBURSED)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
   opsApproved    Boolean             @default(false)
   creditApproved Boolean             @default(false)
   pennyDrop      Boolean             @default(false)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   isDeleted      Boolean             @default(false)
 
-  employee            Employee              @relation(fields: [customerId], references: [id])
-  masterProduct       MasterProduct         @relation(fields: [productId], references: [id])
-  approver            AssociateSubAdmin?    @relation(fields: [approverId], references: [id])
-  fieldValues         LoanFieldValue[]
+  employee      Employee           @relation(fields: [customerId], references: [id])
+  masterProduct MasterProduct      @relation(fields: [productId], references: [id])
+  approver      AssociateSubAdmin? @relation(fields: [approverId], references: [id])
+
+  LoanFormData   LoanFormData?
+  LoanVkycData   LoanVkycData?
+  LoanCrifReport LoanCrifReport?
+  LoanCreditData LoanCreditData?
+
   LoanApplicationLogs LoanApplicationLogs[]
-  LoanCrifReport      LoanCrifReport?
 }
 
-// ####################--------------------Loan Field Model--------------------####################
-model LoanFieldValue {
+// ####################--------------------Loan Form Data Model--------------------####################
+model LoanFormData {
   id            String   @id @default(uuid())
-  applicationId String
-  fieldId       String
-  dropdownId    String?
-  subFieldId    String?
-  value         String?
+  applicationId String   @unique
+  formJsonData  Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   isDeleted     Boolean  @default(false)
 
-  field           Field           @relation(fields: [fieldId], references: [id])
-  dropdown        Dropdown?       @relation(fields: [dropdownId], references: [id])
-  subField        SubField?       @relation(fields: [subFieldId], references: [id])
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Loan Assignment Rule Model----------##########
-model LoanAssignmentRule {
-  id              String   @id @default(uuid())
-  creditManagerId String
-  minScore        Int
-  maxScore        Int
-  chainOrder      Int
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  isDeleted       Boolean  @default(false)
+// ####################--------------------Loan VKYC Data Model--------------------####################
+model LoanVkycData {
+  id            String   @id @default(uuid())
+  applicationId String   @unique
+  vkycPdf       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  isDeleted     Boolean  @default(false)
 
-  creditManager AssociateSubAdmin @relation(fields: [creditManagerId], references: [id])
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+// ####################--------------------Loan Credit Data Model--------------------####################
+model LoanCreditData {
+  id                String   @id @default(uuid())
+  applicationId     String   @unique
+  crifPdf           String?
+  statementPdf      String?
+  accountDetailJson Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  isDeleted         Boolean  @default(false)
+
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+// ##########----------Loan CRIF Report Model----------##########
+model LoanCrifReport {
+  id                String   @id @default(uuid())
+  loanApplicationId String   @unique
+  responseBody      Json
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id])
 }
 
 // ##########----------Loan Application Logs Model----------##########
@@ -70,15 +91,4 @@ model LoanApplicationLogs {
   loanApplication LoanApplication    @relation(fields: [loanApplicationId], references: [id])
   performedBy     AssociateSubAdmin  @relation(fields: [performedById], references: [id])
   assignedTo      AssociateSubAdmin? @relation("AssignedTo", fields: [assignedToId], references: [id])
-}
-
-// ##########----------Loan CRIF Report Model----------##########
-model LoanCrifReport {
-  id                String   @id @default(uuid())
-  loanApplicationId String   @unique
-  responseBody      Json
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id])
 }

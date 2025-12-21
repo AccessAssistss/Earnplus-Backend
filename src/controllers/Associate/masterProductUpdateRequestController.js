@@ -23,6 +23,8 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
         eligibilityCriteriaUpdate,
         creditBureauConfigUpdate,
         otherChargesUpdate,
+        fieldsJsonDataUpdate,
+        creditAssignmentRulesUpdate,
     } = req.body;
 
     if (!masterProductId || !reason) {
@@ -106,6 +108,31 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
         }
     }
 
+    if (creditAssignmentRulesUpdate && Array.isArray(creditAssignmentRulesUpdate)) {
+        for (const rule of creditAssignmentRulesUpdate) {
+            if (!rule.creditRole || rule.minScore == null || rule.maxScore == null) {
+                return res.respond(400, "Each credit assignment rule must have creditRole, minScore, and maxScore.");
+            }
+            if (rule.minScore > rule.maxScore) {
+                return res.respond(400, `Invalid score range for ${rule.creditRole}: minScore cannot be greater than maxScore.`);
+            }
+        }
+
+        for (let i = 0; i < creditAssignmentRulesUpdate.length; i++) {
+            for (let j = i + 1; j < creditAssignmentRulesUpdate.length; j++) {
+                if (creditAssignmentRulesUpdate[i].creditRole === creditAssignmentRulesUpdate[j].creditRole) {
+                    const overlap =
+                        (creditAssignmentRulesUpdate[i].minScore <= creditAssignmentRulesUpdate[j].maxScore &&
+                            creditAssignmentRulesUpdate[i].maxScore >= creditAssignmentRulesUpdate[j].minScore);
+
+                    if (overlap) {
+                        return res.respond(409, `Score ranges overlap for ${creditAssignmentRulesUpdate[i].creditRole} in submitted rules.`);
+                    }
+                }
+            }
+        }
+    }
+
     const updateRequest = await prisma.$transaction(async (tx) => {
         const request = await tx.masterProductUpdateRequest.create({
             data: {
@@ -167,6 +194,26 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
                     updateRequestId: request.id,
                     ...otherChargesUpdate,
                 },
+            });
+        }
+
+        if (fieldsJsonDataUpdate) {
+            await tx.masterProductFieldsUpdateRequest.create({
+                data: {
+                    updateRequestId: request.id,
+                    fieldsJsonData: fieldsJsonDataUpdate,
+                },
+            });
+        }
+
+        if (creditAssignmentRulesUpdate && creditAssignmentRulesUpdate.length > 0) {
+            await tx.productCreditAssignmentRuleUpdateRequest.createMany({
+                data: creditAssignmentRulesUpdate.map(rule => ({
+                    updateRequestId: request.id,
+                    creditRole: rule.creditRole,
+                    minScore: rule.minScore,
+                    maxScore: rule.maxScore,
+                })),
             });
         }
 
@@ -288,6 +335,14 @@ const getMasterProductUpdateRequestDetail = asyncHandler(async (req, res) => {
                     eligibilityCriteria: true,
                     creditBureauConfig: true,
                     masterProductOtherCharges: true,
+                    MasterProductFields: true,
+                    ProductCreditAssignmentRule: {
+                        where: { isDeleted: false },
+                        orderBy: [
+                            { creditRole: 'asc' },
+                            { minScore: 'asc' },
+                        ],
+                    },
                 },
             },
             requestedBy: {
@@ -311,6 +366,13 @@ const getMasterProductUpdateRequestDetail = asyncHandler(async (req, res) => {
             eligibilityCriteriaUpdate: true,
             creditBureauConfigUpdate: true,
             masterProductOtherChargesUpdate: true,
+            masterProductFieldsUpdate: true,
+            productCreditAssignmentRuleUpdate: {
+                orderBy: [
+                    { creditRole: 'asc' },
+                    { minScore: 'asc' },
+                ],
+            },
         },
     });
 
@@ -335,6 +397,8 @@ const getMasterProductUpdateRequestDetail = asyncHandler(async (req, res) => {
         eligibilityCriteria: request.masterProduct.eligibilityCriteria,
         creditBureauConfig: request.masterProduct.creditBureauConfig,
         otherCharges: request.masterProduct.masterProductOtherCharges,
+        productFields: request.masterProduct.MasterProductFields,
+        creditAssignmentRules: request.masterProduct.ProductCreditAssignmentRule,
     };
 
     const proposedData = {
@@ -354,6 +418,8 @@ const getMasterProductUpdateRequestDetail = asyncHandler(async (req, res) => {
         eligibilityCriteria: request.eligibilityCriteriaUpdate,
         creditBureauConfig: request.creditBureauConfigUpdate,
         otherCharges: request.masterProductOtherChargesUpdate,
+        productFields: request.masterProductFieldsUpdate,
+        creditAssignmentRules: request.productCreditAssignmentRuleUpdate,
     };
 
     res.respond(200, "Update Request details fetched successfully!", {
@@ -402,6 +468,8 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
             eligibilityCriteriaUpdate: true,
             creditBureauConfigUpdate: true,
             masterProductOtherChargesUpdate: true,
+            masterProductFieldsUpdate: true,
+            productCreditAssignmentRuleUpdate: true,
         },
     });
 
@@ -527,6 +595,45 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
                 where: { masterProductId: masterProduct.id },
                 data: chargesData,
             });
+        }
+        if (request.masterProductFieldsUpdate) {
+            const { id, updateRequestId, createdAt, updatedAt, isDeleted, ...fieldsData } = request.masterProductFieldsUpdate;
+
+            const existingFields = await tx.masterProductFields.findUnique({
+                where: { masterProductId: masterProduct.id },
+            });
+
+            if (existingFields) {
+                await tx.masterProductFields.update({
+                    where: { masterProductId: masterProduct.id },
+                    data: fieldsData,
+                });
+            } else {
+                await tx.masterProductFields.create({
+                    data: {
+                        masterProductId: masterProduct.id,
+                        ...fieldsData,
+                    },
+                });
+            }
+        }
+
+        if (request.productCreditAssignmentRuleUpdate && request.productCreditAssignmentRuleUpdate.length > 0) {
+            await tx.productCreditAssignmentRule.updateMany({
+                where: { masterProductId: masterProduct.id },
+                data: { isDeleted: true },
+            });
+
+            for (const ruleUpdate of request.productCreditAssignmentRuleUpdate) {
+                const { id, updateRequestId, createdAt, updatedAt, isDeleted, ...ruleData } = ruleUpdate;
+                
+                await tx.productCreditAssignmentRule.create({
+                    data: {
+                        masterProductId: masterProduct.id,
+                        ...ruleData,
+                    },
+                });
+            }
         }
 
         await tx.masterProductUpdateRequest.update({
