@@ -90,15 +90,16 @@ const getMyPendingLoans = asyncHandler(async (req, res) => {
         approverId: approver.id,
     };
 
-    if (internalStatus) {
-        whereClause.internalStatus = internalStatus;
-    } else {
-        if (approver.role.roleName === "Ops_Manager") {
-            whereClause.internalStatus = "OPS_PENDING";
-        } else if (approver.role.roleName.startsWith("CM")) {
-            whereClause.internalStatus = "CREDIT_PENDING";
-            whereClause.opsApproved = true;
-        }
+    if (approver.role.roleName === "Ops" || approver.role.roleName === "Ops_Manager") {
+        whereClause.internalStatus = "OPS_PENDING";
+    } else if (approver.role.roleName === "Senior_Ops") {
+        whereClause.internalStatus = "SENIOR_OPS_PENDING";
+    } else if (approver.role.roleName.startsWith("Credit") || approver.role.roleName.includes("CM")) {
+        whereClause.internalStatus = "CREDIT_PENDING";
+    } else if (approver.role.roleName === "Finance") {
+        whereClause.internalStatus = "FINANCE_PENDING";
+    } else if (approver.role.roleName === "Disbursal") {
+        whereClause.internalStatus = "DISBURSE_PENDING";
     }
 
     const totalCount = await prisma.loanApplication.count({ where: whereClause });

@@ -429,7 +429,7 @@ const assignVariantProductToEmployer = asyncHandler(async (req, res) => {
     data: {
       variantProductId,
       employerId,
-      aasignmentDate: new Date(assignmentDate),
+      assignmentDate: new Date(assignmentDate),
       endDate: new Date(endDate),
       employerNote: employerNote || "",
     },
@@ -514,7 +514,7 @@ const getAssignedEmployers = asyncHandler(async (req, res) => {
         },
       },
     },
-    orderBy: { aasignmentDate: "desc" },
+    orderBy: { assignmentDate: "desc" },
   });
 
   return res.respond(

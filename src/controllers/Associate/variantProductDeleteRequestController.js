@@ -73,17 +73,22 @@ const getAllVariantProductDeleteRequests = asyncHandler(async (req, res) => {
     const associate = await prisma.associate.findFirst({
         where: { userId, isDeleted: false },
     });
-
     if (!associate) {
         return res.respond(403, "Associate not found!");
     }
+
+    const pageNumber = Number(page);
+    const limitNumber = Number(limit);
+
+    const safePage = Number.isInteger(pageNumber) && pageNumber > 0 ? pageNumber : 1;
+    const safeLimit = Number.isInteger(limitNumber) && limitNumber > 0 ? limitNumber : 10;
+
+    const skip = (safePage - 1) * safeLimit;
 
     const whereClause = {
         isDeleted: false,
         ...(status && { status }),
     };
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const [requests, totalCount] = await Promise.all([
         prisma.variantProductDeleteRequest.findMany({
@@ -108,16 +113,16 @@ const getAllVariantProductDeleteRequests = asyncHandler(async (req, res) => {
             },
             orderBy: { createdAt: "desc" },
             skip,
-            take: parseInt(limit),
+            take: safeLimit,
         }),
         prisma.variantProductDeleteRequest.count({ where: whereClause }),
     ]);
 
     res.respond(200, "Variant Product Delete Requests fetched successfully!", {
         total: totalCount,
-        page: parseInt(page),
-        limit: parseInt(limit),
-        totalPages: Math.ceil(totalCount / parseInt(limit)),
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.ceil(totalCount / safeLimit),
         data: requests,
     });
 });

@@ -32,6 +32,12 @@ enum ApplicationKYCStatus {
   Rejected
 }
 
+enum EmployeeAccountStatus {
+  ACTIVE
+  INACTIVE      
+  BLOCKED
+}
+
 // ##########----------Employer Enums----------##########
 enum LegalIdentityType {
   Pvt_Ltd
@@ -39,13 +45,6 @@ enum LegalIdentityType {
   Partnership
   Govt_Org
   Sole_Proprietor
-}
-
-// ##########----------Query Enums----------##########
-enum Urgency {
-  High
-  Low
-  Medium
 }
 
 // ##########----------Payroll Enums----------##########
@@ -95,121 +94,11 @@ enum BureauType {
   ANY
 }
 
-enum BlacklistFlag {
-  WRITE_OFF
-  SETTLEMENT
-  FRAUD
-  DELINQUENCY_OVER_90_DPD
-  WATCHLIST
-  LOAN_OVERDUES
-  MULTIPLE_ENQUIRIES
-}
-
-enum SubmissionMode {
-  UPLOAD
-  OCR
-  WHATSAPP
-  KYC_VIDEO
-  API_PULL
-  MANUAL_COLLECTION
-}
-
-enum VerificationMode {
-  MANUAL
-  OCR
-  API_BASED
-  AADHAAR_XML
-  PAN_NSDL
-  BANKING_AGGREGATOR
-  VIDEO_KYC
-  GEO_TAGGING
-  ESTAMP_VERIFICATION
-}
-
 enum DelinquencyOption {
   NONE
   LESS_THAN_30_DPD
   LESS_THAN_60_DPD
   CUSTOM
-}
-
-enum SalaryPattern {
-  MONTHLY
-  WEEKLY
-  BIWEEKLY
-  IRREGULAR
-  SEASONAL
-}
-
-enum IncomeRecognitionMethod {
-  INFLOWS_MINUS_OUTFLOWS
-  AVG_MONTHLY_SURPLUS
-  CUSTOM_FORMULA
-}
-
-enum StatementSource {
-  MANUAL_UPLOAD
-  ACCOUNT_AGGREGATOR
-  BANK_SCRAPING
-  UPI_PARSING
-}
-
-enum AccountType {
-  SAVINGS
-  CURRENT
-  WALLET
-  OD_ACCOUNT
-}
-
-enum BillPaymentHistory {
-  BBPS
-  UPI
-  WALLET
-  NOT_USED
-}
-
-enum BorrowerBehavior {
-  ONE_PLUS_LOANS_REPAID_ON_TIME
-  DELINQUENT_IN_PAST_LOAN
-  NEW_CUSTOMER
-  ONLY_INTERNAL_HISTORY
-  EXTERNAL_HISTORY
-}
-
-enum CollateralType {
-  GOLD
-  VEHICLE
-  PROPERTY
-  OTHER
-}
-
-enum OwnershipVerificationStatus {
-  YES
-  NO
-  PENDING
-}
-
-enum GuarantorRelationship {
-  PARENT
-  SPOUSE
-  EMPLOYER
-  RELATIVE
-  BUSINESS_PARTNER
-  OTHER
-}
-
-enum IncomeProofType {
-  SALARY_SLIP
-  BANK_STATEMENT
-  ITR
-  PENSION_SLIP
-  OTHERS
-}
-
-enum GuarantorVerificationStatus {
-  VERIFIED
-  REJECTED
-  PENDING
 }
 
 enum RequestStatus {
@@ -229,14 +118,6 @@ enum CreditBureau {
   EXPERIAN
   CRIF
   EQUIFAX
-}
-
-enum FieldType {
-  Dropdown
-  Number
-  String
-  Boolean
-  File
 }
 
 // ##########----------Loan Enums----------##########

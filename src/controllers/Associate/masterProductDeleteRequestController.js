@@ -140,7 +140,6 @@ const getMasterProductDeleteRequestDetail = asyncHandler(async (req, res) => {
                 include: {
                     productCategory: true,
                     loanType: true,
-                    deliveryChannel: true,
                     productPartner: true,
                     VariantProduct: {
                         where: { isDeleted: false },

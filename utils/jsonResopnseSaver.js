@@ -3,7 +3,6 @@ const path = require("path");
 
 const saveJsonResponse = async (folderName, fileName, data) => {
     try {
-        // PROJECT ROOT = /root/Earnplus-Backend-Testing
         const PROJECT_ROOT = process.cwd();
 
         const dirPath = path.join(
@@ -25,10 +24,10 @@ const saveJsonResponse = async (folderName, fileName, data) => {
             "utf8"
         );
 
-        console.log("✅ JSON saved at:", filePath);
+        console.log("JSON saved at:", filePath);
         return filePath;
     } catch (err) {
-        console.error("❌ Failed to save JSON response:", err.message);
+        console.error("Failed to save JSON response:", err.message);
         return null;
     }
 };

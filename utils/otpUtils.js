@@ -80,6 +80,7 @@ const validateOTP = async (otpTime) => {
     return true;
   }
 };
+
 module.exports = {
   generateOTP,
   sendOTP,

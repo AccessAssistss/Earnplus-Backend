@@ -1,4 +1,4 @@
-// ##########----------Varient Product Model----------##########
+// ##########----------Variant Product Model----------##########
 model VariantProduct {
     id               String      @id @default(uuid())
     variantId        String      @db.VarChar(60)

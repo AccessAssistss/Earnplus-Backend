@@ -1,45 +1,45 @@
 // ##########----------Employee Profile Model----------##########
 model Employee {
-    id                    String         @id @default(uuid())
-    userId                String?        @unique
+    id                    String                @id @default(uuid())
+    userId                String?               @unique
     employerId            String?
     customEmployeeId      String?
     employeeId            String?
-    kycStatus             KycStatus      @default(Pending)
-    employeeName          String?        @db.VarChar(100)
-    email                 String?        @db.VarChar(100)
-    mobile                String         @db.VarChar(10)
-    alternativeMobile     String?        @db.VarChar(10)
+    kycStatus             KycStatus             @default(Pending)
+    employeeName          String?               @db.VarChar(100)
+    email                 String?               @db.VarChar(100)
+    mobile                String                @db.VarChar(10)
+    alternativeMobile     String?               @db.VarChar(10)
     gender                Gender?
-    fcmToken              String?        @db.VarChar(100)
     dob                   DateTime?
-    designation           String?        @db.VarChar(100)
-    employmentType        String?        @db.VarChar(100)
-    educationLevel        String?        @db.VarChar(100)
-    nationality           String?        @db.VarChar(100)
-    panNo                 String?        @db.VarChar(100)
-    aadharNo              String?        @db.VarChar(100)
+    designation           String?               @db.VarChar(100)
+    employmentType        String?               @db.VarChar(100)
+    educationLevel        String?               @db.VarChar(100)
+    nationality           String?               @db.VarChar(100)
+    panNo                 String?               @db.VarChar(100)
+    aadharNo              String?               @db.VarChar(100)
     maritalStatus         MaritalStatus?
     hireDate              DateTime?
     salaryDate            DateTime?
     address               String?
     countryId             String?
-    city                  String?        @db.VarChar(100)
+    city                  String?               @db.VarChar(100)
     stateId               String?
-    pincode               String?        @db.VarChar(100)
-    otpExpiration         DateTime       @default(now())
-    otp                   String?        @db.VarChar(100)
-    createdAt             DateTime       @default(now())
-    updatedAt             DateTime       @updatedAt
-    isDeleted             Boolean        @default(false)
-    isEmployerLinked      Boolean        @default(false)
-    isExistingUser        Boolean        @default(false)
-    isKycVerified         Boolean        @default(false)
-    isEmployerScreen      Boolean        @default(false)
-    agreedProductInsight  Boolean        @default(false)
-    agreedToMessageViaApp Boolean        @default(false)
-    agreedPolicyInsight   Boolean        @default(false)
-    totalQuizPoints       Int            @default(0)
+    pincode               String?               @db.VarChar(100)
+    agreedProductInsight  Boolean               @default(false)
+    agreedToMessageViaApp Boolean               @default(false)
+    agreedPolicyInsight   Boolean               @default(false)
+    accountStatus         EmployeeAccountStatus @default(ACTIVE)
+    totalQuizPoints       Int                   @default(0)
+    isEmployerLinked      Boolean               @default(false)
+    isExistingUser        Boolean               @default(false)
+    isKycVerified         Boolean               @default(false)
+    fcmToken              String?               @db.VarChar(100)
+    otpExpiration         DateTime              @default(now())
+    otp                   String?               @db.VarChar(100)
+    createdAt             DateTime              @default(now())
+    updatedAt             DateTime              @updatedAt
+    isDeleted             Boolean               @default(false)
 
     employer Employer?   @relation(fields: [employerId], references: [id], onDelete: Cascade)
     user     CustomUser? @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -57,6 +57,21 @@ model Employee {
     LoanApplication           LoanApplication[]
     EmployeeQuizResponse      EmployeeQuizResponse[]
     EmployeeQuery             EmployeeQuery[]
+}
+
+// ##########----------Employee Bank Detail Model----------##########
+model EmployeeAccountStatusRequest {
+    id           String    @id @default(uuid())
+    employeeId   String
+    requestType  String?
+    reason       String?
+    status       String    @default("PENDING")
+    scheduledAt  DateTime?
+    cancelledAt  DateTime?
+    requestedAt  DateTime  @default(now())
+    reviewRemark String?
+
+    employee Employee @relation(fields: [employeeId], references: [id])
 }
 
 // ##########----------Employee Bank Detail Model----------##########

@@ -16,7 +16,6 @@ const {
   checkPanStatus,
   verifySelfie,
 } = require("../../../utils/verificationUtils");
-// const { crifReport } = require("../../../utils/crifUtils");
 
 const prisma = new PrismaClient();
 
@@ -45,8 +44,8 @@ const generateAccessAndRefreshTokens = async (userId) => {
 };
 
 // ####################--------------------AUTH--------------------####################
-const STATIC_OTP = "612743";
-const TEST_MOBILE = "1239956739";
+const STATIC_OTP = "123456";
+const TEST_MOBILE = "999999999";
 // ##########----------Send OTP To Employee----------##########
 const sendUserOTP = asyncHandler(async (req, res) => {
   const { userType = "EMPLOYEE", mobile } = req.body;
@@ -64,20 +63,14 @@ const sendUserOTP = asyncHandler(async (req, res) => {
     },
   });
 
+  const isExistingUser = Boolean(user);
+
   if (!user) {
     user = await prisma.customUser.create({
       data: {
         mobile,
         userType,
-        employees: {
-          create: {
-            mobile,
-            otp,
-            otpExpiration: new Date(),
-          },
-        },
       },
-      include: { employees: true },
     });
   }
 
@@ -95,6 +88,10 @@ const sendUserOTP = asyncHandler(async (req, res) => {
       },
     });
   } else {
+    if (employee.accountStatus === "BLOCKED") {
+      return res.respond(403, "Your account is blocked. Contact support.");
+    }
+
     await prisma.employee.update({
       where: { id: employee.id },
       data: {
@@ -103,8 +100,6 @@ const sendUserOTP = asyncHandler(async (req, res) => {
       },
     });
   }
-
-  const isExistingUser = !!employee;
 
   const sent = await sendOTP(mobile, otp);
   if (!sent) {
@@ -133,16 +128,20 @@ const verifyOTP = asyncHandler(async (req, res) => {
     const employee = await prisma.employee.findFirst({
       where: { userId: user.id },
     });
-    const isExistingEmployee = !!employee;
 
-    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-      user.id
-    );
+    if (!employee) {
+      employee = await prisma.employee.create({
+        data: {
+          userId: user.id,
+          mobile,
+          accountStatus: "ACTIVE",
+        },
+      });
+    }
 
-    return res.respond(200, `Test user OTP verified successfully!`, {
-      otp,
-      isEmployerPart: false,
-      isEmployerScreen: employee.isEmployerScreen,
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user.id);
+
+    return res.respond(200, `OTP verified successfully (test user)!`, {
       isEmployerLinked: employee.isEmployerLinked,
       isExistingUser: employee.isExistingUser,
       accessToken,
@@ -156,7 +155,6 @@ const verifyOTP = asyncHandler(async (req, res) => {
       OR: [{ mobile }, { alternativeMobile: mobile }],
     },
   });
-
   if (!user) {
     return res.respond(404, "User not found!");
   }
@@ -165,7 +163,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
     where: { userId: user.id },
   });
   if (!employee) {
-    return res.respond(404, "Employee not found!");
+    return res.respond(404, "Employee profile not found!");
   }
 
   if (employee.otp !== otp) {
@@ -177,36 +175,31 @@ const verifyOTP = asyncHandler(async (req, res) => {
     return res.respond(404, "OTP has Expired!");
   }
 
-  const verification = await prisma.employeeVerification.findFirst({
-    where: { employeeId: employee.id },
-  });
-
-  const isPartnerUser = !!employee.employerId;
-
-  if (!isPartnerUser) {
-    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(
-      user.id
-    );
-
-    return res.respond(200, "OTP verified successfully!", {
-      isEmployerPart: false,
-      isEmployerScreen: employee.isEmployerScreen,
-      // adharCheck: verification?.isAadharVerified || false,
-      // panCheck: verification?.isPanVerified || false,
-      // selfieCheck: verification?.isSelfieVerified || false,
-      isEmployerLinked: employee.isEmployerLinked,
-      isExistingUser: employee.isExistingUser,
-      accessToken,
-      refreshToken,
-    });
+  if (employee.accountStatus === "BLOCKED") {
+    return res.respond(403, "Your account is blocked. Contact support.");
+  }
+  if (employee.accountStatus === "INACTIVE") {
+    return res.respond(403, "Your account is inactive. Please request activation.");
   }
 
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user.id);
+
+  await prisma.employeeAccountStatusRequest.updateMany({
+    where: {
+      employeeId: employee.id,
+      requestType: "INACTIVATE",
+      status: "PENDING",
+      cancelledAt: null,
+    },
+    data: {
+      cancelledAt: new Date(),
+      status: "REJECTED",
+      reviewRemark: "User logged in during grace period",
+    },
+  });
+
+
   res.respond(200, `OTP verified successfully!`, {
-    isEmployerPart: true,
-    isEmployerScreen: employee.isEmployerScreen,
-    // adharCheck: verification?.isAadharVerified || false,
-    // panCheck: verification?.isPanVerified || false,
-    // selfieCheck: verification?.isSelfieVerified || false,
     isEmployerLinked: employee.isEmployerLinked,
     isExistingUser: employee.isExistingUser,
     accessToken,
@@ -219,7 +212,6 @@ const RegisterEmployee = asyncHandler(async (req, res) => {
   const user = req.user;
 
   const {
-    userType = "EMPLOYEE",
     employeeName,
     dob,
     gender,
@@ -670,23 +662,114 @@ const cardController = asyncHandler(async (req, res) => {
   );
 });
 
-// ##########----------Delete Employee----------##########
-const deleteEmployee = asyncHandler(async (req, res) => {
+// ##########----------Request Account Deactivation----------##########
+const requestInactivation = asyncHandler(async (req, res) => {
   const userId = req.user;
+  const { reason } = req.body;
 
   const employee = await prisma.employee.findFirst({
     where: { userId },
+    include: {
+      LoanApplication: {
+        where: { status: "ACTIVE" },
+      },
+    },
   });
   if (!employee) {
-    return res.respond(404, "Employee not found!");
+    return res.respond(404, "Employee not found");
+  }
+
+  const existingRequest =
+    await prisma.employeeAccountStatusRequest.findFirst({
+      where: {
+        employeeId: employee.id,
+        requestType: "INACTIVATE",
+        status: "PENDING",
+      },
+    });
+  if (existingRequest) {
+    return res.respond(400, "Inactivation request already pending");
+  }
+
+  await prisma.employeeAccountStatusRequest.create({
+    data: {
+      employeeId: employee.id,
+      requestType: "INACTIVATE",
+      reason: reason || null,
+      scheduledAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+    },
+  });
+
+  return res.respond(200, "Your account will be deactivated after 7 days if you do not log in during this period");
+});
+
+// ##########----------Request Account Reactivation----------##########
+const requestReactivation = asyncHandler(async (req, res) => {
+  const { mobile, userType = "EMPLOYEE", reason } = req.body;
+
+  if (!mobile) {
+    return res.respond(400, "Mobile number is required");
+  }
+
+  const user = await prisma.customUser.findFirst({
+    where: {
+      userType,
+      OR: [{ mobile }, { alternativeMobile: mobile }],
+    },
+  });
+  if (!user) {
+    return res.respond(404, "User not found");
+  }
+
+  const employee = await prisma.employee.findFirst({
+    where: { userId: user.id },
+  });
+  if (!employee) {
+    return res.respond(404, "Employee not found");
+  }
+
+  if (employee.accountStatus !== "INACTIVE") {
+    return res.respond(
+      400,
+      "Your account is already active or does not require reactivation"
+    );
   }
 
   await prisma.employee.update({
     where: { id: employee.id },
-    data: { isDeleted: true },
+    data: {
+      accountStatus: "ACTIVE",
+    },
   });
 
-  res.respond(200, "Employee deleted successfully!");
+  await prisma.employeeAccountStatusRequest.updateMany({
+    where: {
+      employeeId: employee.id,
+      requestType: "ACTIVATE",
+      status: "PENDING",
+    },
+    data: {
+      status: "REJECTED",
+      reviewRemark: "Auto-reactivated by user",
+      reviewedAt: new Date(),
+    },
+  });
+
+  await prisma.employeeAccountStatusRequest.create({
+    data: {
+      employeeId: employee.id,
+      requestType: "ACTIVATE",
+      status: "APPROVED",
+      reason: reason || "User reactivated account",
+      reviewedAt: new Date(),
+      reviewRemark: "Auto-approved without admin",
+    },
+  });
+
+  return res.respond(
+    200,
+    "Your account has been reactivated successfully. Please log in again."
+  );
 });
 
 // ##########----------Get Employee Credit Report----------##########
@@ -774,6 +857,7 @@ module.exports = {
   checkEmployeePanStatus,
   faceLiveliness,
   cardController,
-  deleteEmployee,
+  requestInactivation,
+  requestReactivation,
   getCreditReport
 };
