@@ -25,7 +25,7 @@ router.get(
     getMasterProductDeleteRequestDetail
 );
 router.patch(
-    "/handleMasterProductDeleteRequest/:requestId",
+    "/handleMasterProductDeleteRequest",
     validateToken,
     handleMasterProductDeleteRequest
 );

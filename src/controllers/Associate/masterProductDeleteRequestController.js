@@ -16,7 +16,6 @@ const submitMasterProductDeleteRequest = asyncHandler(async (req, res) => {
         where: { userId, isDeleted: false },
         include: { role: true },
     });
-
     if (!productManager || productManager.role.roleName !== "Product_Manager") {
         return res.respond(403, "Only Product Managers can submit delete requests.");
     }
@@ -24,7 +23,6 @@ const submitMasterProductDeleteRequest = asyncHandler(async (req, res) => {
     const masterProduct = await prisma.masterProduct.findFirst({
         where: { id: masterProductId, isDeleted: false },
     });
-
     if (!masterProduct) {
         return res.respond(404, "Master Product not found!");
     }
@@ -40,7 +38,6 @@ const submitMasterProductDeleteRequest = asyncHandler(async (req, res) => {
     if (existingDeleteRequest) {
         return res.respond(409, "A pending delete request already exists for this product!");
     }
-
 
     const existingUpdateRequest = await prisma.masterProductUpdateRequest.findFirst({
         where: {
@@ -62,6 +59,7 @@ const submitMasterProductDeleteRequest = asyncHandler(async (req, res) => {
     });
     res.respond(201, "Master Product Delete Request submitted successfully!", { requestId: deleteRequest.id });
 });
+
 // ##########----------Get All Master Product Delete Requests----------##########
 const getAllMasterProductDeleteRequests = asyncHandler(async (req, res) => {
     const userId = req.user;
@@ -177,8 +175,7 @@ const getMasterProductDeleteRequestDetail = asyncHandler(async (req, res) => {
 // ##########----------Handle Master Product Delete Request (Approve/Reject)----------##########
 const handleMasterProductDeleteRequest = asyncHandler(async (req, res) => {
     const userId = req.user;
-    const { requestId } = req.params;
-    const { action, rejectionReason } = req.body;
+    const { requestId, action, rejectionReason } = req.body;
 
     if (!["APPROVE", "REJECT"].includes(action)) {
         return res.respond(400, "Action must be APPROVE or REJECT!");

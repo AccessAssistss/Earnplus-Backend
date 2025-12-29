@@ -355,7 +355,6 @@ const getMasterProductUpdateRequestDetail = asyncHandler(async (req, res) => {
             },
             productCategory: true,
             loanType: true,
-            deliveryChannel: true,
             productPartner: true,
             MasterProductUpdateRequestDeliveryChannel: {
                 include: {

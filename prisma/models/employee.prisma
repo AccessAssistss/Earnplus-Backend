@@ -46,17 +46,18 @@ model Employee {
     country  Country?    @relation(fields: [countryId], references: [id])
     state    State?      @relation(fields: [stateId], references: [id])
 
-    EmployeeVerification      EmployeeVerification?
-    EmploymentDetails         EmploymentDetails?
-    KYCRequest                KYCRequest?
-    CrifReport                CrifReport?
-    EmployeeBankDetails       EmployeeBankDetails[]
-    EmployeeCurrentPayroll    EmployeeCurrentPayroll[]
-    EmployeeBasePayroll       EmployeeBasePayroll[]
-    EmployeeHistoricalPayroll EmployeeHistoricalPayroll[]
-    LoanApplication           LoanApplication[]
-    EmployeeQuizResponse      EmployeeQuizResponse[]
-    EmployeeQuery             EmployeeQuery[]
+    EmployeeVerification         EmployeeVerification?
+    EmploymentDetails            EmploymentDetails?
+    KYCRequest                   KYCRequest?
+    CrifReport                   CrifReport?
+    EmployeeBankDetails          EmployeeBankDetails[]
+    EmployeeCurrentPayroll       EmployeeCurrentPayroll[]
+    EmployeeBasePayroll          EmployeeBasePayroll[]
+    EmployeeHistoricalPayroll    EmployeeHistoricalPayroll[]
+    LoanApplication              LoanApplication[]
+    EmployeeQuizResponse         EmployeeQuizResponse[]
+    EmployeeQuery                EmployeeQuery[]
+    EmployeeAccountStatusRequest EmployeeAccountStatusRequest[]
 }
 
 // ##########----------Employee Bank Detail Model----------##########

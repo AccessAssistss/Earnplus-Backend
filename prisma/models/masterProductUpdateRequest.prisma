@@ -132,7 +132,7 @@ model MasterProductFieldsUpdateRequest {
 
 model ProductCreditAssignmentRuleUpdateRequest {
     id              String   @id @default(uuid())
-    updateRequestId String   @unique
+    updateRequestId String
     creditRole      String
     minScore        Int
     maxScore        Int

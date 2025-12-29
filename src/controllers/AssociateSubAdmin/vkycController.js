@@ -44,9 +44,9 @@ const getVKYCDataPointDetails = asyncHandler(async (req, res) => {
     });
     if (!loanApplication) return res.respond(404, "Loan Application not found.");
 
-    const vkycStatus = await GetVKYCStatusByUniqueId(loanApplication.id);
+    const vkycStatus = await GetVKYCStatusByUniqueId([loanApplication.id]);
     if (!vkycStatus.success || !vkycStatus.data.data) {
-        return res.respond(400, "Unable   to fetch VKYC Status");
+        return res.respond(400, "Unable to fetch VKYC Status");
     }
 
     const sessionId = Object.keys(vkycStatus.data.data)[0];
