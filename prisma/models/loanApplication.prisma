@@ -1,20 +1,23 @@
 // ####################--------------------Loan Application Model--------------------####################
 model LoanApplication {
-  id             String              @id @default(uuid())
-  customerId     String
-  productId      String
-  approverId     String?
-  loanCode       String              @unique
-  score          Int?
-  customerStatus CustomerLoanStatus  @default(PENDING)
-  internalStatus InternalLoanStatus  @default(OPS_PENDING)
-  loanStatus     LoanLifecycleStatus @default(NOT_DISBURSED)
-  opsApproved    Boolean             @default(false)
-  creditApproved Boolean             @default(false)
-  pennyDrop      Boolean             @default(false)
-  createdAt      DateTime            @default(now())
-  updatedAt      DateTime            @updatedAt
-  isDeleted      Boolean             @default(false)
+  id                String              @id @default(uuid())
+  customerId        String
+  productId         String
+  approverId        String?
+  loanCode          String              @unique
+  score             Int?
+  customerStatus    CustomerLoanStatus  @default(PENDING)
+  internalStatus    InternalLoanStatus  @default(OPS_PENDING)
+  loanStatus        LoanLifecycleStatus @default(NOT_DISBURSED)
+  opsApproved       Boolean             @default(false)
+  creditApproved    Boolean             @default(false)
+  pennyDrop         Boolean             @default(false)
+  vkycLink          String?
+  vkycLinkCreatedAt DateTime?
+  vkycStatus        VKYCStatus          @default(NOT_INITIATED)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  isDeleted         Boolean             @default(false)
 
   employee      Employee           @relation(fields: [customerId], references: [id])
   masterProduct MasterProduct      @relation(fields: [productId], references: [id])

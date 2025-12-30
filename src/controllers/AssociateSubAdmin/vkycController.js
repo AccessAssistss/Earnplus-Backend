@@ -23,7 +23,29 @@ const createVKYCLinkForCustomer = asyncHandler(async (req, res) => {
     });
     if (!loanApplication) return res.respond(404, "Loan Application not found.");
 
-    const vkycLink = await createVKYCLink(firstName, lastName, loanId = loanApplication.id, mobile, email, preferredAgentEmailId = associateSubAdmin.email)
+    const vkycResponse = await createVKYCLink(firstName, lastName, loanId = loanApplication.id, mobile, email, preferredAgentEmailId = associateSubAdmin.email)
+
+    if (!vkycResponse.success) {
+        return res.respond(500, "Failed to generate VKYC link", vkycResponse);
+    }
+
+    const updatedLoan = await prisma.loanApplication.update({
+        where: { id: loanApplicationId },
+        data: {
+            vkycLink: vkycResponse.data?.vkycLink || "Generated",
+            vkycLinkCreatedAt: new Date(),
+            vkycStatus: "LINK_GENERATED"
+        }
+    });
+
+    await prisma.loanApplicationLogs.create({
+        data: {
+            loanApplicationId,
+            performedById: opsManager.id,
+            action: "VKYC_LINK_GENERATED",
+            remarks: "VKYC link generated and sent to customer"
+        }
+    });
 
     res.respond(200, "VKYC Link Created Successfully!");
 });
@@ -59,7 +81,44 @@ const getVKYCDataPointDetails = asyncHandler(async (req, res) => {
     res.respond(200, "VKYC Details fetched Successfully!", vkycDetails.data.data);
 });
 
+// ##########----------Update VKYC Status----------##########
+const updateVKYCStatus = asyncHandler(async (req, res) => {
+    const userId = req.user;
+    const { loanApplicationId } = req.params;
+    const { vkycStatus } = req.body;
+
+    const validStatuses = ["IN_PROGRESS", "COMPLETED", "FAILED"];
+    if (!validStatuses.includes(vkycStatus)) {
+        return res.respond(400, "Invalid VKYC status!");
+    }
+
+    const opsManager = await prisma.associateSubAdmin.findFirst({
+        where: { userId, isDeleted: false }
+    });
+
+    if (!opsManager) {
+        return res.respond(404, "Operations Manager not found!");
+    }
+
+    const updatedLoan = await prisma.loanApplication.update({
+        where: { id: loanApplicationId },
+        data: { vkycStatus }
+    });
+
+    await prisma.loanApplicationLogs.create({
+        data: {
+            loanApplicationId,
+            performedById: opsManager.id,
+            action: `VKYC_STATUS_UPDATED_TO_${vkycStatus}`,
+            remarks: `VKYC status updated to ${vkycStatus}`
+        }
+    });
+
+    res.respond(200, "VKYC status updated successfully!", updatedLoan);
+});
+
 module.exports = {
     createVKYCLinkForCustomer,
-    getVKYCDataPointDetails
+    getVKYCDataPointDetails,
+    updateVKYCStatus
 };

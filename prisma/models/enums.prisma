@@ -154,3 +154,11 @@ enum AssignmentStatus {
   APPROVED
   REJECTED
 }
+
+enum VKYCStatus {
+  NOT_INITIATED
+  LINK_GENERATED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+}

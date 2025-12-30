@@ -81,6 +81,13 @@ const getMasterProductDetailsForCustomer = asyncHandler(async (req, res) => {
     return res.respond(404, "Customer not found.");
   }
 
+  const exists = await prisma.masterProduct.findUnique({
+    where: { id: productId },
+  });
+  if (!exists) {
+    return res.respond(404, "Master Product not found.");
+  }
+
   const masterProduct = await prisma.masterProduct.findFirst({
     where: {
       id: productId,
@@ -126,15 +133,19 @@ const getMasterProductDetailsForCustomer = asyncHandler(async (req, res) => {
           collateralRequired: true,
         },
       },
+      MasterProductFields: {
+        select: {
+          id: true,
+          fieldsJsonData: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      },
     },
     orderBy: {
       createdAt: "desc",
     },
   });
-
-  if (!masterProduct) {
-    return res.respond(404, "Product not found!");
-  }
 
   res.respond(200, "Master Product Details fetched successfully!", masterProduct);
 });
@@ -162,127 +173,40 @@ const getMasterProductFields = asyncHandler(async (req, res) => {
     return res.respond(404, "Master Product not found.");
   }
 
-  const categories = await prisma.fieldCategory.findMany({
-    where: { isDeleted: false },
-    include: {
-      masterProductFields: {
-        where: { masterProductId },
-        include: {
-          Field: {
-            include: {
-              dropdowns: {
-                where: { isDeleted: false },
-              },
-            },
-          },
+  const masterProduct = await prisma.masterProduct.findFirst({
+    where: {
+      id: productId,
+      isDeleted: false,
+    },
+    select: {
+      id: true,
+      productName: true,
+      productCode: true,
+      productId: true,
+      productDescription: true,
+      deliveryChannel: true,
+      createdAt: true,
+      updatedAt: true,
+
+      MasterProductFields: {
+        select: {
+          id: true,
+          fieldsJsonData: true,
+          createdAt: true,
+          updatedAt: true,
         },
       },
     },
-    orderBy: { name: "asc" },
-  });
-
-  const response = categories.map((category) => ({
-    categoryId: category.id,
-    categoryName: category.name,
-    fields: category.masterProductFields.map((mpField) => ({
-      id: mpField.id,
-      isRequired: mpField.isRequired,
-      field: {
-        id: mpField.Field.id,
-        name: mpField.Field.name,
-        fieldType: mpField.Field.fieldType,
-        dropdowns: mpField.Field.dropdowns.map((dd) => ({
-          id: dd.id,
-          label: dd.label,
-          value: dd.value,
-        })),
-      },
-    })),
-  }));
-
-  return res.respond(200, "Master Product Fields fetched successfully!", response);
-});
-
-// ##########----------Get Master Product SubFields----------##########
-const getSubFieldsByFieldAndDropdown = asyncHandler(async (req, res) => {
-  const userId = req.user
-  const { masterProductId } = req.params;
-  const { fieldId, dropdownId } = req.query;
-
-  if (!fieldId || !dropdownId) {
-    return res.respond(400, "fieldId and dropdownId are required!");
-  }
-
-  const customer = await prisma.employee.findFirst({
-    where: { userId, isDeleted: false },
-  });
-  if (!customer) {
-    return res.respond(404, "Customer not found.");
-  }
-
-  const exists = await prisma.masterProduct.findUnique({
-    where: { id: masterProductId },
-  });
-  if (!exists) {
-    return res.respond(404, "Master Product not found.");
-  }
-
-  const fieldExists = await prisma.field.findUnique({
-    where: { id: fieldId, isDeleted: false },
-  });
-  if (!fieldExists) {
-    return res.respond(404, "Field not found!");
-  }
-
-  const dropdownExists = await prisma.dropdown.findUnique({
-    where: { id: dropdownId, isDeleted: false },
-  });
-  if (!dropdownExists) {
-    return res.respond(404, "Dropdown not found!");
-  }
-
-  const subFields = await prisma.subField.findMany({
-    where: {
-      dropdownId: dropdownId,
-      dropdown: {
-        fieldId: fieldId,
-      },
-    },
-    include: {
-      field: {
-        select: {
-          id: true,
-          name: true,
-          fieldType: true,
-          dropdowns: {
-            select: {
-              id: true,
-              label: true,
-              value: true,
-            }
-          },
-        }
-      },
+    orderBy: {
+      createdAt: "desc",
     },
   });
 
-  const response = subFields.map((sf) => ({
-    id: sf.id,
-    name: sf.field.name,
-    fieldType: sf.field.fieldType,
-    dropdowns: sf.field.dropdowns.map((dd) => ({
-      id: dd.id,
-      label: dd.label,
-      value: dd.value,
-    })),
-  }));
-
-  return res.respond(200, "SubFields fetched successfully!", response);
+  return res.respond(200, "Master Product Fields fetched successfully!", masterProduct);
 });
 
 module.exports = {
   getMasterProductsForCustomer,
   getMasterProductDetailsForCustomer,
   getMasterProductFields,
-  getSubFieldsByFieldAndDropdown
 };
