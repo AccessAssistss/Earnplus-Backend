@@ -34,7 +34,6 @@ const getMasterProductsForCustomer = asyncHandler(async (req, res) => {
       productCode: true,
       productId: true,
       productDescription: true,
-      deliveryChannel: true,
       versionId: true,
       status: true,
       createdAt: true,
@@ -99,7 +98,6 @@ const getMasterProductDetailsForCustomer = asyncHandler(async (req, res) => {
       productCode: true,
       productId: true,
       productDescription: true,
-      deliveryChannel: true,
       createdAt: true,
       updatedAt: true,
 
@@ -175,7 +173,7 @@ const getMasterProductFields = asyncHandler(async (req, res) => {
 
   const masterProduct = await prisma.masterProduct.findFirst({
     where: {
-      id: productId,
+      id: masterProductId,
       isDeleted: false,
     },
     select: {
@@ -184,7 +182,6 @@ const getMasterProductFields = asyncHandler(async (req, res) => {
       productCode: true,
       productId: true,
       productDescription: true,
-      deliveryChannel: true,
       createdAt: true,
       updatedAt: true,
 

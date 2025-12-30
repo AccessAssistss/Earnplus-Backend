@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 const applyLoan = asyncHandler(async (req, res) => {
     const customerId = req.user;
     const { masterProductId } = req.params;
-    const { formJsonData, score } = req.body;
+    const { formJsonData } = req.body;
 
     if (!masterProductId) return res.respond(400, "Master Product Id is required.");
     if (!formJsonData || typeof formJsonData !== 'object') {
@@ -40,7 +40,6 @@ const applyLoan = asyncHandler(async (req, res) => {
                 productId: masterProductId,
                 approverId: selectedOps.id,
                 loanCode,
-                score: score ?? null,
                 customerStatus: "PENDING",
                 internalStatus: "OPS_PENDING",
                 loanStatus: "NOT_DISBURSED",
@@ -187,7 +186,6 @@ const getLoanLogs = asyncHandler(async (req, res) => {
             },
             LoanFormData: true,
             LoanVkycData: true,
-            LoanCrifReport: true,
             LoanApplicationLogs: {
                 include: {
                     performedBy: {

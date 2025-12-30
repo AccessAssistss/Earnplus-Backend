@@ -5,8 +5,8 @@ const { createAARedirection, webhookHandler, getConsentData, fetchPeriodicData }
 const router = express.Router();
 
 router.post("/createAARedirection/:loanApplicationId", validateToken, createAARedirection);
-router.post("/getConsentData", getConsentData);
-router.post("/fetchPeriodicData", fetchPeriodicData);
+router.post("/getConsentData/:loanApplicationId", validateToken, getConsentData);
+router.post("/fetchPeriodicData/:loanApplicationId", validateToken, fetchPeriodicData);
 router.post("/webhook", webhookHandler);
 
 module.exports = router;

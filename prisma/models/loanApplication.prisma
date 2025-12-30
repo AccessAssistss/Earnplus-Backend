@@ -5,7 +5,7 @@ model LoanApplication {
   productId         String
   approverId        String?
   loanCode          String              @unique
-  score             Int?
+  crifScore         Int?
   customerStatus    CustomerLoanStatus  @default(PENDING)
   internalStatus    InternalLoanStatus  @default(OPS_PENDING)
   loanStatus        LoanLifecycleStatus @default(NOT_DISBURSED)
@@ -25,8 +25,8 @@ model LoanApplication {
 
   LoanFormData   LoanFormData?
   LoanVkycData   LoanVkycData?
-  LoanCrifReport LoanCrifReport?
   LoanCreditData LoanCreditData?
+  LoanCamsData   LoanCamsData?
 
   LoanApplicationLogs LoanApplicationLogs[]
 }
@@ -55,29 +55,33 @@ model LoanVkycData {
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
-// ####################--------------------Loan Credit Data Model--------------------####################
-model LoanCreditData {
-  id                String   @id @default(uuid())
-  applicationId     String   @unique
-  crifPdf           String?
-  statementPdf      String?
-  accountDetailJson Json?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  isDeleted         Boolean  @default(false)
+// ####################--------------------Loan Cams Data Model--------------------####################
+model LoanCamsData {
+  id            String   @id @default(uuid())
+  applicationId String   @unique
+  consentId     String?
+  sessionId     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  isDeleted     Boolean  @default(false)
 
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
-// ##########----------Loan CRIF Report Model----------##########
-model LoanCrifReport {
-  id                String   @id @default(uuid())
-  loanApplicationId String   @unique
-  responseBody      Json
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+// ####################--------------------Loan Credit Data Model--------------------####################
+model LoanCreditData {
+  id                       String   @id @default(uuid())
+  applicationId            String   @unique
+  crifPdf                  String?
+  crifAccountSummery       Json?
+  lastOneYearStatementPdf  String?
+  lastSixMonthStatementPdf String?
+  statementJson            Json?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  isDeleted                Boolean  @default(false)
 
-  loanApplication LoanApplication @relation(fields: [loanApplicationId], references: [id])
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
 // ##########----------Loan Application Logs Model----------##########

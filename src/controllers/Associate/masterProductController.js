@@ -417,7 +417,6 @@ const createMasterProductFields = asyncHandler(async (req, res) => {
   const masterProduct = await prisma.masterProduct.findUnique({
     where: { id: masterProductId },
   });
-
   if (!masterProduct) {
     return res.respond(404, "Master Product not found.");
   }
@@ -425,7 +424,6 @@ const createMasterProductFields = asyncHandler(async (req, res) => {
   const existingFields = await prisma.masterProductFields.findUnique({
     where: { masterProductId },
   });
-
   if (existingFields) {
     return res.respond(409, "Master Product Fields already exist for this product.");
   }

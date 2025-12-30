@@ -92,7 +92,7 @@ const getVKYCPendingLoans = asyncHandler(async (req, res) => {
         isDeleted: false,
         approverId: opsManager.id,
         internalStatus: "OPS_PENDING",
-        vkycStatus: vkycStatus || { in: ["LINK_GENERATED", "IN_PROGRESS", "COMPLETED", "FAILED"] },
+        vkycStatus: vkycStatus || { in: ["LINK_GENERATED"] },
         OR: search ? [
             { loanCode: { contains: search, mode: 'insensitive' } },
             { employee: { employeeName: { contains: search, mode: 'insensitive' } } }
@@ -335,7 +335,6 @@ const getLoanDetailsWithHistory = asyncHandler(async (req, res) => {
             },
             LoanFormData: true,
             LoanVkycData: true,
-            LoanCrifReport: true,
             LoanCreditData: true,
             LoanApplicationLogs: {
                 include: {

@@ -1,6 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const { asyncHandler } = require("../../../utils/asyncHandler");
 const { crifReport } = require("../../../utils/proxyUtils");
+const { formatDateTime, formatDateForFile } = require("../../../utils/dateFormatter");
+const { saveBase64Html } = require("../../../utils/saveBase64Html");
 
 const prisma = new PrismaClient();
 
@@ -8,10 +10,10 @@ const prisma = new PrismaClient();
 const fetchCreditReportCustomer = asyncHandler(async (req, res) => {
     const userId = req.user;
     const { loanApplicationId } = req.params;
-    const { firstName, middleName = "", lastName, dob, pan_number, address, city, state, pincode, loanAmount, ltv, term, mobile } = req.body;
+    const { firstName, middleName = "", lastName, dob, pan_number, address, city, state, pincode, mobile } = req.body;
 
     if (!loanApplicationId) return res.respond(400, "Loan Application Id is required.");
-    if (!firstName || !lastName || !dob || !pan_number || !address || !city || !state || !pincode || !loanAmount || !ltv || !term || !mobile) return res.respond(400, "required fields missing.");
+    if (!firstName || !lastName || !dob || !pan_number || !address || !city || !state || !pincode || !mobile) return res.respond(400, "required fields missing.");
 
     const user = await prisma.customUser.findFirst({
         where: { id: userId, isDeleted: false },
@@ -24,7 +26,7 @@ const fetchCreditReportCustomer = asyncHandler(async (req, res) => {
     if (!loanApplication) return res.respond(404, "Loan Application not found.");
 
     const applicantData = {
-        inquiryDateTime: new Date.now(),
+        inquiryDateTime: formatDateTime(),
         applicantId: loanApplication.customerId,
         firstName: firstName,
         middleName: middleName,
@@ -38,25 +40,56 @@ const fetchCreditReportCustomer = asyncHandler(async (req, res) => {
         mobile: mobile,
         inquiryId: loanApplication.id,
         applicationId: loanApplication.id,
-        loanAmount: loanAmount,
-        ltv: ltv,
-        term: term,
+        loanAmount: "",
+        ltv: "",
+        term: "",
     }
 
     const crifResponse = await crifReport(applicantData)
+
     if (!crifResponse.success) {
         return res.respond(crifResponse.statusCode || 500, "Failed to fetch CRIF report", crifResponse.data);
     }
 
-    await prisma.loanCrifReport.upsert({
-        where: { loanApplicationId: loanApplication.id },
+    const reportFile = crifResponse.data["CIR-REPORT-FILE"];
+
+    const scoreArray =
+        reportFile?.["REPORT-DATA"]?.["STANDARD-DATA"]?.["SCORE"] || [];
+
+    const crifScore =
+        scoreArray.length > 0 && scoreArray[0].VALUE
+            ? parseInt(scoreArray[0].VALUE)
+            : null;
+
+    const accountSummary =
+        reportFile?.["REPORT-DATA"]?.["ACCOUNTS-SUMMARY"] || null;
+
+    const printableBase64 = reportFile?.["PRINTABLE-REPORT"]?.["CONTENT"];
+
+    const timestamp = formatDateForFile();
+
+    const crifPdfPath = saveBase64Html(
+        printableBase64,
+        `crif_${loanApplication.id}_${timestamp}`
+    );
+
+    await prisma.loanApplication.update({
+        where: { id: loanApplication.id },
+        data: {
+            crifScore: crifScore,
+        },
+    });
+
+    await prisma.loanCreditData.upsert({
+        where: { applicationId: loanApplication.id },
         update: {
-            responseBody: crifResponse.data,
-            updatedAt: new Date(),
+            crifPdf: crifPdfPath,
+            crifAccountSummery: accountSummary,
         },
         create: {
-            loanId: loanApplication.id,
-            responseBody: crifResponse.data,
+            applicationId: loanApplication.id,
+            crifPdf: crifPdfPath,
+            crifAccountSummery: accountSummary,
         },
     });
 

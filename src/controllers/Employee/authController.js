@@ -16,6 +16,9 @@ const {
   checkPanStatus,
   verifySelfie,
 } = require("../../../utils/verificationUtils");
+const { crifReportCustomer } = require("../../../utils/proxyUtils");
+const { saveJsonResponse } = require("../../../utils/jsonResopnseSaver");
+const { formatDateTime } = require("../../../utils/dateFormatter");
 
 const prisma = new PrismaClient();
 
@@ -669,11 +672,6 @@ const requestInactivation = asyncHandler(async (req, res) => {
 
   const employee = await prisma.employee.findFirst({
     where: { userId },
-    include: {
-      LoanApplication: {
-        where: { status: "ACTIVE" },
-      },
-    },
   });
   if (!employee) {
     return res.respond(404, "Employee not found");
@@ -802,6 +800,8 @@ const getCreditReport = asyncHandler(async (req, res) => {
   }
 
   const applicantData = {
+    inquiryDateTime: formatDateTime(),
+    applicantId: employee.id,
     firstName: firstName || "",
     middleName: middleName || "",
     lastName: lastName || "",
@@ -812,13 +812,14 @@ const getCreditReport = asyncHandler(async (req, res) => {
     state: state || "",
     pincode: pincode || "",
     mobile: mobile,
+    inquiryId: employee.id,
     applicationId: employee.id,
-    loanAmount: "5000",
-    ltv: "12.3",
-    term: "24",
+    loanAmount: "",
+    ltv: "",
+    term: "",
   };
 
-  const crifResponse = await crifReport(applicantData);
+  const crifResponse = await crifReportCustomer(applicantData);
 
   if (!crifResponse.success) {
     return res.respond(crifResponse.statusCode || 500, "Failed to fetch CRIF report", crifResponse.data);
