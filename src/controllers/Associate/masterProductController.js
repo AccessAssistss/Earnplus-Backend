@@ -81,6 +81,7 @@ const createMasterProduct = asyncHandler(async (req, res) => {
         productId: generatedCode,
         productCode,
         productDescription,
+        status: "Draft",
         loanTypeId,
         partnerId,
         versionId: newVersionId,
@@ -521,6 +522,12 @@ const createProductCreditAssignmentRule = asyncHandler(async (req, res) => {
       });
       created.push(newRule);
     }
+
+    await tx.masterProduct.update({
+      where: { id: masterProductId },
+      data: { status: "Active" },
+    });
+
     return created;
   });
 
