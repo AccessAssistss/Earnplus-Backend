@@ -324,26 +324,20 @@ const getLoansDeatilsByCustomer = asyncHandler(async (req, res) => {
                 }
             },
             LoanFormData: true,
-            LoanVkycData: {
-                select: {
-                    id: true,
-                    vkycPdf: true,
-                    createdAt: true,
-                }
-            },
-            LoanApplicationLogs: {
-                include: {
-                    performedBy: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                        }
-                    }
-                },
-                orderBy: { createdAt: 'desc' },
-                take: 10
-            }
+            LoanOtherDocs: true,
+            // LoanApplicationLogs: {
+            //     include: {
+            //         performedBy: {
+            //             select: {
+            //                 id: true,
+            //                 name: true,
+            //                 email: true,
+            //             }
+            //         }
+            //     },
+            //     orderBy: { createdAt: 'desc' },
+            //     take: 10
+            // }
         }
     });
 
@@ -374,6 +368,77 @@ const uploadDocs = asyncHandler(async (req, res) => {
     res.respond(201, "Document uploaded successfully!", { imageUrl: docUrl });
 });
 
+// ##########----------Upload Additional Loan Document----------##########
+const uploadAdditionalLoanDoc = asyncHandler(async (req, res) => {
+    const userId = req.user;
+    const { documentId } = req.body;
+
+    if (!documentId) {
+        return res.respond(400, "Document Id is required.");
+    }
+
+    const customer = await prisma.employee.findFirst({
+        where: { userId, isDeleted: false },
+    });
+    if (!customer) {
+        return res.respond(404, "Customer not found.");
+    }
+
+    const loanDoc = await prisma.loanOtherDocs.findFirst({
+        where: {
+            id: documentId,
+            isDeleted: false
+        },
+        include: {
+            loanApplication: {
+                include: {
+                    employee: true
+                }
+            }
+        }
+    });
+
+    if (!loanDoc) {
+        return res.respond(404, "Requested document not found.");
+    }
+
+    if (loanDoc.loanApplication.customerId !== userId) {
+        return res.respond(403, "Unauthorized upload attempt.");
+    }
+
+    if (loanDoc.status !== "REQUESTED") {
+        return res.respond(
+            400,
+            `Document cannot be uploaded in ${loanDoc.status} state.`
+        );
+    }
+
+    const docFile = req.files?.doc?.[0];
+
+    const docUrl = docFile
+        ? `/uploads/loan/additional_doc/${docFile.filename}`
+        : null;
+    if (!docUrl) {
+        return res.respond(
+            400,
+            `doc is required.`
+        );
+    }
+
+    await prisma.loanOtherDocs.update({
+        where: { id: loanOtherDocId },
+        data: {
+            docUrl,
+            status: "UPLOADED"
+        }
+    });
+
+    return res.respond(
+        200,
+        "Document uploaded successfully."
+    );
+});
+
 module.exports = {
     applyLoan,
     getMyPendingLoans,
@@ -382,4 +447,5 @@ module.exports = {
     getLoansByCustomer,
     getLoansDeatilsByCustomer,
     uploadDocs,
+    uploadAdditionalLoanDoc
 };

@@ -162,3 +162,8 @@ enum VKYCStatus {
   COMPLETED
   FAILED
 }
+
+enum LoanDocStatus {
+  REQUESTED
+  UPLOADED
+}

@@ -52,6 +52,7 @@ const getAppliedLoans = asyncHandler(async (req, res) => {
                         productCode: true
                     }
                 },
+                LoanVkycData: true,
                 LoanFormData: {
                     select: { id: true, formJsonData: true }
                 }
@@ -77,7 +78,7 @@ const getAppliedLoans = asyncHandler(async (req, res) => {
 // ##########----------Get VKYC Pending Loans----------##########
 const getVKYCPendingLoans = asyncHandler(async (req, res) => {
     const userId = req.user;
-    const { page = 1, limit = 10, search = "", vkycStatus="LINK_GENERATED" } = req.query;
+    const { page = 1, limit = 10, search = "", vkycStatus = "LINK_GENERATED" } = req.query;
 
     const opsManager = await prisma.associateSubAdmin.findFirst({
         where: { userId, isDeleted: false, isActive: true },
@@ -119,7 +120,10 @@ const getVKYCPendingLoans = asyncHandler(async (req, res) => {
                         productCode: true
                     }
                 },
-                LoanVkycData: true
+                LoanVkycData: true,
+                LoanFormData: {
+                    select: { id: true, formJsonData: true }
+                }
             },
             orderBy: { vkycLinkCreatedAt: "desc" },
             skip: (page - 1) * limit,
@@ -155,16 +159,16 @@ const getManagerLoanHistory = asyncHandler(async (req, res) => {
 
     const whereClause = {
         performedById: manager.id,
-        action: { 
+        action: {
             in: [
-                "ASSIGNED_TO_OPS", 
+                "ASSIGNED_TO_OPS",
                 "ASSIGNED_TO_SENIOR_OPS",
                 "ASSIGNED_TO_CREDIT",
                 "ASSIGNED_TO_FINANCE",
                 "ASSIGNED_TO_DISBURSAL",
                 "REJECTED",
                 "APPROVED"
-            ] 
+            ]
         }
     };
 
@@ -290,7 +294,7 @@ const getManagerDashboardStats = asyncHandler(async (req, res) => {
 });
 
 // ##########----------Get Loan Details with Full History----------##########
-const getLoanDetailsWithHistory = asyncHandler(async (req, res) => {
+const getLoanDetails = asyncHandler(async (req, res) => {
     const userId = req.user;
     const { loanApplicationId } = req.params;
 
@@ -334,29 +338,30 @@ const getLoanDetailsWithHistory = asyncHandler(async (req, res) => {
                 }
             },
             LoanFormData: true,
+            LoanOtherDocs: true,
             LoanVkycData: true,
             LoanCreditData: true,
-            LoanApplicationLogs: {
-                include: {
-                    performedBy: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            role: { select: { roleName: true } }
-                        }
-                    },
-                    assignedTo: {
-                        select: {
-                            id: true,
-                            name: true,
-                            email: true,
-                            role: { select: { roleName: true } }
-                        }
-                    }
-                },
-                orderBy: { createdAt: 'asc' }
-            }
+            // LoanApplicationLogs: {
+            //     include: {
+            //         performedBy: {
+            //             select: {
+            //                 id: true,
+            //                 name: true,
+            //                 email: true,
+            //                 role: { select: { roleName: true } }
+            //             }
+            //         },
+            //         assignedTo: {
+            //             select: {
+            //                 id: true,
+            //                 name: true,
+            //                 email: true,
+            //                 role: { select: { roleName: true } }
+            //             }
+            //         }
+            //     },
+            //     orderBy: { createdAt: 'asc' }
+            // }
         }
     });
 
@@ -367,10 +372,87 @@ const getLoanDetailsWithHistory = asyncHandler(async (req, res) => {
     res.respond(200, "Loan details with history fetched successfully", loan);
 });
 
+// ##########----------Ask Additional Docs For Loans----------##########
+const askAdditionalDocs = asyncHandler(async (req, res) => {
+    const userId = req.user;
+    const { loanApplicationId, documents } = req.body;
+
+    if (!loanApplicationId) {
+        return res.respond(400, "Loan Application Id is required.");
+    }
+
+    if (!Array.isArray(documents) || documents.length === 0) {
+        return res.respond(400, "At least one document is required.");
+    }
+
+    const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
+        where: {
+            userId,
+            isDeleted: false,
+            isActive: true
+        },
+        include: { role: true }
+    });
+    if (!associateSubAdmin) {
+        return res.respond(403, "Unauthorized access.");
+    }
+
+    const loanApplication = await prisma.loanApplication.findFirst({
+        where: {
+            id: loanApplicationId,
+            isDeleted: false
+        }
+    });
+
+    if (!loanApplication) {
+        return res.respond(404, "Loan application not found.");
+    }
+
+    const existingDocs = await prisma.loanOtherDocs.findMany({
+        where: {
+            applicationId: loanApplicationId,
+            isDeleted: false,
+            docName: {
+                in: documents.map(d => d.docName)
+            }
+        },
+        select: { docName: true }
+    });
+
+    const existingDocNames = new Set(existingDocs.map(d => d.docName));
+
+    const docsToCreate = documents
+        .filter(d => !existingDocNames.has(d.docName))
+        .map(d => ({
+            applicationId: loanApplicationId,
+            docName: d.docName,
+            status: "REQUESTED"
+        }));
+
+    if (docsToCreate.length === 0) {
+        return res.respond(400, "All requested documents already exist.");
+    }
+
+    await prisma.$transaction(async (tx) => {
+        await tx.loanOtherDocs.createMany({
+            data: docsToCreate
+        });
+    });
+
+    return res.respond(
+        201,
+        "Additional document request sent successfully.",
+        {
+            requestedDocs: docsToCreate.map(d => d.docName)
+        }
+    );
+});
+
 module.exports = {
     getAppliedLoans,
     getVKYCPendingLoans,
     getManagerLoanHistory,
     getManagerDashboardStats,
-    getLoanDetailsWithHistory
+    getLoanDetails,
+    askAdditionalDocs
 };

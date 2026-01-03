@@ -565,34 +565,50 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
         }
 
         if (request.financialTermsUpdate) {
-            const { id, updateRequestId, ...financialData } = request.financialTermsUpdate;
-            await tx.financialTerms.update({
+            const { id, updateRequestId, createdAt, updatedAt, ...financialData } = request.financialTermsUpdate;
+            await tx.financialTerms.upsert({
                 where: { masterProductId: masterProduct.id },
-                data: financialData,
+                update: financialData,
+                create: {
+                    masterProductId: masterProduct.id,
+                    ...financialData,
+                },
             });
         }
 
         if (request.eligibilityCriteriaUpdate) {
-            const { id, updateRequestId, ...eligibilityData } = request.eligibilityCriteriaUpdate;
-            await tx.eligibilityCriteria.update({
+            const { id, updateRequestId, createdAt, updatedAt, ...eligibilityData } = request.eligibilityCriteriaUpdate;
+            await tx.eligibilityCriteria.upsert({
                 where: { masterProductId: masterProduct.id },
-                data: eligibilityData,
+                update: eligibilityData,
+                create: {
+                    masterProductId: masterProduct.id,
+                    ...eligibilityData,
+                },
             });
         }
 
         if (request.creditBureauConfigUpdate) {
-            const { id, updateRequestId, ...bureauData } = request.creditBureauConfigUpdate;
-            await tx.creditBureauConfig.update({
+            const { id, updateRequestId, createdAt, updatedAt, ...bureauData } = request.creditBureauConfigUpdate;
+            await tx.creditBureauConfig.upsert({
                 where: { masterProductId: masterProduct.id },
-                data: bureauData,
+                update: bureauData,
+                create: {
+                    masterProductId: masterProduct.id,
+                    ...bureauData,
+                },
             });
         }
 
         if (request.masterProductOtherChargesUpdate) {
             const { id, updateRequestId, createdAt, updatedAt, ...chargesData } = request.masterProductOtherChargesUpdate;
-            await tx.masterProductOtherCharges.update({
+            await tx.masterProductOtherCharges.upsert({
                 where: { masterProductId: masterProduct.id },
-                data: chargesData,
+                update: chargesData,
+                create: {
+                    masterProductId: masterProduct.id,
+                    ...chargesData,
+                },
             });
         }
         if (request.masterProductFieldsUpdate) {
@@ -625,7 +641,7 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
 
             for (const ruleUpdate of request.productCreditAssignmentRuleUpdate) {
                 const { id, updateRequestId, createdAt, updatedAt, isDeleted, ...ruleData } = ruleUpdate;
-                
+
                 await tx.productCreditAssignmentRule.create({
                     data: {
                         masterProductId: masterProduct.id,

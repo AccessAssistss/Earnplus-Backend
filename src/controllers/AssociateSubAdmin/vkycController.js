@@ -41,7 +41,7 @@ const createVKYCLinkForCustomer = asyncHandler(async (req, res) => {
     await prisma.loanApplicationLogs.create({
         data: {
             loanApplicationId,
-            performedById: opsManager.id,
+            performedById: associateSubAdmin.id,
             action: "VKYC_LINK_GENERATED",
             remarks: "VKYC link generated and sent to customer"
         }
@@ -77,6 +77,20 @@ const getVKYCDataPointDetails = asyncHandler(async (req, res) => {
     }
 
     const vkycDetails = await GetVKYCDetailsBySessionId([sessionId]);
+    if (!vkycDetails.success) {
+        return res.respond(400, "Unable to fetch VKYC Details");
+    }
+
+    await prisma.loanVkycData.upsert({
+        where: { applicationId: loanApplicationId },
+        update: {
+            vkycJson: vkycDetails.data.data,
+        },
+        create: {
+            applicationId: loanApplicationId,
+            vkycJson: vkycDetails.data.data,
+        },
+    });
 
     res.respond(200, "VKYC Details fetched Successfully!", vkycDetails.data.data);
 });

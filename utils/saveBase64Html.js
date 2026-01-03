@@ -15,12 +15,12 @@ const saveBase64Html = (base64Content, filePrefix) => {
   const buffer = Buffer.from(base64Content, "base64");
   ensureDir(BASE_DIR);
 
-  const fileName = `${filePrefix}_${Date.now()}.html`;
+  const fileName = `/crif/${filePrefix}_${Date.now()}.html`;
   const filePath = path.join(BASE_DIR, fileName);
 
   fs.writeFileSync(filePath, buffer);
 
-  return `/uploads/crif/${fileName}`;
+  return `/uploads${fileName}`;
 }
 
 module.exports = { saveBase64Html };

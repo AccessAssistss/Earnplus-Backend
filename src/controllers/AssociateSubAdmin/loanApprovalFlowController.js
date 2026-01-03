@@ -4,6 +4,7 @@ const { selectOpsManager, selectSeniorOpsManager } = require("../../../helper/se
 const { selectCreditManagerByScore, selectCreditManagerByRole } = require("../../../helper/selectCreditManager");
 const { selectFinanceManager } = require("../../../helper/selectFinanceManager");
 const { selectDisbursalManager } = require("../../../helper/selectDisbursalManager");
+const { calculateEmi } = require("../../../utils/emiCalculator");
 
 const prisma = new PrismaClient();
 
@@ -11,7 +12,7 @@ const prisma = new PrismaClient();
 const processLoanApproval = asyncHandler(async (req, res) => {
     const userId = req.user;
     const { loanApplicationId } = req.params;
-    const { assignTo, action, remarks } = req.body
+    const { assignTo, action, remarks, approvedAmount, interestRate, tenure, interestType, accountholderName, bankAccountNumber, ifsc, bankName, accountType } = req.body
 
     if (!loanApplicationId) return res.respond(400, "Loan Application Id is required.");
     if (!assignTo ||
@@ -53,11 +54,19 @@ const processLoanApproval = asyncHandler(async (req, res) => {
         }
 
         if (assignTo === "Finance") {
-            return await assignToFinance(tx, loanApplication, associateSubAdmin.id, remarks);
+            if (!approvedAmount || !interestRate || !tenure) {
+                return res.respond(400, "Loan amount, interest rate and tenure are required");
+            }
+            const body = { approvedAmount, interestRate, tenure, interestType }
+            return await assignToFinance(tx, loanApplication, associateSubAdmin.id, remarks, body);
         }
 
         if (assignTo === "Disbursal") {
-            return await assignToDisbursal(tx, loanApplication, associateSubAdmin.id, remarks);
+            if (!accountholderName || !bankAccountNumber || !ifsc || !bankName || !accountType) {
+                return res.respond(400, "accountholderName, bankAccountNumber, ifsc, bankName and accountType are required");
+            }
+            const body = { accountholderName, bankAccountNumber, ifsc, bankName, accountType }
+            return await assignToDisbursal(tx, loanApplication, associateSubAdmin.id, remarks, body);
         }
 
         throw new Error("Invalid assignment flow");
@@ -220,7 +229,49 @@ async function assignToCreditLevel(tx, loanApplication, performedById, creditRol
 }
 
 // ##########----------Assign Loan Application To Finance Function----------##########
-async function assignToFinance(tx, loanApplication, performedById, remarks) {
+async function assignToFinance(tx, loanApplication, performedById, remarks, body) {
+    const { approvedAmount, interestRate, tenure, interestType = "FLAT", } = body;
+
+    const emiResult = calculateEmi({
+        principal: approvedAmount,
+        rate: interestRate,
+        tenure,
+        interestType,
+    });
+
+    await tx.loanApprovedData.upsert({
+        where: { applicationId: loanApplication.id },
+        update: { approvedAmount, interestRate, tenure, interestType },
+        create: {
+            applicationId: loanApplication.id,
+            approvedAmount,
+            interestRate,
+            tenure,
+            interestType,
+        },
+    });
+
+    await tx.loanEmiDetails.upsert({
+        where: { applicationId: loanApplication.id },
+        update: {
+            emiAmount: emiResult.emiAmount,
+            principalEmi: emiResult.principalEmi,
+            interestEmi: emiResult.interestEmi,
+            totalInterest: emiResult.totalInterest,
+            totalPayable: emiResult.totalPayable,
+            calculationJson: emiResult.meta,
+        },
+        create: {
+            applicationId: loanApplication.id,
+            emiAmount: emiResult.emiAmount,
+            principalEmi: emiResult.principalEmi,
+            interestEmi: emiResult.interestEmi,
+            totalInterest: emiResult.totalInterest,
+            totalPayable: emiResult.totalPayable,
+            calculationJson: emiResult.meta,
+        },
+    });
+
     const finance = await selectFinanceManager(tx, loanApplication.approverId);
 
     if (!finance) throw new Error("No active Finance Manager found");
@@ -248,7 +299,22 @@ async function assignToFinance(tx, loanApplication, performedById, remarks) {
 }
 
 // ##########----------Assign Loan Application To Disbursal Manager Function----------##########
-async function assignToDisbursal(tx, loanApplication, performedById, remarks) {
+async function assignToDisbursal(tx, loanApplication, performedById, remarks, body) {
+    const { accountholderName, bankAccountNumber, ifsc, bankName, accountType } = body
+
+    await tx.loanBankDetails.upsert({
+        where: { applicationId: loanApplication.id },
+        update: { accountholderName, bankAccountNumber, ifsc, bankName, accountType },
+        create: {
+            applicationId: loanApplication.id,
+            accountholderName,
+            bankAccountNumber,
+            ifsc,
+            bankName,
+            accountType
+        },
+    });
+
     const disbursalManager = await selectDisbursalManager(
         tx,
         loanApplication.approverId

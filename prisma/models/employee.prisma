@@ -69,7 +69,7 @@ model EmployeeAccountStatusRequest {
     status       String    @default("PENDING")
     scheduledAt  DateTime?
     cancelledAt  DateTime?
-    requestedAt  DateTime  @default(now())
+    requestedAt  DateTime?  @default(now())
     reviewRemark String?
 
     employee Employee @relation(fields: [employeeId], references: [id])

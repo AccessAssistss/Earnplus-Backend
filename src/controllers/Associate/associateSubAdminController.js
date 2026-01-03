@@ -10,6 +10,7 @@ const {
 const { UserType } = require("@prisma/client");
 const { verifyGST, verifyPAN } = require("../../../utils/verificationUtils");
 const { generateUniqueEmployerId } = require("../../../utils/uniqueCodeGenerator");
+const { ROLE_GROUPS } = require("../../../utils/roleGroups");
 
 const prisma = new PrismaClient();
 
@@ -164,6 +165,12 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
   const existingSubAdmin = await prisma.associateSubAdmin.findFirst({
     where: { email },
     include: {
+      role: {
+        select: {
+          id: true,
+          roleName: true,
+        },
+      },
       AssociateSubAdminModule: {
         where: { isDeleted: false },
         include: {
@@ -177,6 +184,7 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
           }
         },
       },
+      role: true
     },
   });
   if (!existingSubAdmin) {
@@ -212,6 +220,9 @@ const loginAssociateSubAdmin = asyncHandler(async (req, res) => {
     email: existingSubAdmin.email,
     mobile: existingSubAdmin.mobile,
     role: existingUser.role,
+    role: existingSubAdmin.role
+      ? existingSubAdmin.role.roleName
+      : null,
     modules
   };
 
@@ -795,6 +806,63 @@ const deleteAssociateSubAdminByAssociate = asyncHandler(async (req, res) => {
   res.respond(200, "SubAdmin deleted successfully!");
 });
 
+const getAssociateSubAdminsByRole = asyncHandler(async (req, res) => {
+  const { roleKey, page = 1, limit = 10 } = req.query;
+  if (!roleKey) {
+    return res.respond(400, "roleKey is required!");
+  }
+
+  const roleNames = ROLE_GROUPS[roleKey];
+  if (!roleNames || roleNames.length === 0) {
+    return res.respond(400, "Invalid roleKey provided!");
+  }
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const whereClause = {
+    isDeleted: false,
+    role: {
+      roleName: {
+        in: roleNames,
+      },
+    },
+  };
+
+  const [subAdmins, totalCount] = await Promise.all([
+    prisma.associateSubAdmin.findMany({
+      where: whereClause,
+      skip,
+      take: Number(limit),
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        mobile: true,
+        isActive: true,
+        createdAt: true,
+        role: {
+          select: {
+            id: true,
+            roleName: true,
+          },
+        },
+      },
+    }),
+    prisma.associateSubAdmin.count({ where: whereClause }),
+  ]);
+
+  res.respond(200, "SubAdmins fetched successfully!", {
+    roleKey,
+    total: totalCount,
+    page: Number(page),
+    limit: Number(limit),
+    totalPages: Math.ceil(totalCount / limit),
+    data: subAdmins,
+  });
+});
+
+
 module.exports = {
   createAssociateSubAdmin,
   loginAssociateSubAdmin,
@@ -806,5 +874,6 @@ module.exports = {
   getEmployersByAssociateSubAdmin,
   getEmployerDetails,
   deleteAssociateSubAdmin,
-  deleteAssociateSubAdminByAssociate
+  deleteAssociateSubAdminByAssociate,
+  getAssociateSubAdminsByRole
 };

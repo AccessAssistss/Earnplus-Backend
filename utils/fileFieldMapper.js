@@ -18,9 +18,14 @@ const QUERY_FILE_FIELDS = {
   file: "query/file",
 };
 
+const ADDITIONAL_DOC = {
+  doc: "additional_doc",
+};
+
 module.exports = {
   EMPLOYER_FILE_FIELDS,
   MODULE_FILE_FIELDS,
   LOAN_FILE_FIELDS,
-  QUERY_FILE_FIELDS
+  QUERY_FILE_FIELDS,
+  ADDITIONAL_DOC
 };

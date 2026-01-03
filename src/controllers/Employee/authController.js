@@ -17,7 +17,6 @@ const {
   verifySelfie,
 } = require("../../../utils/verificationUtils");
 const { crifReportCustomer } = require("../../../utils/proxyUtils");
-const { saveJsonResponse } = require("../../../utils/jsonResopnseSaver");
 const { formatDateTime } = require("../../../utils/dateFormatter");
 
 const prisma = new PrismaClient();
@@ -749,7 +748,6 @@ const requestReactivation = asyncHandler(async (req, res) => {
     data: {
       status: "REJECTED",
       reviewRemark: "Auto-reactivated by user",
-      reviewedAt: new Date(),
     },
   });
 
@@ -759,7 +757,6 @@ const requestReactivation = asyncHandler(async (req, res) => {
       requestType: "ACTIVATE",
       status: "APPROVED",
       reason: reason || "User reactivated account",
-      reviewedAt: new Date(),
       reviewRemark: "Auto-approved without admin",
     },
   });

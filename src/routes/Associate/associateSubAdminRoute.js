@@ -11,6 +11,7 @@ const {
   deactivateAssociateSubAdmin,
   getAssociateSubAdmins,
   deleteAssociateSubAdminByAssociate,
+  getAssociateSubAdminsByRole,
 } = require("../../controllers/Associate/associateSubAdminController");
 const validateToken = require("../../../middleware/validateJwtToken");
 const multerErrorHandler = require("../../../middleware/multerErrorHandler");
@@ -60,6 +61,10 @@ router.delete(
 router.delete(
   "/deleteAssociateSubAdminByAssociate/:userId",
   deleteAssociateSubAdminByAssociate
+);
+router.get(
+  "/getAssociateSubAdminsByRole",
+  getAssociateSubAdminsByRole
 );
 
 module.exports = router;

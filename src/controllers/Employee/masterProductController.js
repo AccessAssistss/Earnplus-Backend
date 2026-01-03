@@ -27,6 +27,7 @@ const getMasterProductsForCustomer = asyncHandler(async (req, res) => {
   const masterProducts = await prisma.masterProduct.findMany({
     where: {
       isDeleted: false,
+      status: "Active",
     },
     select: {
       id: true,

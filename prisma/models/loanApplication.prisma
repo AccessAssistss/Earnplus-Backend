@@ -23,12 +23,31 @@ model LoanApplication {
   masterProduct MasterProduct      @relation(fields: [productId], references: [id])
   approver      AssociateSubAdmin? @relation(fields: [approverId], references: [id])
 
-  LoanFormData   LoanFormData?
-  LoanVkycData   LoanVkycData?
-  LoanCreditData LoanCreditData?
-  LoanCamsData   LoanCamsData?
+  LoanFormData     LoanFormData?
+  LoanVkycData     LoanVkycData?
+  LoanCreditData   LoanCreditData?
+  LoanCamsData     LoanCamsData?
+  LoanApprovedData LoanApprovedData?
+  LoanEmiDetails   LoanEmiDetails?
+  LoanBankDetails  LoanBankDetails?
 
   LoanApplicationLogs LoanApplicationLogs[]
+  LoanOtherDocs       LoanOtherDocs[]
+}
+
+// ####################--------------------Loan Other Docs Model--------------------####################
+model LoanOtherDocs {
+  id            String        @id @default(uuid())
+  applicationId String
+  docName       String?
+  docUrl        String?
+  status        LoanDocStatus @default(REQUESTED)
+  remarks       String?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  isDeleted     Boolean       @default(false)
+
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
 // ####################--------------------Loan Form Data Model--------------------####################
@@ -47,7 +66,7 @@ model LoanFormData {
 model LoanVkycData {
   id            String   @id @default(uuid())
   applicationId String   @unique
-  vkycPdf       String?
+  vkycJson      Json?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   isDeleted     Boolean  @default(false)
@@ -82,6 +101,52 @@ model LoanCreditData {
   isDeleted                Boolean  @default(false)
 
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+// ####################--------------------Loan Approved Data Model--------------------####################
+model LoanApprovedData {
+  id             String       @id @default(uuid())
+  applicationId  String       @unique
+  approvedAmount Int?
+  interestRate   Float?
+  tenure         Int?
+  interestType   InterestType @default(FLAT)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  isDeleted      Boolean      @default(false)
+
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+// ####################--------------------Loan EMI Details Model--------------------####################
+model LoanEmiDetails {
+  id              String   @id @default(uuid())
+  applicationId   String   @unique
+  emiAmount       Float
+  principalEmi    Float?
+  interestEmi     Float?
+  totalInterest   Float
+  totalPayable    Float
+  calculationJson Json
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id])
+}
+
+// ####################--------------------Loan Bank Details Model--------------------####################
+model LoanBankDetails {
+  id                String   @id @default(uuid())
+  applicationId     String   @unique
+  accountholderName String?
+  bankAccountNumber String?
+  ifsc              String?
+  bankName          String?
+  accountType       String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id])
 }
 
 // ##########----------Loan Application Logs Model----------##########

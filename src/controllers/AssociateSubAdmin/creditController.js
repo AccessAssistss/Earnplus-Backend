@@ -16,7 +16,7 @@ const fetchCreditReportCustomer = asyncHandler(async (req, res) => {
     if (!firstName || !lastName || !dob || !pan_number || !address || !city || !state || !pincode || !mobile) return res.respond(400, "required fields missing.");
 
     const user = await prisma.customUser.findFirst({
-        where: { id: userId, isDeleted: false },
+        where: { id: userId },
     });
     if (!user) return res.respond(404, "User not found.");
 
@@ -51,14 +51,17 @@ const fetchCreditReportCustomer = asyncHandler(async (req, res) => {
         return res.respond(crifResponse.statusCode || 500, "Failed to fetch CRIF report", crifResponse.data);
     }
 
-    const reportFile = crifResponse.data["CIR-REPORT-FILE"];
+    const reportFile = crifResponse?.data?.data?.["CIR-REPORT-FILE"];
+    if (!reportFile) {
+        return res.respond(500, "Invalid CRIF response structure");
+    }
 
     const scoreArray =
         reportFile?.["REPORT-DATA"]?.["STANDARD-DATA"]?.["SCORE"] || [];
 
     const crifScore =
         scoreArray.length > 0 && scoreArray[0].VALUE
-            ? parseInt(scoreArray[0].VALUE)
+            ? Number(scoreArray[0].VALUE)
             : null;
 
     const accountSummary =
