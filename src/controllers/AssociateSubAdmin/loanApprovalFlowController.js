@@ -158,11 +158,14 @@ async function assignToCredit(tx, loanApplication, performedById, remarks) {
     const loan = await prisma.loanApplication.findUnique({
         where: { id: loanApplication.id },
     });
-    if (!loan || !loan.crifScore) return res.respond(404, "Credit Score not found for this Loan Application!");
+    if (!loan) {
+        throw new Error("Loan Application not found");
+    }
+    if (!loan.crifScore) {
+        throw new Error("Credit Score not found for this Loan Application");
+    }
 
     const score = loan.crifScore;
-
-    if (!score) return res.respond(400, "Score is Invalid!");
 
     const selectedCredit = await selectCreditManagerByScore(
         tx,
