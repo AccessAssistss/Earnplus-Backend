@@ -35,10 +35,12 @@ const createAARedirection = asyncHandler(async (req, res) => {
         },
         update: {
             sessionId: authData.data.sessionId,
+            redirectionUrl: redirectionData.data.data.redirectionurl,
         },
         create: {
             applicationId: loanApplication.id,
             sessionId: authData.data.sessionId,
+            redirectionUrl: redirectionData.data.data.redirectionurl,
         },
     });
 

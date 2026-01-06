@@ -1,0 +1,10 @@
+// ##########----------Agreement Template Model----------##########
+model AgreementTemplate {
+    id            String   @id @default(uuid())
+    name          String?
+    path          String?
+    contextSchema Json?
+    createdAt     DateTime @default(now())
+    updatedAt     DateTime @updatedAt
+    isDeleted     Boolean  @default(false)
+}

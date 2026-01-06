@@ -2,7 +2,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 
-const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "application/pdf"];
+const ALLOWED_MIME_TYPES = ["image/png", "image/jpeg", "application/pdf", "text/html"];
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const BASE_UPLOADS_DIR = path.join(__dirname, "../uploads");
 
@@ -36,7 +36,7 @@ function createUploader(entity, fieldMap) {
     if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Invalid file type. Only PNG, JPEG, PDF allowed."));
+      cb(new Error("Invalid file type. Only PNG, JPEG, PDF, and HTML files are allowed."));
     }
   };
 

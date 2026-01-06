@@ -22,10 +22,15 @@ const ADDITIONAL_DOC = {
   doc: "additional_doc",
 };
 
+const AGREEMENT_TEMPLATE = {
+  path: "templates",
+};
+
 module.exports = {
   EMPLOYER_FILE_FIELDS,
   MODULE_FILE_FIELDS,
   LOAN_FILE_FIELDS,
   QUERY_FILE_FIELDS,
-  ADDITIONAL_DOC
+  ADDITIONAL_DOC,
+  AGREEMENT_TEMPLATE
 };

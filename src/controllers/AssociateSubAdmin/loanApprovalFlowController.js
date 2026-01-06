@@ -45,11 +45,11 @@ const processLoanApproval = asyncHandler(async (req, res) => {
             return await assignToSeniorOps(tx, loanApplication, associateSubAdmin.id, remarks);
         }
 
-        if (assignTo === "Senior_Credit") {
+        if (assignTo === "Credit") {
             return await assignToCredit(tx, loanApplication, associateSubAdmin.id, remarks);
         }
 
-        if (assignTo.startsWith("Credit")) {
+        if (assignTo.startsWith("Credit") || assignTo === "Senior_Credit") {
             return await assignToCreditLevel(tx, loanApplication, associateSubAdmin.id, assignTo, remarks);
         }
 
@@ -215,12 +215,17 @@ async function assignToCreditLevel(tx, loanApplication, performedById, creditRol
         }
     });
 
+    const action =
+        creditRole === "Senior_Credit"
+            ? "ESCALATED_TO_SENIOR_CREDIT"
+            : "REASSIGNED_TO_CREDIT_LEVEL";
+
     await tx.loanApplicationLogs.create({
         data: {
             loanApplicationId: loanApplication.id,
             performedById,
             assignedToId: selectedCredit.id,
-            action: "REASSIGNED_TO_CREDIT",
+            action,
             remarks
         }
     });

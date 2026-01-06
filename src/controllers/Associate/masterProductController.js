@@ -1,6 +1,7 @@
 const { asyncHandler } = require("../../../utils/asyncHandler");
 const { PrismaClient } = require("@prisma/client");
 const { generateProductCode } = require("../../../utils/uniqueCodeGenerator");
+const { normalizeFieldsJsonData } = require("../../../utils/dataFormatter");
 
 const prisma = new PrismaClient();
 
@@ -429,10 +430,12 @@ const createMasterProductFields = asyncHandler(async (req, res) => {
     return res.respond(409, "Master Product Fields already exist for this product.");
   }
 
+  const normalizedFields = normalizeFieldsJsonData(fieldsJsonData);
+
   const fields = await prisma.masterProductFields.create({
     data: {
       masterProductId,
-      fieldsJsonData,
+      fieldsJsonData: normalizedFields,
     },
   });
 

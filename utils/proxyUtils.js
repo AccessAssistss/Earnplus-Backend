@@ -390,6 +390,61 @@ const camsFetchPeriodicData = async (sessionId, txnId, consentId, token) => {
     }
 };
 
+// ###############---------------Create E-Sign Request--------------###############
+const createEsignRequest = async (name, file, invitees, loanId) => {
+    try {
+        const url = `${BASE_URL}/api/v1/proxy/earnplus/leegality/createEsignRequest`;
+
+        const headers = {
+            "userid": PROXY_CRIF_USER_ID,
+            "password": PROXY_CRIF_PASSWORD,
+            "Content-Type": "application/json",
+        };
+
+        const payload = {
+            profileId: "mGokwnu",
+            name,
+            file,
+            invitees,
+            irn: loanId
+        };
+
+        const response = await axios.post(url, payload, { headers, validateStatus: () => true });
+
+        if (response.status === 200) {
+            return { success: true, data: response.data };
+        } else {
+            return { success: false, data: response.data, statusCode: response.status };
+        }
+    } catch (error) {
+        console.error("Error while Fetching Cams Periodic Data:", error.message);
+        return { success: false, error: error.message, statusCode: 500 };
+    }
+};
+
+// ###############---------------Fetch Document Details--------------###############
+const fetchDocumentDetails = async (documentId) => {
+    try {
+        const url = `${BASE_URL}/api/v1/proxy/earnplus/leegality/fetchDocumentDetails?documentId=${documentId}&file=${true}&auditTrail=${true}`;
+
+        const headers = {
+            "userid": PROXY_CRIF_USER_ID,
+            "password": PROXY_CRIF_PASSWORD,
+        };
+
+        const response = await axios.get(url, { headers, validateStatus: () => true });
+
+        if (response.status === 200) {
+            return { success: true, data: response.data };
+        } else {
+            return { success: false, data: response.data, statusCode: response.status };
+        }
+    } catch (error) {
+        console.error("Error while Fetching Cams Periodic Data:", error.message);
+        return { success: false, error: error.message, statusCode: 500 };
+    }
+};
+
 module.exports = {
     crifReportCustomer,
     crifReport,
@@ -400,4 +455,6 @@ module.exports = {
     camsAARedirection,
     camsGetConsentData,
     camsFetchPeriodicData,
+    createEsignRequest,
+    fetchDocumentDetails,
 }

@@ -1,23 +1,21 @@
 // ####################--------------------Loan Application Model--------------------####################
 model LoanApplication {
-  id                String              @id @default(uuid())
-  customerId        String
-  productId         String
-  approverId        String?
-  loanCode          String              @unique
-  crifScore         Int?
-  customerStatus    CustomerLoanStatus  @default(PENDING)
-  internalStatus    InternalLoanStatus  @default(OPS_PENDING)
-  loanStatus        LoanLifecycleStatus @default(NOT_DISBURSED)
-  opsApproved       Boolean             @default(false)
-  creditApproved    Boolean             @default(false)
-  pennyDrop         Boolean             @default(false)
-  vkycLink          String?
-  vkycLinkCreatedAt DateTime?
-  vkycStatus        VKYCStatus          @default(NOT_INITIATED)
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  isDeleted         Boolean             @default(false)
+  id             String              @id @default(uuid())
+  customerId     String
+  productId      String
+  approverId     String?
+  loanCode       String              @unique
+  crifScore      Int?
+  customerStatus CustomerLoanStatus  @default(PENDING)
+  internalStatus InternalLoanStatus  @default(OPS_PENDING)
+  loanStatus     LoanLifecycleStatus @default(NOT_DISBURSED)
+  opsApproved    Boolean             @default(false)
+  creditApproved Boolean             @default(false)
+  pennyDrop      Boolean             @default(false)
+  vkycStatus     VKYCStatus          @default(NOT_INITIATED)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  isDeleted      Boolean             @default(false)
 
   employee      Employee           @relation(fields: [customerId], references: [id])
   masterProduct MasterProduct      @relation(fields: [productId], references: [id])
@@ -33,6 +31,7 @@ model LoanApplication {
 
   LoanApplicationLogs LoanApplicationLogs[]
   LoanOtherDocs       LoanOtherDocs[]
+  LoanEsignDocuments  LoanEsignDocuments[]
 }
 
 // ####################--------------------Loan Other Docs Model--------------------####################
@@ -64,25 +63,28 @@ model LoanFormData {
 
 // ####################--------------------Loan VKYC Data Model--------------------####################
 model LoanVkycData {
-  id            String   @id @default(uuid())
-  applicationId String   @unique
-  vkycJson      Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  isDeleted     Boolean  @default(false)
+  id                String    @id @default(uuid())
+  applicationId     String    @unique
+  vkycJson          Json?
+  vkycLink          String?
+  vkycLinkCreatedAt DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  isDeleted         Boolean   @default(false)
 
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
 // ####################--------------------Loan Cams Data Model--------------------####################
 model LoanCamsData {
-  id            String   @id @default(uuid())
-  applicationId String   @unique
-  consentId     String?
-  sessionId     String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  isDeleted     Boolean  @default(false)
+  id             String   @id @default(uuid())
+  applicationId  String   @unique
+  consentId      String?
+  sessionId      String?
+  redirectionUrl String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  isDeleted      Boolean  @default(false)
 
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
@@ -145,6 +147,20 @@ model LoanBankDetails {
   accountType       String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id])
+}
+
+// ####################--------------------Loan E-sign Documents Model--------------------####################
+model LoanEsignDocuments {
+  id            String   @id @default(uuid())
+  applicationId String
+  documentId    String?  @unique
+  status        String?
+  signedFile    String?
+  signUrlLink   String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id])
 }

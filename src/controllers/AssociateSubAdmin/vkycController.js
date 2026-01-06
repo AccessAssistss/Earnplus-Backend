@@ -29,13 +29,26 @@ const createVKYCLinkForCustomer = asyncHandler(async (req, res) => {
         return res.respond(500, "Failed to generate VKYC link", vkycResponse);
     }
 
-    const updatedLoan = await prisma.loanApplication.update({
+    await prisma.loanApplication.update({
         where: { id: loanApplicationId },
         data: {
-            vkycLink: vkycResponse.data?.vkycLink || "Generated",
-            vkycLinkCreatedAt: new Date(),
             vkycStatus: "LINK_GENERATED"
         }
+    });
+
+    await prisma.loanVkycData.upsert({
+        where: {
+            applicationId: loanApplicationId,
+        },
+        update: {
+            vkycLink: vkycResponse.data?.vkycLink || "Generated",
+            vkycLinkCreatedAt: new Date(),
+        },
+        create: {
+            applicationId: loanApplicationId,
+            vkycLink: vkycResponse.data?.vkycLink || "Generated",
+            vkycLinkCreatedAt: new Date(),
+        },
     });
 
     await prisma.loanApplicationLogs.create({

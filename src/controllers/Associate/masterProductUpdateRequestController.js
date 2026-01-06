@@ -1,5 +1,6 @@
 const { PrismaClient } = require("@prisma/client");
 const { asyncHandler } = require("../../../utils/asyncHandler");
+const { normalizeFieldsJsonData } = require("../../../utils/dataFormatter");
 
 const prisma = new PrismaClient();
 
@@ -198,10 +199,12 @@ const submitMasterProductUpdateRequest = asyncHandler(async (req, res) => {
         }
 
         if (fieldsJsonDataUpdate) {
+            const normalizedFields = normalizeFieldsJsonData(fieldsJsonDataUpdate);
+
             await tx.masterProductFieldsUpdateRequest.create({
                 data: {
                     updateRequestId: request.id,
-                    fieldsJsonData: fieldsJsonDataUpdate,
+                    fieldsJsonData: normalizedFields,
                 },
             });
         }
@@ -451,7 +454,6 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
     const associate = await prisma.associate.findFirst({
         where: { userId, isDeleted: false },
     });
-
     if (!associate) {
         return res.respond(403, "Only Main Associate can approve requests!");
     }
@@ -612,42 +614,67 @@ const approveMasterProductUpdateRequest = asyncHandler(async (req, res) => {
             });
         }
         if (request.masterProductFieldsUpdate) {
-            const { id, updateRequestId, createdAt, updatedAt, isDeleted, ...fieldsData } = request.masterProductFieldsUpdate;
+            const { fieldsJsonData } = request.masterProductFieldsUpdate;
+            
+            const normalized = normalizeFieldsJsonData(fieldsJsonData);
 
-            const existingFields = await tx.masterProductFields.findUnique({
+            await tx.masterProductFields.upsert({
                 where: { masterProductId: masterProduct.id },
+                update: { fieldsJsonData: normalized },
+                create: {
+                    masterProductId: masterProduct.id,
+                    fieldsJsonData: normalized,
+                },
             });
-
-            if (existingFields) {
-                await tx.masterProductFields.update({
-                    where: { masterProductId: masterProduct.id },
-                    data: fieldsData,
-                });
-            } else {
-                await tx.masterProductFields.create({
-                    data: {
-                        masterProductId: masterProduct.id,
-                        ...fieldsData,
-                    },
-                });
-            }
         }
 
-        if (request.productCreditAssignmentRuleUpdate && request.productCreditAssignmentRuleUpdate.length > 0) {
-            await tx.productCreditAssignmentRule.updateMany({
-                where: { masterProductId: masterProduct.id },
-                data: { isDeleted: true },
-            });
+        if (Array.isArray(request.productCreditAssignmentRuleUpdate) && request.productCreditAssignmentRuleUpdate.length > 0) {
+            const rulesByRole = {};
 
-            for (const ruleUpdate of request.productCreditAssignmentRuleUpdate) {
-                const { id, updateRequestId, createdAt, updatedAt, isDeleted, ...ruleData } = ruleUpdate;
+            for (const rule of request.productCreditAssignmentRuleUpdate) {
+                if (!rulesByRole[rule.creditRole]) {
+                    rulesByRole[rule.creditRole] = [];
+                }
+                rulesByRole[rule.creditRole].push(rule);
+            }
 
-                await tx.productCreditAssignmentRule.create({
-                    data: {
+            for (const [creditRole, rules] of Object.entries(rulesByRole)) {
+
+                rules.sort((a, b) => a.minScore - b.minScore);
+                for (let i = 1; i < rules.length; i++) {
+                    if (rules[i].minScore <= rules[i - 1].maxScore) {
+                        throw new Error(
+                            `Overlapping score ranges detected for credit role ${creditRole}`
+                        );
+                    }
+                }
+
+                await tx.productCreditAssignmentRule.updateMany({
+                    where: {
                         masterProductId: masterProduct.id,
-                        ...ruleData,
+                        creditRole,
+                        isDeleted: false,
                     },
+                    data: { isDeleted: true },
                 });
+
+                for (const rule of rules) {
+                    const {
+                        id,
+                        updateRequestId,
+                        createdAt,
+                        updatedAt,
+                        isDeleted,
+                        ...ruleData
+                    } = rule;
+
+                    await tx.productCreditAssignmentRule.create({
+                        data: {
+                            masterProductId: masterProduct.id,
+                            ...ruleData,
+                        },
+                    });
+                }
             }
         }
 

@@ -325,6 +325,7 @@ const getLoansDeatilsByCustomer = asyncHandler(async (req, res) => {
             },
             LoanFormData: true,
             LoanOtherDocs: true,
+            LoanCamsData: true,
             // LoanApplicationLogs: {
             //     include: {
             //         performedBy: {
@@ -402,10 +403,6 @@ const uploadAdditionalLoanDoc = asyncHandler(async (req, res) => {
         return res.respond(404, "Requested document not found.");
     }
 
-    if (loanDoc.loanApplication.customerId !== userId) {
-        return res.respond(403, "Unauthorized upload attempt.");
-    }
-
     if (loanDoc.status !== "REQUESTED") {
         return res.respond(
             400,
@@ -426,7 +423,7 @@ const uploadAdditionalLoanDoc = asyncHandler(async (req, res) => {
     }
 
     await prisma.loanOtherDocs.update({
-        where: { id: loanOtherDocId },
+        where: { id: documentId },
         data: {
             docUrl,
             status: "UPLOADED"

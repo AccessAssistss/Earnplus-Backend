@@ -125,7 +125,7 @@ const getVKYCPendingLoans = asyncHandler(async (req, res) => {
                     select: { id: true, formJsonData: true }
                 }
             },
-            orderBy: { vkycLinkCreatedAt: "desc" },
+            orderBy: { createdAt: "desc" },
             skip: (page - 1) * limit,
             take: parseInt(limit)
         }),
@@ -164,6 +164,9 @@ const getManagerLoanHistory = asyncHandler(async (req, res) => {
                 "ASSIGNED_TO_OPS",
                 "ASSIGNED_TO_SENIOR_OPS",
                 "ASSIGNED_TO_CREDIT",
+                "ASSIGNED_TO_CREDIT_AUTO",
+                "REASSIGNED_TO_CREDIT_LEVEL",
+                "ESCALATED_TO_SENIOR_CREDIT",
                 "ASSIGNED_TO_FINANCE",
                 "ASSIGNED_TO_DISBURSAL",
                 "REJECTED",
@@ -341,6 +344,10 @@ const getLoanDetails = asyncHandler(async (req, res) => {
             LoanOtherDocs: true,
             LoanVkycData: true,
             LoanCreditData: true,
+            LoanApprovedData: true,
+            LoanEmiDetails: true,
+            LoanBankDetails: true,
+            LoanEsignDocuments: true,
             // LoanApplicationLogs: {
             //     include: {
             //         performedBy: {
