@@ -1,5 +1,6 @@
 const slugify = require("slugify");
 const { PrismaClient } = require("@prisma/client");
+const { randomUUID } = require("crypto");
 
 const prisma = new PrismaClient();
 
@@ -143,6 +144,11 @@ const generateUniqueLoanCode = async (productId, customerId) => {
   return newLoanCode;
 };
 
+// ###############---------------Generate Client Txn Code---------------###############
+const generateClientTxnId = () => {
+  return randomUUID();
+};
+
 module.exports = {
   generateProductCode,
   generateVariantProductCode,
@@ -150,5 +156,6 @@ module.exports = {
   generateUniqueEmployerId,
   generateUniqueContractCombinationId,
   generateUniqueRuleBookId,
-  generateUniqueLoanCode
+  generateUniqueLoanCode,
+  generateClientTxnId
 };

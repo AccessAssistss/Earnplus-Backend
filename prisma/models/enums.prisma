@@ -34,7 +34,7 @@ enum ApplicationKYCStatus {
 
 enum EmployeeAccountStatus {
   ACTIVE
-  INACTIVE      
+  INACTIVE
   BLOCKED
 }
 
@@ -160,6 +160,8 @@ enum VKYCStatus {
   LINK_GENERATED
   IN_PROGRESS
   COMPLETED
+  REJECTED
+  DROPPED
   FAILED
 }
 

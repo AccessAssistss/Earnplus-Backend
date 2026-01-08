@@ -7,6 +7,9 @@ const { htmlToBase64Pdf } = require("../../../utils/saveBase64Html");
 const { injectTemplate } = require("../../../utils/templateInjector");
 const { resolveContext } = require("../../../utils/agreementResolver");
 const { buildAgreementContext } = require("../../../utils/agreementContext");
+const { saveJsonResponse } = require("../../../utils/jsonResopnseSaver");
+const path = require("path");
+const fs = require("fs");
 
 const prisma = new PrismaClient();
 
@@ -37,7 +40,7 @@ const sendEsignDocumentToCustomer = asyncHandler(async (req, res) => {
     });
     if (!loanApplication) return res.respond(404, "Loan Application not found.");
 
-    if (!loanApplication.LoanApprovedData || !loanApplication.LoanEmiDetails) {
+    if (!loanApplication.creditApproved) {
         return res.respond(400, "Loan is not approved yet.");
     }
 
@@ -53,9 +56,10 @@ const sendEsignDocumentToCustomer = asyncHandler(async (req, res) => {
 
     const templatePath = path.join(
         __dirname,
-        "../../../..",
+        "../../..",
         template.path
     );
+    console.log(templatePath)
     if (!fs.existsSync(templatePath)) {
         return res.respond(500, "Agreement template file missing on server.");
     }
@@ -86,7 +90,7 @@ const sendEsignDocumentToCustomer = asyncHandler(async (req, res) => {
 
     const inviteesPayload = [{
         name: resolvedValues.CUSTOMER_NAME,
-        email: loanApplication.LoanFormData?.basicDetails.email,
+        email: loanApplication.LoanFormData?.formJsonData.basicDetails.email,
         phone: resolvedValues.CUSTOMER_MOBILE
     }]
 
@@ -106,11 +110,12 @@ const sendEsignDocumentToCustomer = asyncHandler(async (req, res) => {
 
 // ##########----------Leegality Webhook Handler----------##########
 const leegalityWebhookHandler = asyncHandler(async (req, res) => {
-    const apiKey = req.headers["x-api-key"];
-    if (apiKey !== "epcmaawh") {
+    if (req.headers["x-api-key"] !== "epcmaawh") {
         return res.respond(401, "Unauthorized webhook");
     }
     const body = req.body;
+    const timestamps = formatDateForFile()
+    saveJsonResponse("leegality", timestamps, body)
     if (!body) {
         return res.respond(400, "Invalid webhook payload");
     }

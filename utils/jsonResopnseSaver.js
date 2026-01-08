@@ -8,7 +8,7 @@ const saveJsonResponse = async (folderName, fileName, data) => {
         const dirPath = path.join(
             PROJECT_ROOT,
             "logs",
-            "cams",
+            "new",
             folderName
         );
 

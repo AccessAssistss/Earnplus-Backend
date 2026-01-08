@@ -28,5 +28,6 @@ router.use("/masterProductDeleteRequest", require("./masterProductDeleteRequestR
 router.use("/variantProductUpdateRequest", require("./variantProductUpdateRequestRoute"));
 router.use("/variantProductDeleteRequest", require("./variantProductDeleteRequestRoute"));
 router.use("/agreement", require("./agreementTemplateRoute"));
+router.use("/field", require("./fieldRoute"));
 
 module.exports = router;

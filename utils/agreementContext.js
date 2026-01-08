@@ -1,10 +1,10 @@
 const buildAgreementContext = async (loan) => {
     return {
         CUSTOMER: {
-            FIRST_NAME: loan.LoanFormData?.basicDetails.firstName ?? "",
-            MIDDLE_NAME: loan.LoanFormData?.basicDetails.middleName ?? "",
-            LAST_NAME: loan.LoanFormData?.basicDetails.lastName ?? "",
-            MOBILE: loan.LoanFormData?.basicDetails.phone ?? "",
+            FIRST_NAME: loan.LoanFormData?.formJsonData.basicDetails.firstName ?? "",
+            MIDDLE_NAME: loan.LoanFormData?.formJsonData.basicDetails.middleName ?? "",
+            LAST_NAME: loan.LoanFormData?.formJsonData.basicDetails.lastName ?? "",
+            MOBILE: loan.LoanFormData?.formJsonData.basicDetails.phone ?? "",
         },
 
         LOAN: {

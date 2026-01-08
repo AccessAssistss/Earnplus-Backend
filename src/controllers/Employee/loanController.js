@@ -326,6 +326,19 @@ const getLoansDeatilsByCustomer = asyncHandler(async (req, res) => {
             LoanFormData: true,
             LoanOtherDocs: true,
             LoanCamsData: true,
+            LoanVkycData: {
+                select: {
+                    id: true,
+                    vkycLink: true,
+                }
+            },
+            LoanEsignDocuments: {
+                select: {
+                    id: true,
+                    status: true,
+                    signUrlLink: true,
+                }
+            },
             // LoanApplicationLogs: {
             //     include: {
             //         performedBy: {

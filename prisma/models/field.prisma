@@ -1,0 +1,24 @@
+// ####################--------------------Section Key Model--------------------####################
+model SectionKey {
+    id        String   @id @default(uuid())
+    key       String?
+    label     String?
+    createdAt DateTime @default(now())
+    updtedAt  DateTime @updatedAt
+    isDeleted Boolean  @default(false)
+
+    FieldKey FieldKey[]
+}
+
+// ####################--------------------Field Key Model--------------------####################
+model FieldKey {
+    id           String   @id @default(uuid())
+    sectionKeyId String
+    key          String?
+    label        String?
+    createdAt    DateTime @default(now())
+    updtedAt     DateTime @updatedAt
+    isDeleted    Boolean  @default(false)
+
+    SectionKey SectionKey? @relation(fields: [sectionKeyId], references: [id], onDelete: Cascade)
+}

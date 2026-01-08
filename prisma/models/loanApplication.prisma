@@ -79,9 +79,12 @@ model LoanVkycData {
 model LoanCamsData {
   id             String   @id @default(uuid())
   applicationId  String   @unique
+  clienttxnid    String   @unique
   consentId      String?
   sessionId      String?
+  txnId          String?
   redirectionUrl String?
+  status         String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   isDeleted      Boolean  @default(false)
@@ -98,6 +101,7 @@ model LoanCreditData {
   lastOneYearStatementPdf  String?
   lastSixMonthStatementPdf String?
   statementJson            Json?
+  bsaJson                  Json?
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
   isDeleted                Boolean  @default(false)

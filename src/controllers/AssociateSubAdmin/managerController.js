@@ -344,10 +344,17 @@ const getLoanDetails = asyncHandler(async (req, res) => {
             LoanOtherDocs: true,
             LoanVkycData: true,
             LoanCreditData: true,
+            LoanCamsData: true,
             LoanApprovedData: true,
             LoanEmiDetails: true,
             LoanBankDetails: true,
-            LoanEsignDocuments: true,
+            LoanEsignDocuments: {
+                select: {
+                    id: true,
+                    status: true,
+                    signedFile: true,
+                }
+            },
             // LoanApplicationLogs: {
             //     include: {
             //         performedBy: {

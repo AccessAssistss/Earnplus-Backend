@@ -1,6 +1,8 @@
 const { PrismaClient } = require("@prisma/client");
 const { asyncHandler } = require("../../../utils/asyncHandler");
 const { createVKYCLink, GetVKYCStatusByUniqueId, GetVKYCDetailsBySessionId } = require("../../../utils/proxyUtils");
+const { saveJsonResponse } = require("../../../utils/jsonResopnseSaver");
+const { formatDateForFile } = require("../../../utils/dateFormatter");
 
 const prisma = new PrismaClient();
 
@@ -36,17 +38,18 @@ const createVKYCLinkForCustomer = asyncHandler(async (req, res) => {
         }
     });
 
+
     await prisma.loanVkycData.upsert({
         where: {
             applicationId: loanApplicationId,
         },
         update: {
-            vkycLink: vkycResponse.data?.vkycLink || "Generated",
+            vkycLink: vkycResponse.data?.data?.url || "Generated",
             vkycLinkCreatedAt: new Date(),
         },
         create: {
             applicationId: loanApplicationId,
-            vkycLink: vkycResponse.data?.vkycLink || "Generated",
+            vkycLink: vkycResponse.data?.data?.url || "Generated",
             vkycLinkCreatedAt: new Date(),
         },
     });
@@ -144,8 +147,77 @@ const updateVKYCStatus = asyncHandler(async (req, res) => {
     res.respond(200, "VKYC status updated successfully!", updatedLoan);
 });
 
+const fetchAndStoreVKYCDetails = async (loanApplicationId) => {
+    const vkycStatus = await GetVKYCStatusByUniqueId([loanApplicationId]);
+    if (!vkycStatus.success || !vkycStatus.data?.data) return;
+
+    const sessionId = Object.keys(vkycStatus.data.data)[0];
+    if (!sessionId) return;
+
+    const vkycDetails = await GetVKYCDetailsBySessionId([sessionId]);
+    if (!vkycDetails.success) return;
+
+    await prisma.loanVkycData.upsert({
+        where: { applicationId: loanApplicationId },
+        update: {
+            vkycJson: vkycDetails.data.data,
+        },
+        create: {
+            applicationId: loanApplicationId,
+            vkycJson: vkycDetails.data.data,
+        },
+    });
+};
+
+// ##########----------Digitap Webhook Handler----------##########
+const digitapWebhookHandler = asyncHandler(async (req, res) => {
+    if (req.headers["x-api-key"] !== "epcmaawh") {
+        console.warn("Invalid webhook key");
+    }
+    console.log("Digitap Webhook Running")
+
+    const timestamp = formatDateForFile()
+
+    saveJsonResponse("VKYC", timestamp, req.body)
+
+    const { state, status, uniqueId } = req.body;
+
+    const loanApplication = await prisma.loanApplication.findUnique({
+        where: { id: uniqueId },
+    });
+    if (!loanApplication) {
+        console.log("Loan application not found");
+    }
+
+    if (state === "VKYC") {
+        let vkycStatus = null;
+
+        if (status === "APPROVED") vkycStatus = "COMPLETED";
+        if (status === "REJECTED") vkycStatus = "REJECTED";
+        if (status === "DROPPED") vkycStatus = "DROPPED";
+
+        if (!loanApplication) {
+            console.warn("VKYC webhook before loan creation", uniqueId);
+        }
+
+        if (vkycStatus) {
+            await prisma.loanApplication.update({
+                where: { id: uniqueId },
+                data: { vkycStatus },
+            });
+        }
+    }
+
+    if (["APPROVED", "REJECTED", "DROPPED"].includes(status)) {
+        await fetchAndStoreVKYCDetails(uniqueId);
+    }
+
+    return res.respond(200, "Success");
+});
+
 module.exports = {
     createVKYCLinkForCustomer,
     getVKYCDataPointDetails,
-    updateVKYCStatus
+    updateVKYCStatus,
+    digitapWebhookHandler
 };
