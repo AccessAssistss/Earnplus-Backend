@@ -340,7 +340,16 @@ async function assignToDisbursal(tx, loanApplication, performedById, remarks) {
 const approveLoan = asyncHandler(async (req, res) => {
     const userId = req.user;
     const { loanApplicationId } = req.params;
-    let { approvedAmount, interestRate, tenure, interestType = "FLAT" } = req.body;
+    let {
+        approvedAmount,
+        interestRate,
+        tenure,
+        interestType = "FLAT",
+        processingFeePercent,
+        insuranceAmount,
+        stampDuty,
+        otherCharges
+    } = req.body;
 
     if (!loanApplicationId) {
         return res.respond(400, "Loan Application Id is required.");
@@ -349,17 +358,37 @@ const approveLoan = asyncHandler(async (req, res) => {
     approvedAmount = Number(approvedAmount);
     interestRate = Number(interestRate);
     tenure = Number(tenure);
+    processingFeePercent = Number(processingFeePercent);
+    insuranceAmount = Number(insuranceAmount);
+    stampDuty = Number(stampDuty);
+    otherCharges = Number(otherCharges);
 
     if (
         Number.isNaN(approvedAmount) ||
         Number.isNaN(interestRate) ||
-        Number.isNaN(tenure)
+        Number.isNaN(tenure) ||
+        Number.isNaN(processingFeePercent) ||
+        Number.isNaN(insuranceAmount) ||
+        Number.isNaN(stampDuty) ||
+        Number.isNaN(otherCharges)
     ) {
         return res.respond(
             400,
-            "approvedAmount, interestRate and tenure must be valid numbers"
+            "approvedAmount, interestRate, tenure, processingFeePercent, insuranceAmount, stampDuty and otherCharges must be valid numbers"
         );
     }
+
+    const processingFee = (approvedAmount * processingFeePercent) / 100;
+    const processingFeeGst = processingFee * 0.18;
+
+    const totalCharges =
+        processingFee +
+        processingFeeGst +
+        insuranceAmount +
+        stampDuty +
+        otherCharges;
+
+    const netDisbursalAmount = approvedAmount - totalCharges;
 
     const associateSubAdmin = await prisma.associateSubAdmin.findFirst({
         where: { userId, isDeleted: false },
@@ -393,7 +422,7 @@ const approveLoan = asyncHandler(async (req, res) => {
                 approvedAmount,
                 interestRate,
                 tenure,
-                interestType,
+                interestType
             },
         });
 
@@ -416,6 +445,40 @@ const approveLoan = asyncHandler(async (req, res) => {
                 totalPayable: emiResult.totalPayable,
                 calculationJson: emiResult.meta,
             },
+        });
+
+        await tx.loanCharges.upsert({
+            where: { applicationId: loanApplication.id },
+            update: {
+                processingFee,
+                processingFeeGst,
+                insuranceAmount,
+                stampDuty,
+                otherCharges,
+                totalCharges
+            },
+            create: {
+                applicationId: loanApplication.id,
+                processingFee,
+                processingFeeGst,
+                insuranceAmount,
+                stampDuty,
+                otherCharges,
+                totalCharges
+            }
+        });
+
+        await tx.loanDisbursalSummary.upsert({
+            where: { applicationId: loanApplication.id },
+            update: {
+                totalCharges,
+                netDisbursalAmount
+            },
+            create: {
+                applicationId: loanApplication.id,
+                totalCharges,
+                netDisbursalAmount
+            }
         });
 
         await tx.loanApplication.update({

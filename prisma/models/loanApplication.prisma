@@ -21,13 +21,15 @@ model LoanApplication {
   masterProduct MasterProduct      @relation(fields: [productId], references: [id])
   approver      AssociateSubAdmin? @relation(fields: [approverId], references: [id])
 
-  LoanFormData     LoanFormData?
-  LoanVkycData     LoanVkycData?
-  LoanCreditData   LoanCreditData?
-  LoanCamsData     LoanCamsData?
-  LoanApprovedData LoanApprovedData?
-  LoanEmiDetails   LoanEmiDetails?
-  LoanBankDetails  LoanBankDetails?
+  LoanFormData         LoanFormData?
+  LoanVkycData         LoanVkycData?
+  LoanCreditData       LoanCreditData?
+  LoanCamsData         LoanCamsData?
+  LoanApprovedData     LoanApprovedData?
+  LoanCharges          LoanCharges?
+  LoanEmiDetails       LoanEmiDetails?
+  LoanBankDetails      LoanBankDetails?
+  LoanDisbursalSummary LoanDisbursalSummary?
 
   LoanApplicationLogs LoanApplicationLogs[]
   LoanOtherDocs       LoanOtherDocs[]
@@ -124,6 +126,22 @@ model LoanApprovedData {
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade)
 }
 
+// ####################--------------------Loan Charges Model--------------------####################
+model LoanCharges {
+  id               String   @id @default(uuid())
+  applicationId    String   @unique
+  processingFee    Float
+  processingFeeGst Float
+  insuranceAmount  Float?
+  stampDuty        Float?
+  otherCharges     Float?
+  totalCharges     Float
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id])
+}
+
 // ####################--------------------Loan EMI Details Model--------------------####################
 model LoanEmiDetails {
   id              String   @id @default(uuid())
@@ -165,6 +183,18 @@ model LoanEsignDocuments {
   signUrlLink   String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  loanApplication LoanApplication @relation(fields: [applicationId], references: [id])
+}
+
+// ##########----------Loan Disbursement Summery Model----------##########
+model LoanDisbursalSummary {
+  id                 String   @id @default(uuid())
+  applicationId      String   @unique
+  totalCharges       Float
+  netDisbursalAmount Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   loanApplication LoanApplication @relation(fields: [applicationId], references: [id])
 }

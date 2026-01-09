@@ -355,6 +355,8 @@ const getLoanDetails = asyncHandler(async (req, res) => {
                     signedFile: true,
                 }
             },
+            LoanCharges: true,
+            LoanDisbursalSummary: true,
             // LoanApplicationLogs: {
             //     include: {
             //         performedBy: {

@@ -30,7 +30,6 @@ const createSectionKey = asyncHandler(async (req, res) => {
     res.respond(201, "Section Key created successfully!", newSectionKey);
 });
 
-
 // ##########----------Update Section Key----------##########
 const updateSectionKey = asyncHandler(async (req, res) => {
     const { key, label } = req.body;
